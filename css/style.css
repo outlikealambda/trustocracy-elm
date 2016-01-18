@@ -1,0 +1,30 @@
+.circle-explicit {
+  height: 20px;
+  width: 20px;
+  border-radius: 10px;
+
+  background: green;
+  margin: 4px;
+}
+
+.circle-regular {
+  height: 16px;
+  width: 16px;
+  border-radius: 10px;
+
+  background: orange;
+  margin: 6px;
+}
+
+.single-line > div {
+  display: inline-block;
+}
+
+.friend {
+  width: 200px;
+  display: inline-block;;
+}
+
+.path {
+  width: 90px;
+}
