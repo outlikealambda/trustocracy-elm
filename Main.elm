@@ -9,12 +9,13 @@ import Json.Decode as Json exposing ((:=))
 import Task exposing (..)
 import User
 import Neighbor
-import OpinionPath as OP
+import OpinionPathGroup as OPG
+import NearestOpinions as NOPG
 import Relationship
 
 
 -- VIEW
-view : String -> Result String (User.Model, List Neighbor.Model) -> String -> Result String (List OP.Model) -> Html
+view : String -> Result String (User.Model, List Neighbor.Model) -> String -> Result String NOPG.Model -> Html
 view uid result tid resultsTopic =
   div []
     [ css "css/style.css"
@@ -22,7 +23,7 @@ view uid result tid resultsTopic =
     , viewNearest tid resultsTopic ]
 
 
-viewNearest : String -> Result String (List OP.Model) -> Html
+viewNearest : String -> Result String NOPG.Model -> Html
 viewNearest tid result =
   let field =
         input
@@ -36,9 +37,9 @@ viewNearest tid result =
           Err msg ->
               [ div [] [ text msg ] ]
 
-          Ok ops ->
-            [ div []
-              (List.map OP.view (List.sortWith OP.compareOP ops)) ]
+          Ok nearestOPGs ->
+              NOPG.view nearestOPGs
+
   in
       div [] (field :: paths)
 
@@ -92,7 +93,7 @@ topicId =
   Signal.mailbox ""
 
 
-topicResults : Signal.Mailbox (Result String (List OP.Model))
+topicResults : Signal.Mailbox (Result String NOPG.Model)
 topicResults =
   Signal.mailbox (Err "Enter a topic ID")
 
@@ -125,14 +126,15 @@ lookupNeighbors rawId =
       -- toUrl `andThen` (mapError (always "Not found :(") << Http.get userDecode)
 
 
-lookupNearestOpinions : String -> String -> Task String (List OP.Model)
+lookupNearestOpinions : String -> String -> Task String NOPG.Model
 lookupNearestOpinions user topic =
   let toUrl =
         if isNum user && isNum topic
           then succeed ("http://localhost:3714/api/user/" ++ user ++ "/topic/" ++ topic ++ "/opinions")
           else fail ("User-Topic combo is not valid")
   in
-      toUrl `andThen` (mapError errorString << Http.get nearestOpinionsDecoder)
+      toUrl `andThen` (mapError errorString << Http.get OPG.decoder)
+      |> Task.map NOPG.init
 
 
 isNum : String -> Bool
@@ -147,9 +149,6 @@ userInfo =
     ("neighbors" := Json.list Neighbor.decoder)
 
 
-nearestOpinionsDecoder : Json.Decoder (List OP.Model)
-nearestOpinionsDecoder = "paths" := Json.list OP.decoder
-
 
 errorString : Http.Error -> String
 errorString error =
@@ -158,24 +157,3 @@ errorString error =
     Http.NetworkError -> "network error"
     Http.UnexpectedPayload msg -> msg
     Http.BadResponse int msg -> (toString int) ++ ": " ++ msg
-
--- bucketNearestOpinions : (a -> comparable) -> List a -> Dict.Dict comparable (List a) -> Dict.Dict comparable (List a)
--- bucketNearestOpinions keyGen opinions dict =
---   case opinions of
---     o::os ->
---       let key =
---         keyGen o
---       in
---         bucketNearestOpinion key o dict
---         |> bucketNearestOpinions keyGen os
---     [] -> dict
---
--- bucketNearestOpinion : comparable -> a -> Dict.Dict comparable (List a) -> Dict.Dict comparable (List a)
--- bucketNearestOpinion key v dict =
---   Dict.insert key (v :: safeGetList key dict) dict
---
--- safeGetList : comparable -> Dict.Dict comparable (List a) -> List a
--- safeGetList key dict =
---   case Dict.get key dict of
---     Just vs -> vs
---     Nothing -> []
