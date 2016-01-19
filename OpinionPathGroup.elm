@@ -10,6 +10,7 @@ import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
 import Json.Decode as Json exposing ((:=))
 
+
 type alias Model =
   { expanded : Bool
   , paths : List OP.Model
@@ -26,6 +27,7 @@ init =
   ( Model False []
   , Effects.none
   )
+
 
 update : Action -> Model -> (Model, Effects Action)
 update message model =
@@ -46,6 +48,7 @@ viewByOpinion : Signal.Address Action -> Model -> Html
 viewByOpinion address opg =
   let header =
         List.head opg.paths
+
       remainder =
         if opg.expanded then
           List.tail opg.paths |> Maybe.withDefault []
@@ -55,11 +58,21 @@ viewByOpinion address opg =
     case header of
 
       Just h ->
-        div [class "opg"]
-          [ OP.viewHeader h (List.length opg.paths)
-          , viewToggle address opg.expanded
-          , div [class "opg-others"] (List.map OP.view remainder)
-          ]
+        let
+            expandButton =
+              viewToggle address opg.expanded
+
+            opgHeader =
+              OP.viewHeader h (List.length opg.paths) expandButton
+
+            others =
+              List.map OP.view remainder
+
+        in
+            div [class "opg"]
+              [ opgHeader
+              , div [class "others"] others
+              ]
 
       Nothing -> div [] []
 
@@ -67,9 +80,9 @@ viewByOpinion address opg =
 viewToggle : Signal.Address Action -> Bool -> Html
 viewToggle address expanded =
   if expanded then
-    button [ onClick address Collapse ] [ text "-" ]
+    button [ onClick address Collapse, class "opg-toggle" ] [ text "-" ]
   else
-    button [ onClick address Expand ] [ text "+" ]
+    button [ onClick address Expand, class "opg-toggle" ] [ text "+" ]
 
 
 opinerKeyGen : (OP.Model -> String)

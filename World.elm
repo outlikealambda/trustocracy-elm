@@ -1,27 +1,31 @@
 module World (Action, init, view, update) where
 
--- import Char
 import String
--- import Dict
 import Html exposing (Html, input, div, node, h1, text)
 import Effects exposing (Effects)
 import Html.Attributes exposing (rel, href, placeholder, value)
 import Html.Events exposing (on, targetValue)
--- import Result
--- import Http
--- import Json.Decode as Json exposing ((:=))
--- import Task exposing (..)
 import NearestOpinions as Nearest
 
 
 type alias Model =
   { uid : Int
   , nearest : Nearest.Model
+  , view : View
   }
+
+
+-- not used yet
+type View
+  = UsersNearestOpinions
+  | UserInfo
+
 
 type Action
   = SetUser Int
+  | SwitchView View
   | NearestMsg Nearest.Action
+
 
 init : (Model, Effects Action)
 init =
@@ -29,9 +33,10 @@ init =
     (nearestModel, fx) =
       Nearest.init 0 0
   in
-    ( Model 0 nearestModel
+    ( Model 0 nearestModel UsersNearestOpinions
     , Effects.map NearestMsg fx
     )
+
 
 update : Action -> Model -> (Model, Effects Action)
 update message model =
@@ -40,9 +45,19 @@ update message model =
       let
           (nearestModel, fx) = Nearest.update (Nearest.SetUser uid) model.nearest
       in
-        ( Model uid nearestModel
+        ( { model
+          | uid = uid
+          , nearest = nearestModel
+          }
         , Effects.map NearestMsg fx
         )
+
+    SwitchView view ->
+      ( { model
+        | view = view
+        }
+      , Effects.none
+      )
 
     NearestMsg msg ->
       let
@@ -52,6 +67,7 @@ update message model =
           | nearest = nearestModel }
         , Effects.map NearestMsg fx
         )
+
 
 view : Signal.Address Action -> Model -> Html
 view address model =

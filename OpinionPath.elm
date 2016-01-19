@@ -43,19 +43,19 @@ view op =
   let relationships =
     List.map Relationship.view op.path
   in
-    div [class "single-line"]
-      [ span [class "friend"] [text op.friend.name]
+    div [class "op single-line cf"]
+      [ div [class "op-text"] [text op.friend.name]
       , div [class "single-line path"] relationships
-      , span [class "opiner"] [text op.opiner.name]
-      , span [class "opinion-id"] [text <| toString op.opinionId]
+      , div [class "op-text"] [text op.opiner.name]
       ]
 
 
-viewHeader : Model -> Int -> Html
-viewHeader op count =
-   div [class "opg-header single-line"]
+viewHeader : Model -> Int -> Html -> Html
+viewHeader op count button =
+   div [class "opg-header single-line cf"]
       [ div [class "op-text"] [ text op.friend.name ]
       , div [class "single-line path"] (List.map Relationship.view op.path)
-      , div [class "path-count"] [text <| toString count]
       , div [class "op-text"] [ text op.opiner.name ]
+      , div [class "path-count"] [text <| toString count]
+      , button
       ]

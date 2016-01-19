@@ -79,10 +79,12 @@ update message model =
                 , Effects.none)
               Just bucket ->
                 let
-                    (bucketUpdate, fx) =
+                    (updatedBucket, fx) =
                       OPG.update subMsg bucket
+                    updatedBuckets =
+                      Dict.insert key updatedBucket model.buckets
                 in
-                    ( Dict.insert key bucket model.buckets
+                    ( updatedBuckets
                     , fx )
       in
           ( { model | buckets = newBuckets }
