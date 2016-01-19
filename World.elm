@@ -64,7 +64,8 @@ view address model =
           []
   in
       div []
-        [ css "css/style.css"
+        [ css "css/normalize.css"
+        , css "css/style.css"
         , h1 [] [ toString model.uid |> text ]
         , field
         , div [] (Nearest.view (Signal.forwardTo address NearestMsg) model.nearest)

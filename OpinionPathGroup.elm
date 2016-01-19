@@ -56,8 +56,8 @@ viewByOpinion address opg =
 
       Just h ->
         div [class "opg"]
-          [ viewToggle address opg.expanded
-          , OP.viewHeader h (List.length opg.paths)
+          [ OP.viewHeader h (List.length opg.paths)
+          , viewToggle address opg.expanded
           , div [class "opg-others"] (List.map OP.view remainder)
           ]
 

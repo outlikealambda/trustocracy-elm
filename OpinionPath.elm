@@ -54,8 +54,8 @@ view op =
 viewHeader : Model -> Int -> Html
 viewHeader op count =
    div [class "opg-header single-line"]
-      [ span [] [ text op.friend.name ]
+      [ div [class "op-text"] [ text op.friend.name ]
       , div [class "single-line path"] (List.map Relationship.view op.path)
-      , span [class "path-count"] [text <| toString count]
-      , span [] [ text op.opiner.name ]
+      , div [class "path-count"] [text <| toString count]
+      , div [class "op-text"] [ text op.opiner.name ]
       ]

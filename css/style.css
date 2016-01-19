@@ -4,7 +4,7 @@
   border-radius: 10px;
 
   background: green;
-  margin: 4px;
+  margin: 4px 4px;
 }
 
 .circle-regular {
@@ -13,11 +13,11 @@
   border-radius: 10px;
 
   background: orange;
-  margin: 6px;
+  margin: 6px 6px;
 }
 
 .single-line > div {
-  display: inline-block;
+  float: left
 }
 
 .friend {
@@ -27,4 +27,17 @@
 
 .path {
   width: 90px;
+}
+
+.opg-header {
+  clear: both;
+  line-height:28px;
+}
+
+.opg-header > div {
+  margin-right: 8px;
+}
+
+.opg {
+  margin-top: 16px;
 }
