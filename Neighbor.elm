@@ -19,7 +19,6 @@ view n =
   div [class "single-line"]
     [ Relationship.view n.relationship
     , span [] [text n.user.name]
-    , span [] [text ":"]
     ]
 
 

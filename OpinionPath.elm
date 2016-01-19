@@ -1,4 +1,4 @@
-module OpinionPath (Model, view, decoder, compareOP) where
+module OpinionPath (Model, view, viewHeader, decoder, compareOP) where
 
 import Json.Decode as Json exposing ((:=))
 import Relationship
@@ -48,4 +48,14 @@ view op =
       , div [class "single-line path"] relationships
       , span [class "opiner"] [text op.opiner.name]
       , span [class "opinion-id"] [text <| toString op.opinionId]
+      ]
+
+
+viewHeader : Model -> Int -> Html
+viewHeader op count =
+   div [class "opg-header single-line"]
+      [ span [] [ text op.friend.name ]
+      , div [class "single-line path"] (List.map Relationship.view op.path)
+      , span [class "path-count"] [text <| toString count]
+      , span [] [ text op.opiner.name ]
       ]
