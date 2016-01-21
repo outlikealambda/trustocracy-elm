@@ -64,9 +64,8 @@ update message model =
 
     SetOpinions rawOpinions ->
       ( model
-      , Effects.batch (Debug.log "messages" (List.map createSetOpinionEffect (Debug.log "raw-opinions" rawOpinions)))
+      , Effects.batch (List.map createSetOpinionEffect rawOpinions)
       )
-
 
     SetTopic tid ->
       ( { model | tid = tid }

@@ -8,14 +8,15 @@ module OpinionPathGroup
   , opinionKeyGen
   ) where
 
--- import Effects exposing (Effects, map, batch, Never)
+
 import Opinion
 import OpinionPath as OP
 import Relationship
 
+
 import Effects exposing (Effects)
 import Task
-import Html exposing (Html, div, span, text, button)
+import Html exposing (Html, Attribute, div, span, text, button)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
 import Json.Decode as Json exposing ((:=))
@@ -37,7 +38,10 @@ type Action
 
 fromOpinionPaths : Int -> List OP.Model -> Model
 fromOpinionPaths opinionId ops =
-  Model False ops (Opinion.init opinionId)
+  let sorted =
+        List.sortBy .score ops
+  in
+        Model False sorted (Opinion.init opinionId)
 
 
 init : (Model, Effects Action)
@@ -65,7 +69,7 @@ update message model =
       )
 
     SetOpinion opinion ->
-      ( Debug.log "opg set-opinion" model
+      ( model
       , OpinionMsg (Opinion.SetText <| snd opinion)
           |> Task.succeed
           |> Effects.task
@@ -86,44 +90,52 @@ view = viewByOpinion
 
 viewByOpinion : Signal.Address Action -> Model -> Html
 viewByOpinion address opg =
-  let header =
-        List.head opg.paths
+  let
+    header =
+      List.head opg.paths
 
-      remainder =
-        if opg.expanded then
-          List.tail opg.paths |> Maybe.withDefault []
-        else []
+    remainder =
+      if opg.expanded then
+        List.tail opg.paths |> Maybe.withDefault []
+      else []
 
   in
     case header of
 
       Just h ->
         let
-            expandButton =
-              viewToggle address opg.expanded
+          opgHeader =
+            OP.viewHeader h (List.length opg.paths)
 
-            opgHeader =
-              OP.viewHeader h (List.length opg.paths) expandButton
+          others =
+            List.map OP.viewAbbreviated remainder
 
-            others =
-              List.map OP.view remainder
+          opiner =
+            OP.viewOpiner h
+
+          clickAction =
+            if opg.expanded then Collapse else Expand
+
+          toggleClass =
+            if opg.expanded then "expanded" else "collapsed"
 
         in
-            div [class "opg cf"]
-              [ opgHeader
-              , div [class "others"] others
-              , Opinion.view opg.opinion
+          div [class "opg col m12 l6"]
+            [ div [class "t-card white"]
+              [ div [class "t-card-content"]
+                  [ div
+                    [ class ("t-card-title toggles indigo grey-text text-lighten-5 " ++ toggleClass)
+                    , onClick address clickAction ]
+                    (opgHeader :: others)
+                  , div [class "t-card-subtitle"] [opiner]
+                  , div [class "t-card-body"]
+                      [ Opinion.view opg.opinion
+                      ]
+                  ]
               ]
+            ]
 
       Nothing -> div [] []
-
-
-viewToggle : Signal.Address Action -> Bool -> Html
-viewToggle address expanded =
-  if expanded then
-    button [ onClick address Collapse, class "opg-toggle" ] [ text "-" ]
-  else
-    button [ onClick address Expand, class "opg-toggle" ] [ text "+" ]
 
 
 opinionKeyGen : (OP.Model -> Int)

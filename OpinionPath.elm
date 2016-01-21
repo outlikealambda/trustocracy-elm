@@ -1,4 +1,12 @@
-module OpinionPath (Model, view, viewHeader, decoder, compareOP) where
+module OpinionPath
+  ( Model
+  , view
+  , viewAbbreviated
+  , viewHeader
+  , viewOpiner
+  , decoder
+  , compareScore
+  ) where
 
 import Json.Decode as Json exposing ((:=))
 import Relationship
@@ -43,18 +51,29 @@ view op =
   let relationships =
     List.map Relationship.view op.path
   in
+    div [class "op single-line"]
+      [ span [class "op-text friend"] [text op.friend.name]
+      , span [class "single-line path"] relationships
+      ]
+
+viewHeader : Model -> Int -> Html
+viewHeader op count =
+   div [class "opg-header op single-line cf"]
+      [ span [class "op-text friend"] [ text op.friend.name ]
+      , span [class "single-line path"] (List.map Relationship.view op.path)
+      , span [class "path-count"] [text <| toString count]
+      ]
+
+viewAbbreviated : Model -> Html
+viewAbbreviated op =
+  let relationships =
+    List.map Relationship.view op.path
+  in
     div [class "op single-line cf"]
-      [ div [class "op-text friend"] [text op.friend.name]
-      , div [class "single-line path"] relationships
+      [ span [class "op-text friend"] [text op.friend.name]
+      , span [class "single-line path"] relationships
       ]
 
-
-viewHeader : Model -> Int -> Html -> Html
-viewHeader op count button =
-   div [class "opg-header single-line cf"]
-      [ div [class "op-text friend"] [ text op.friend.name ]
-      , div [class "single-line path"] (List.map Relationship.view op.path)
-      , button
-      , div [class "op-text opiner"] [ text op.opiner.name ]
-      , div [class "path-count"] [text <| toString count]
-      ]
+viewOpiner : Model -> Html
+viewOpiner op =
+  div [class "opiner"] [ text op.opiner.name ]

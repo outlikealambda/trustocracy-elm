@@ -39,7 +39,7 @@ update message model =
     SetText fullText ->
       ( { model
         | text = Debug.log "set-text" fullText
-        , snippet = snippetize 200 fullText
+        , snippet = snippetize 132 fullText
         }
       , Effects.none )
 

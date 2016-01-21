@@ -75,13 +75,17 @@ view address model =
           , on "input" targetValue (Signal.message address << SetUser << processStr)
           ]
           []
+      nearestGroups =
+        Nearest.view (Signal.forwardTo address NearestMsg) model.nearest
   in
-      div [ class "world" ]
+      div [ class "world container" ]
         [ css "css/normalize.css"
+        , css "css/materialize.css"
+        , css "css/fonts.css"
         , css "css/style.css"
         , h1 [] [ toString model.uid |> text ]
         , field
-        , div [] (Nearest.view (Signal.forwardTo address NearestMsg) model.nearest)
+        , div [class "row"] nearestGroups
         ]
 
 -- todo: handle errors better, although we shouldn't be getting invalid users

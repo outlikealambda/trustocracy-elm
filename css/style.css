@@ -7,84 +7,83 @@
   clear:both;
 }
 .cf {
-  zoom:1; /* For IE 6/7 (trigger hasLayout) */
+  zoom:1;
+  /* for ie 6/7 (trigger haslayout) */
 }
 
-.world {
-  margin: 16px;
-  width: 800px;
+span {
+  display:block;
+}
+
+.t-card {
+  border-radius: 2px;
+  box-shadow: 0 2px 5px 0 rgba(0,0,0,0.16), 0 2px 10px 0 rgba(0,0,0,0.12);
+  margin-bottom: 20px;
+}
+
+.t-card-title {
+  font-size: 1.3rem;
+  line-height: 1.8rem;
+  padding: 20px;
+
+  font-family: 'Merriweather';
+  font-weight: lighter;
+}
+
+.t-card-subtitle {
+  font-size: 1.3rem;
+  line-height: 1.8rem;
+  padding: 20px;
+  border-top: 1px solid rgba(160, 160, 160, 0.2);
+
+  font-family: 'Merriweather';
+  font-weight: lighter;
+}
+
+.t-card-body {
+  padding: 20px;
+  border-top: 1px solid rgba(160, 160, 160, 0.2);
+  font-size: 1.2em;
+}
+
+.toggles {
+  cursor: pointer;
 }
 
 .circle-explicit {
-  height: 20px;
-  width: 20px;
-  border-radius: 10px;
-
-  background: green;
-  margin: 4px 4px;
+  height: 1.2rem;
+  width: 1.2rem;
+  border-radius: 0.7rem;
+  margin: .3rem 4px;
 }
 
 .circle-regular {
-  height: 16px;
-  width: 16px;
-  border-radius: 10px;
-
-  background: orange;
-  margin: 6px 6px;
+  height: 1rem;
+  width: 1rem;
+  border-radius: 0.6rem;
+  margin: .4rem 4px;
 }
 
-.single-line > div {
-  float: left
+.op > span {
+  float: left;
 }
 
-.op-text.friend {
-  width: 160px;
+.op .friend {
+  min-width: 200px;
 }
 
-.opg-header .opiner, .opg-header button, .opg-header .path-count {
+.op .path-count {
   float: right;
 }
 
-.path {
-  width: 90px;
+.expanded .op {
+  margin-bottom: 8px;
 }
 
-.opg-header, .op {
-  line-height:28px;
-  padding: 4px 0px;
+.expanded .op:last-of-type {
+  margin-bottom: 0px;
 }
 
-.opg-toggle {
-  height: 18px;
-  line-height: 18px;
-  margin: 4px;
-  font-size: 14px;
-  text-align: center;
-}
-
-.opg-header > div, .op > div {
-  margin-right: 8px;
-}
-
-.opg {
-  margin-top: 8px;
-}
-
-.op {
-}
-
-.path-count {
-  background: #e6e6e6;
-  border-radius: 8px;
-  min-width: 16px;
-  text-align: center;
-  margin: 4px;
-  height: 18px;
-  line-height: 18px;
-  font-size: 12px;
-  color: #666;
-}
-
-.others {
+.path > span {
   float: left;
 }
