@@ -1,10 +1,20 @@
-module OpinionPathGroup (Model, Action, init, view, update, opinerKeyGen, friendKeyGen, decoder) where
+module OpinionPathGroup
+  ( Model
+  , Action(SetOpinion)
+  , init
+  , view
+  , update
+  , fromOpinionPaths
+  , opinionKeyGen
+  ) where
 
 -- import Effects exposing (Effects, map, batch, Never)
+import Opinion
 import OpinionPath as OP
 import Relationship
 
 import Effects exposing (Effects)
+import Task
 import Html exposing (Html, div, span, text, button)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
@@ -14,17 +24,25 @@ import Json.Decode as Json exposing ((:=))
 type alias Model =
   { expanded : Bool
   , paths : List OP.Model
+  , opinion : Opinion.Model
   }
 
 
 type Action
   = Expand
   | Collapse
+  | SetOpinion (Int, String)
+  | OpinionMsg Opinion.Action
+
+
+fromOpinionPaths : Int -> List OP.Model -> Model
+fromOpinionPaths opinionId ops =
+  Model False ops (Opinion.init opinionId)
 
 
 init : (Model, Effects Action)
 init =
-  ( Model False []
+  ( Model False [] (Opinion.init 0)
   , Effects.none
   )
 
@@ -34,10 +52,32 @@ update message model =
   case message of
     Expand ->
       ( { model | expanded = True }
-      , Effects.none )
+      , OpinionMsg Opinion.Expand
+          |> Task.succeed
+          |> Effects.task
+      )
+
     Collapse ->
       ( { model | expanded = False }
-      , Effects.none )
+      , OpinionMsg Opinion.Collapse
+          |> Task.succeed
+          |> Effects.task
+      )
+
+    SetOpinion opinion ->
+      ( Debug.log "opg set-opinion" model
+      , OpinionMsg (Opinion.SetText <| snd opinion)
+          |> Task.succeed
+          |> Effects.task
+      )
+
+    OpinionMsg msg ->
+      let (opinion, fx) =
+        Opinion.update msg model.opinion
+      in
+        ( { model | opinion = opinion }
+        , Effects.map OpinionMsg fx
+        )
 
 
 view : Signal.Address Action -> Model -> Html
@@ -69,9 +109,10 @@ viewByOpinion address opg =
               List.map OP.view remainder
 
         in
-            div [class "opg"]
+            div [class "opg cf"]
               [ opgHeader
               , div [class "others"] others
+              , Opinion.view opg.opinion
               ]
 
       Nothing -> div [] []
@@ -85,17 +126,5 @@ viewToggle address expanded =
     button [ onClick address Expand, class "opg-toggle" ] [ text "+" ]
 
 
-opinerKeyGen : (OP.Model -> String)
-opinerKeyGen = .opiner >> .name
-
-
-friendKeyGen : (OP.Model -> String)
-friendKeyGen = .friend >> .name
-
-
-decoder : Json.Decoder Model
-decoder =
-  let asOP =
-    "paths" := Json.list OP.decoder
-  in
-    Json.map (Model False) asOP
+opinionKeyGen : (OP.Model -> Int)
+opinionKeyGen = .opinionId

@@ -10,6 +10,11 @@
   zoom:1; /* For IE 6/7 (trigger hasLayout) */
 }
 
+.world {
+  margin: 16px;
+  width: 800px;
+}
+
 .circle-explicit {
   height: 20px;
   width: 20px;
@@ -32,8 +37,12 @@
   float: left
 }
 
-.op-text {
-  width: 200px;
+.op-text.friend {
+  width: 160px;
+}
+
+.opg-header .opiner, .opg-header button, .opg-header .path-count {
+  float: right;
 }
 
 .path {
@@ -74,4 +83,8 @@
   line-height: 18px;
   font-size: 12px;
   color: #666;
+}
+
+.others {
+  float: left;
 }

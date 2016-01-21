@@ -3,7 +3,7 @@ module World (Action, init, view, update) where
 import String
 import Html exposing (Html, input, div, node, h1, text)
 import Effects exposing (Effects)
-import Html.Attributes exposing (rel, href, placeholder, value)
+import Html.Attributes exposing (class, rel, href, placeholder, value)
 import Html.Events exposing (on, targetValue)
 import NearestOpinions as Nearest
 
@@ -53,9 +53,7 @@ update message model =
         )
 
     SwitchView view ->
-      ( { model
-        | view = view
-        }
+      ( { model | view = view }
       , Effects.none
       )
 
@@ -63,8 +61,7 @@ update message model =
       let
           (nearestModel, fx) = Nearest.update msg model.nearest
       in
-        ( { model
-          | nearest = nearestModel }
+        ( { model | nearest = nearestModel }
         , Effects.map NearestMsg fx
         )
 
@@ -79,7 +76,7 @@ view address model =
           ]
           []
   in
-      div []
+      div [ class "world" ]
         [ css "css/normalize.css"
         , css "css/style.css"
         , h1 [] [ toString model.uid |> text ]

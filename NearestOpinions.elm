@@ -9,10 +9,11 @@ import Json.Decode as Json exposing ((:=))
 import OpinionPathGroup as OPG
 import OpinionPath as OP
 import Dict
+import String
 import Http
 
 
-type alias Key = String
+type alias Key = Int
 type alias Uid = Int
 type alias Tid = Int
 
@@ -20,16 +21,17 @@ type alias Ops = List OP.Model
 
 
 type alias Model =
-  { uid: Uid,
-    tid: Tid,
-    raw : Ops
+  { uid: Uid
+  , tid: Tid
+  , raw : Ops
   , buckets : Dict.Dict Key OPG.Model -- opinion paths bucketed by key
   }
 
 
 type Action
-  = SetRaw (Maybe Ops)
+  = SetRaw Ops
   | SetUser Uid
+  | SetOpinions (List (Key, String))
   | SetTopic Tid
   | SubMsg Key OPG.Action
 
@@ -44,39 +46,42 @@ init tid uid =
 update : Action -> Model -> (Model, Effects Action)
 update message model =
   case message of
-    SetRaw maybeOps ->
-      case maybeOps of
+    SetRaw ops ->
+      case ops of
 
-        Nothing -> (model, Effects.none)
+        [] -> (model, Effects.none)
 
-        Just ops ->
+        ops ->
           let newBuckets =
-            bucketList OPG.opinerKeyGen ops Dict.empty |> Dict.map toOPG
+            bucketList OPG.opinionKeyGen ops Dict.empty
+              |> Dict.map toOPG
 
           in
             ( { model
               | raw = ops
               , buckets = newBuckets }
-            , Effects.none )
+            , getOpinions (Dict.keys newBuckets) )
+
+    SetOpinions rawOpinions ->
+      ( model
+      , Effects.batch (Debug.log "messages" (List.map createSetOpinionEffect (Debug.log "raw-opinions" rawOpinions)))
+      )
+
 
     SetTopic tid ->
-      ( { model | tid = tid },
-      getNearestOpinions tid model.uid)
+      ( { model | tid = tid }
+      , getNearestOpinions tid model.uid)
 
     SetUser uid ->
       ( { model | uid = uid }
       , getNearestOpinions model.tid uid)
 
     SubMsg key subMsg ->
-      let
-          maybeBucket =
-            Dict.get key model.buckets
-
-          (newBuckets, fx) =
-            case maybeBucket of
+      let (newBuckets, fx) =
+            case Dict.get key model.buckets of
               Nothing ->
                 ( model.buckets
-                , Effects.none)
+                , Effects.none )
               Just bucket ->
                 let
                     (updatedBucket, fx) =
@@ -91,31 +96,69 @@ update message model =
           , Effects.map (SubMsg key) fx
           )
 
-  -- let dict =
-  --   bucketList OPG.opinerKeyGen opg.paths Dict.empty
-  --   |> Dict.map mapToOPG
-  -- in Model opg dict
+createSetOpinionEffect : (Key, String) -> Effects Action
+createSetOpinionEffect rawOpinion =
+  SubMsg (fst rawOpinion) (OPG.SetOpinion rawOpinion)
+    |> Task.succeed
+    |> Effects.task
 
 getNearestOpinions : Tid -> Uid -> Effects Action
 getNearestOpinions tid uid =
-  buildUrl tid uid
-  |> Http.get opsDecoder
-  |> Task.toMaybe
-  |> Task.map SetRaw
-  |> Effects.task
+  buildNearestOpinionsUrl tid uid
+    |> Http.get opsDecoder
+    |> Task.toMaybe
+    |> Task.map (Maybe.withDefault [])
+    |> Task.map SetRaw
+    |> Effects.task
+
 
 opsDecoder : Json.Decoder Ops
 opsDecoder =
   "paths" := Json.list OP.decoder
 
-buildUrl : Tid -> Uid -> String
-buildUrl tid uid =
-  "http://localhost:3714/api/user/" ++ toString uid ++ "/topic/" ++ toString tid ++ "/opinions"
+
+getOpinions : List Key -> Effects Action
+getOpinions ids =
+  buildOpinionsUrl ids
+    |> Http.get opinionsRawDecoder
+    |> Task.toMaybe
+    |> Task.map (Maybe.withDefault [])
+    |> Task.map SetOpinions
+    |> Effects.task
+
+
+opinionsRawDecoder : Json.Decoder (List (Key, String))
+opinionsRawDecoder =
+  let opinionDec =
+        Json.object2 (,)
+          ("id" := Json.int)
+          ("text" := Json.string)
+  in
+      Json.list opinionDec
+
+
+buildNearestOpinionsUrl : Tid -> Uid -> String
+buildNearestOpinionsUrl tid uid =
+  String.concat
+    [ "http://localhost:3714/api/user/"
+    , toString uid
+    , "/topic/"
+    , toString tid
+    , "/opinions"
+    ]
+
+
+buildOpinionsUrl : List Int -> String
+buildOpinionsUrl ids =
+  List.map toString ids
+    |> String.join ","
+    |> (++) "http://localhost:3714/api/opinions/"
+
 
 view : Signal.Address Action -> Model -> List Html
 view address nops =
   Dict.toList nops.buckets
-  |> List.map (viewOPG address)
+    |> List.map (viewOPG address)
 
 
 viewOPG : Signal.Address Action -> (Key, OPG.Model) -> Html
@@ -123,8 +166,8 @@ viewOPG address (key, opg) =
   OPG.view (Signal.forwardTo address (SubMsg key)) opg
 
 
-toOPG : comparable -> List OP.Model -> OPG.Model
-toOPG key ops = OPG.Model False ops
+toOPG : Key -> List OP.Model -> OPG.Model
+toOPG key ops = OPG.fromOpinionPaths key ops
 
 
 bucketList : (a -> comparable) -> List a -> Dict.Dict comparable (List a) -> Dict.Dict comparable (List a)
