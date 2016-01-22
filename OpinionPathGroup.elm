@@ -121,10 +121,10 @@ viewByOpinion address opg =
 
         in
           div [class "opg col m12 l6"]
-            [ div [class "t-card white"]
+            [ div [class "t-card"]
               [ div [class "t-card-content"]
                   [ div
-                    [ class ("t-card-title toggles indigo grey-text text-lighten-5 " ++ toggleClass)
+                    [ class ("t-card-title toggles " ++ toggleClass)
                     , onClick address clickAction ]
                     (opgHeader :: others)
                   , div [class "t-card-subtitle"] [opiner]

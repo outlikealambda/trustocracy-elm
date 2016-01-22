@@ -1,3 +1,7 @@
+@charset "UTF-8";
+
+@import "materialize";
+
 .cf:before,
 .cf:after {
   content:"";
@@ -17,17 +21,29 @@ span {
 
 .t-card {
   border-radius: 2px;
-  box-shadow: 0 2px 5px 0 rgba(0,0,0,0.16), 0 2px 10px 0 rgba(0,0,0,0.12);
   margin-bottom: 20px;
+  background-color: $card-bg-color;
+
+  @extend .z-depth-1;
 }
+
 
 .t-card-title {
   font-size: 1.3rem;
   line-height: 1.8rem;
   padding: 20px;
+  border-radius: 2px 2px 0 0;
 
   font-family: 'Merriweather';
   font-weight: lighter;
+
+  background-color: $primary-color;
+  color: $text-color-inverse;
+
+}
+
+.t-card-title:hover {
+  background-color: $primary-color-light;
 }
 
 .t-card-subtitle {
@@ -43,7 +59,7 @@ span {
 .t-card-body {
   padding: 20px;
   border-top: 1px solid rgba(160, 160, 160, 0.2);
-  font-size: 1.2em;
+  font-size: 1.2rem;
 }
 
 .toggles {
@@ -54,14 +70,14 @@ span {
   height: 1.2rem;
   width: 1.2rem;
   border-radius: 0.7rem;
-  margin: .3rem 4px;
+  margin: .3rem .3rem;
 }
 
 .circle-regular {
   height: 1rem;
   width: 1rem;
   border-radius: 0.6rem;
-  margin: .4rem 4px;
+  margin: .4rem .4rem;
 }
 
 .op > span {

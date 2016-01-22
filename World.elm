@@ -80,9 +80,8 @@ view address model =
   in
       div [ class "world container" ]
         [ css "css/normalize.css"
-        , css "css/materialize.css"
         , css "css/fonts.css"
-        , css "css/style.css"
+        , css "css/trusto.css"
         , h1 [] [ toString model.uid |> text ]
         , field
         , div [class "row"] nearestGroups

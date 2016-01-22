@@ -2,3 +2,8 @@
 elm-package.json
 elm-stuff/
 elm.js
+
+# sass
+.sass-cache
+css/trusto.css*
+
