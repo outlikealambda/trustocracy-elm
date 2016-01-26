@@ -1,6 +1,7 @@
 module Opinion
   ( Model
   , init
+  , initExpanded
   ) where
 
 import String
@@ -17,6 +18,16 @@ type alias Model =
   , credentials : Credentials.Model
   }
 
+
 init : Int -> Model
 init oid =
   Model oid False "" "" Credentials.init
+
+
+initExpanded : Int -> Model
+initExpanded = setExpanded << init
+
+
+setExpanded : Model -> Model
+setExpanded m =
+  { m | expanded = True }

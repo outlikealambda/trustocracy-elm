@@ -51,7 +51,7 @@ init =
     (nearestModel, fx) =
       Nearest.init user topic
     writeModel =
-      Composer.init 0
+      Composer.init user topic 0
   in
     ( Model user topic nearestModel writeModel UsersNearestOpinions
     , Effects.map NearestMsg fx

@@ -18,46 +18,37 @@ import Markdown
 import Credentials
 import Opinion
 import OpinionView
+import OpinionCreate as Create
 import User exposing (User)
 import Topic exposing (Topic)
 
 
-type alias Model = Opinion.Model
+type alias Model =
+  { user : User
+  , topic : Topic
+  , opinion : Opinion.Model
+  }
 
 
-init : Int -> Model
-init = setExpanded << Opinion.init
-
-
-setExpanded : Model -> Model
-setExpanded model =
-  { model | expanded = True}
+init : User -> Topic -> Int -> Model
+init user topic oid =
+  Model user topic (Opinion.initExpanded oid)
 
 
 type Action
-  = Save
-  | Write String
-  | Publish
-  | CredentialsMsg Credentials.Action
+  = CreateMsg Create.Action
 
 
 update : Action -> Model -> (Model, Effects Action)
 update message model =
   case message of
-    Write rawText ->
-      ( { model | text = rawText }
-      , Effects.none
-      )
-
-    Save ->
-      ( model, Effects.none )
-
-    Publish ->
-      ( model, Effects.none )
-
-    CredentialsMsg msg ->
-      ( { model | credentials = Credentials.update msg model.credentials}
-      , Effects.none )
+    CreateMsg msg ->
+      let
+          (updatedOpinion, fx) =
+            Create.update msg model.opinion
+      in
+          ( { model | opinion = updatedOpinion }
+          , Effects.map CreateMsg fx )
 
 
 view : Signal.Address Action -> Model -> Html
@@ -67,40 +58,21 @@ view address model =
       [ div [ class "t-card" ]
         [ div [ class "t-card-body" ]
           [ div [ class "subtitle" ] [ text "Write" ]
-          , div [ class "input-field" ]
-            [ textarea
-              [ class "write"
-              , placeholder "Let's write something!"
-              , value model.text
-              , on "input" textDecoder (Signal.message address << Write)
-              ]
-              []
-            ]
-          , div [ class "character-count" ]
-            [ String.length model.text
-              |> toString
-              |> flip (++) " characters written"
-              |> text
-            ]
+          , Create.viewCreator (Signal.forwardTo address CreateMsg) model.opinion
           ]
         ]
       , div [ class "t-card" ]
         [ div [ class "t-card-body" ]
-          [ Credentials.viewForm (Signal.forwardTo address CredentialsMsg) model.credentials
-          ]
+          [ Create.viewCredentialsInput (Signal.forwardTo address CreateMsg) model.opinion ]
         ]
       ]
     , div [ class "col m12 l6 preview" ]
       [ div [ class "t-card" ]
         [ div [ class "t-card-body" ]
           [ div [ class "subtitle" ] [ text "Preview" ]
-          , OpinionView.view model
+          , OpinionView.view model.opinion
           ]
         ]
       , button [ class "publish forward-action"] [ text "publish" ]
       ]
     ]
-
-
-textDecoder : Json.Decoder String
-textDecoder = targetValue
