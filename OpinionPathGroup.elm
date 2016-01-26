@@ -121,17 +121,15 @@ viewByOpinion address opg =
 
         in
           div [class "opg col m12 l6"]
-            [ div [class "t-card"]
-              [ div [class "t-card-content"]
-                  [ div
-                    [ class ("t-card-title toggles " ++ toggleClass)
-                    , onClick address clickAction ]
-                    (opgHeader :: others)
-                  , div [class "t-card-subtitle"] [opiner]
-                  , div [class "t-card-body"]
-                      [ Opinion.view opg.opinion
-                      ]
-                  ]
+            [ div [class ("t-card " ++ toggleClass)]
+              [ div
+                [ class "t-card-title toggles "
+                , onClick address clickAction ]
+                (opgHeader :: others)
+              , div [class "t-card-body"]
+                [ opiner
+                , Opinion.view opg.opinion
+                ]
               ]
             ]
 

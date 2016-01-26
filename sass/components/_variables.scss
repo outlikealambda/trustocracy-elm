@@ -1,10 +1,9 @@
+// $lines-borders: color("grey", "lighten-3") !default;
+
 /*** Colors ***/
-$primary-color: color("indigo", "lighten-2") !default;
+$primary-color: color("grey", "lighten-3") !default;
 $primary-color-light: lighten($primary-color, 15%) !default;
 $primary-color-dark: darken($primary-color, 15%) !default;
-
-$text-color-main: color("grey", "darken-1");
-$text-color-inverse: color("grey", "lighten-4");
 
 $secondary-color: color("teal", "lighten-1") !default;
 $success-color: color("green", "base") !default;
@@ -136,6 +135,10 @@ $toast-text-color: #fff !default;
 
 /*** Typography ***/
 $off-black: rgba(0, 0, 0, 0.87) !default;
+$text-color: $off-black;
+$text-color-lighter: rgba(0, 0, 0, 0.54) !default;
+$text-color-inverse: rgba(255, 255, 255, 1);
+
 // Header Styles
 $h1-fontsize: 4.2rem !default;
 $h2-fontsize: 3.56rem !default;

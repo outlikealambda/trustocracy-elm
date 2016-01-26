@@ -1,6 +1,9 @@
 @charset "UTF-8";
 
 @import "materialize";
+@import "markdown";
+@import "t-form";
+@import "t-button";
 
 .cf:before,
 .cf:after {
@@ -19,8 +22,19 @@ span {
   display:block;
 }
 
+html {
+  font-size: 10px;
+}
+
+body {
+  background: #fafafa;
+  font-size: 1.6rem;
+}
+h1, h2, h3, h4 {
+  font-family: 'Merriweather';
+}
+
 .t-card {
-  border-radius: 2px;
   margin-bottom: 20px;
   background-color: $card-bg-color;
 
@@ -29,16 +43,14 @@ span {
 
 
 .t-card-title {
-  font-size: 1.3rem;
-  line-height: 1.8rem;
+  font-size: 1.8rem;
+  line-height: 2.4rem;
   padding: 20px;
-  border-radius: 2px 2px 0 0;
 
   font-family: 'Merriweather';
-  font-weight: lighter;
 
   background-color: $primary-color;
-  color: $text-color-inverse;
+  color: $text-color;
 
 }
 
@@ -46,20 +58,21 @@ span {
   background-color: $primary-color-light;
 }
 
-.t-card-subtitle {
-  font-size: 1.3rem;
-  line-height: 1.8rem;
-  padding: 20px;
-  border-top: 1px solid rgba(160, 160, 160, 0.2);
-
+.subtitle {
+  font-size: 1.6rem;
+  line-height: 2.2rem;
   font-family: 'Merriweather';
-  font-weight: lighter;
+  padding-bottom: 16px;
+
+  border-bottom: 1px solid #ccc;
+
+  color: $text-color;
 }
 
 .t-card-body {
   padding: 20px;
   border-top: 1px solid rgba(160, 160, 160, 0.2);
-  font-size: 1.2rem;
+  font-size: 1.8rem;
 }
 
 .toggles {
@@ -93,7 +106,7 @@ span {
 }
 
 .expanded .op {
-  margin-bottom: 8px;
+  margin-bottom: 16px;
 }
 
 .expanded .op:last-of-type {
@@ -102,4 +115,38 @@ span {
 
 .path > span {
   float: left;
+}
+
+
+button {
+  &.forward-action {
+    float: right;
+  }
+
+  &.backward-action {
+    float: left;
+  }
+}
+
+textarea.write {
+  min-height: 50rem;
+  font-size: 2.0rem;
+  display: block;
+}
+
+.publish {
+  clear: both;
+}
+
+.character-count {
+  color: $text-color-lighter;
+  height: 2rem;
+}
+
+.markdown {
+  min-height: 52rem;
+}
+
+.composer .subtitle {
+  font-size: 2rem;
 }

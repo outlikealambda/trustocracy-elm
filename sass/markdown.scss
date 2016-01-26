@@ -1,0 +1,29 @@
+.markdown {
+
+  padding: 20px;
+
+  strong {
+    font-weight: 600;
+
+  }
+
+  h1, h2, h3, h4, h5 {
+    font-family: 'Merriweather';
+  }
+
+  ul {
+    padding-left: 15px;
+    li {
+      list-style-type: disc;
+      li {
+        list-style-type: square;
+        li {
+          list-style-type: disc;
+          li {
+            list-style-type: square;
+          }
+        }
+      }
+    }
+  }
+}

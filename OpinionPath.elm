@@ -76,4 +76,4 @@ viewAbbreviated op =
 
 viewOpiner : Model -> Html
 viewOpiner op =
-  div [class "opiner"] [ text op.opiner.name ]
+  div [class "opiner subtitle"] [ text op.opiner.name ]

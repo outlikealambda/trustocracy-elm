@@ -5,12 +5,15 @@ import Html exposing (Html, input, div, node, h1, text)
 import Effects exposing (Effects)
 import Html.Attributes exposing (class, rel, href, placeholder, value)
 import Html.Events exposing (on, targetValue)
+
 import NearestOpinions as Nearest
+import Composer
 
 
 type alias Model =
   { uid : Int
   , nearest : Nearest.Model
+  , write : Composer.Model
   , view : View
   }
 
@@ -18,6 +21,7 @@ type alias Model =
 -- not used yet
 type View
   = UsersNearestOpinions
+  | ComposeOpinion
   | UserInfo
 
 
@@ -25,6 +29,7 @@ type Action
   = SetUser Int
   | SwitchView View
   | NearestMsg Nearest.Action
+  | ComposerMsg Composer.Action
 
 
 init : (Model, Effects Action)
@@ -32,8 +37,10 @@ init =
   let
     (nearestModel, fx) =
       Nearest.init 0 0
+    writeModel =
+      Composer.init 0
   in
-    ( Model 0 nearestModel UsersNearestOpinions
+    ( Model 0 nearestModel writeModel UsersNearestOpinions
     , Effects.map NearestMsg fx
     )
 
@@ -65,6 +72,14 @@ update message model =
         , Effects.map NearestMsg fx
         )
 
+    ComposerMsg msg ->
+      let
+          (writeModel, fx) = Composer.update msg model.write
+      in
+          ( { model | write = writeModel }
+          , Effects.map ComposerMsg fx
+          )
+
 
 view : Signal.Address Action -> Model -> Html
 view address model =
@@ -75,8 +90,12 @@ view address model =
           , on "input" targetValue (Signal.message address << SetUser << processStr)
           ]
           []
+
       nearestGroups =
         Nearest.view (Signal.forwardTo address NearestMsg) model.nearest
+
+      write =
+        Composer.view (Signal.forwardTo address ComposerMsg) model.write
   in
       div [ class "world container" ]
         [ css "css/normalize.css"
@@ -84,6 +103,7 @@ view address model =
         , css "css/trusto.css"
         , h1 [] [ toString model.uid |> text ]
         , field
+        , write
         , div [class "row"] nearestGroups
         ]
 

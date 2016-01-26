@@ -1,0 +1,89 @@
+$b-color-primary: color("light-green", "accent-4");
+$b-color-secondary: orange;
+$b-color-initial: $text-color;
+
+.button,
+button,
+input[type='button'],
+input[type='reset'],
+input[type='submit'] {
+
+	background-color: $b-color-primary;
+	border: .1rem solid $b-color-primary;
+	// border-radius: .4rem;
+	color: $b-color-initial;
+	cursor: pointer;
+	display: inline-block;
+	font-size: 1.8rem;
+	font-weight: 700;
+	height: 3.8rem;
+	letter-spacing: .1rem;
+	line-height: 3.8rem;
+	padding: 0 3.0rem;
+	text-align: center;
+	text-decoration: none;
+	text-transform: uppercase;
+	white-space: nowrap;
+
+	&:hover,
+	&:focus {
+		background-color: $b-color-secondary;
+		border-color: $b-color-secondary;
+		color: $b-color-initial;
+		outline: 0;
+  }
+
+	&.button-disabled,
+	&[disabled] {
+		opacity: .5;
+		cursor: default;
+
+		&:hover,
+		&:focus {
+			background-color: $b-color-primary;
+			border-color: $b-color-primary;
+    }
+  }
+
+	&.button-outline {
+		color: $b-color-primary;
+		background-color: transparent;
+
+		&:hover,
+		&:focus {
+			color: $b-color-secondary;
+			background-color: transparent;
+			border-color: $b-color-secondary;
+    }
+
+		&.button-disabled,
+		&[disabled] {
+			&:hover,
+			&:focus {
+				color: $b-color-primary;
+				border-color: inherit;
+      }
+    }
+  }
+
+	&.button-clear {
+		color: $b-color-primary;
+		background-color: transparent;
+		border-color: transparent;
+
+		&:hover,
+		&:focus {
+			color: $b-color-secondary;
+			background-color: transparent;
+			border-color: transparent;
+    }
+
+		&.button-disabled,
+		&[disabled] {
+			&:hover,
+			&:focus {
+				color: $b-color-primary;
+      }
+    }
+  }
+}
