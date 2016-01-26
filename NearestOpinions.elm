@@ -16,7 +16,6 @@ import Topic exposing (Topic)
 
 
 type alias Key = Int
-
 type alias Ops = List OP.Model
 
 
@@ -54,7 +53,7 @@ update message model =
         ops ->
           let newBuckets =
             bucketList OPG.opinionKeyGen ops Dict.empty
-              |> Dict.map (toOPG model.topic)
+              |> Dict.map toOPG
 
           in
             ( { model
@@ -165,8 +164,8 @@ viewOPG address (key, opg) =
   OPG.view (Signal.forwardTo address (SubMsg key)) opg
 
 
-toOPG : Topic -> Key -> List OP.Model -> OPG.Model
-toOPG topic key ops = OPG.fromOpinionPaths key topic ops
+toOPG : Key -> List OP.Model -> OPG.Model
+toOPG key ops = OPG.fromOpinionPaths key ops
 
 
 bucketList : (a -> comparable) -> List a -> Dict.Dict comparable (List a) -> Dict.Dict comparable (List a)

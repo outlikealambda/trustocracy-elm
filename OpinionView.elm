@@ -51,10 +51,7 @@ update message model =
 view : Model -> Html
 view model =
   let p =
-        if model.expanded then
-          viewFull model
-        else
-          viewSnippet model
+        viewFull model
       creds =
         Credentials.view model.credentials
   in
@@ -66,7 +63,7 @@ view model =
 
 viewFull : Model -> Html
 viewFull model =
-  p [class "full-text"] [ Markdown.toHtml model.text ]
+  div [class "text"] [ Markdown.toHtml model.text ]
 
 
 viewSnippet : Model -> Html

@@ -83,14 +83,24 @@ h1, h2, h3, h4 {
   height: 1.2rem;
   width: 1.2rem;
   border-radius: 0.7rem;
-  margin: .3rem .3rem;
+  margin: .6rem .3rem;
 }
 
 .circle-regular {
   height: 1rem;
   width: 1rem;
   border-radius: 0.6rem;
-  margin: .4rem .4rem;
+  margin: .7rem .4rem;
+}
+
+.collapsed .text {
+  max-height: 10rem;
+  overflow: hidden;
+
+  p {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 }
 
 .op > span {

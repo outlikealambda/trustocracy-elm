@@ -39,19 +39,12 @@ type Action
 
 -- create OPG using a List of OpinionPaths
 -- grab the opiner from the paths
-fromOpinionPaths : Int -> Topic -> List OP.Model -> Model
-fromOpinionPaths opinionId topic ops =
+fromOpinionPaths : Int -> List OP.Model -> Model
+fromOpinionPaths opinionId ops =
   let sorted =
         List.sortBy .score ops
-      hPath =
-        List.head ops
-      opiner =
-        case hPath of
-          Nothing -> (User "Who's this?" -1)
-          Just p -> p.opiner
   in
-        Model False sorted (Opinion.init opinionId opiner topic)
-
+        Model False sorted (Opinion.init opinionId)
 
 
 update : Action -> Model -> (Model, Effects Action)

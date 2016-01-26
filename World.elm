@@ -1,10 +1,16 @@
-module World (Action, init, view, update) where
+module World
+  ( Action
+  , init
+  , view
+  , update) where
+
 
 import String
 import Html exposing (Html, input, div, node, h1, text)
 import Effects exposing (Effects)
 import Html.Attributes exposing (class, rel, href, placeholder, value)
 import Html.Events exposing (on, targetValue)
+
 
 import NearestOpinions as Nearest
 import Composer
@@ -45,7 +51,7 @@ init =
     (nearestModel, fx) =
       Nearest.init user topic
     writeModel =
-      Composer.init 0 user topic
+      Composer.init 0
   in
     ( Model user topic nearestModel writeModel UsersNearestOpinions
     , Effects.map NearestMsg fx

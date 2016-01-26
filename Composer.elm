@@ -13,7 +13,6 @@ import Html.Attributes exposing (class, placeholder, value)
 import Html.Events exposing (on, targetValue, keyCode)
 import Effects exposing (Effects)
 import Json.Decode as Json exposing ((:=))
-
 import Markdown
 
 import Credentials
@@ -22,16 +21,17 @@ import OpinionView
 import User exposing (User)
 import Topic exposing (Topic)
 
+
 type alias Model = Opinion.Model
 
 
-init : Int -> User -> Topic -> Model
-init oid user topic =
-  let model =
-    Opinion.init oid user topic
+init : Int -> Model
+init = setExpanded << Opinion.init
 
-  in
-    { model | expanded = True }
+
+setExpanded : Model -> Model
+setExpanded model =
+  { model | expanded = True}
 
 
 type Action
@@ -69,7 +69,7 @@ view address model =
           [ div [ class "subtitle" ] [ text "Write" ]
           , div [ class "input-field" ]
             [ textarea
-              [ class "write materialize-textarea"
+              [ class "write"
               , placeholder "Let's write something!"
               , value model.text
               , on "input" textDecoder (Signal.message address << Write)
