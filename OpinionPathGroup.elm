@@ -1,7 +1,6 @@
 module OpinionPathGroup
   ( Model
   , Action(SetOpinion)
-  , init
   , view
   , update
   , fromOpinionPaths
@@ -9,9 +8,11 @@ module OpinionPathGroup
   ) where
 
 
-import Opinion
+import OpinionView as Opinion
 import OpinionPath as OP
 import Relationship
+import User as UserMod exposing (User)
+import Topic exposing (Topic)
 
 
 import Effects exposing (Effects)
@@ -36,19 +37,21 @@ type Action
   | OpinionMsg Opinion.Action
 
 
-fromOpinionPaths : Int -> List OP.Model -> Model
-fromOpinionPaths opinionId ops =
+-- create OPG using a List of OpinionPaths
+-- grab the opiner from the paths
+fromOpinionPaths : Int -> Topic -> List OP.Model -> Model
+fromOpinionPaths opinionId topic ops =
   let sorted =
         List.sortBy .score ops
+      hPath =
+        List.head ops
+      opiner =
+        case hPath of
+          Nothing -> (User "Who's this?" -1)
+          Just p -> p.opiner
   in
-        Model False sorted (Opinion.init opinionId)
+        Model False sorted (Opinion.init opinionId opiner topic)
 
-
-init : (Model, Effects Action)
-init =
-  ( Model False [] (Opinion.init 0)
-  , Effects.none
-  )
 
 
 update : Action -> Model -> (Model, Effects Action)

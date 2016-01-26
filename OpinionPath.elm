@@ -10,15 +10,15 @@ module OpinionPath
 
 import Json.Decode as Json exposing ((:=))
 import Relationship
-import User
+import User exposing (User)
 
 import Html exposing (Html, div, span, text)
 import Html.Attributes exposing (class)
 
 type alias Model = {
-  friend: User.Model,
+  friend: User,
   path: List Relationship.Model,
-  opiner: User.Model,
+  opiner: User,
   opinionId: Int,
   score: Int
 }

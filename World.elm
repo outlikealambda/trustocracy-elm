@@ -8,10 +8,13 @@ import Html.Events exposing (on, targetValue)
 
 import NearestOpinions as Nearest
 import Composer
+import User exposing (User)
+import Topic exposing (Topic)
 
 
 type alias Model =
-  { uid : Int
+  { user: User
+  , topic: Topic
   , nearest : Nearest.Model
   , write : Composer.Model
   , view : View
@@ -35,12 +38,16 @@ type Action
 init : (Model, Effects Action)
 init =
   let
+    user =
+      User "me" 0
+    topic =
+      0
     (nearestModel, fx) =
-      Nearest.init 0 0
+      Nearest.init user topic
     writeModel =
-      Composer.init 0
+      Composer.init 0 user topic
   in
-    ( Model 0 nearestModel writeModel UsersNearestOpinions
+    ( Model user topic nearestModel writeModel UsersNearestOpinions
     , Effects.map NearestMsg fx
     )
 
@@ -50,10 +57,11 @@ update message model =
   case message of
     SetUser uid ->
       let
-          (nearestModel, fx) = Nearest.update (Nearest.SetUser uid) model.nearest
+          updatedUser = User ("me" ++ (toString uid)) uid
+          (nearestModel, fx) = Nearest.update (Nearest.SetUser updatedUser) model.nearest
       in
         ( { model
-          | uid = uid
+          | user = updatedUser
           , nearest = nearestModel
           }
         , Effects.map NearestMsg fx
@@ -86,7 +94,7 @@ view address model =
   let field =
         input
           [ placeholder "User ID"
-          , value <| toString model.uid
+          , value <| toString model.user.id
           , on "input" targetValue (Signal.message address << SetUser << processStr)
           ]
           []
@@ -101,7 +109,7 @@ view address model =
         [ css "css/normalize.css"
         , css "css/fonts.css"
         , css "css/trusto.css"
-        , h1 [] [ toString model.uid |> text ]
+        , h1 [] [ text model.user.name ]
         , field
         , write
         , div [class "row"] nearestGroups

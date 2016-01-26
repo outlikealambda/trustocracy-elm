@@ -16,18 +16,30 @@ import Json.Decode as Json exposing ((:=))
 
 import Markdown
 
-type alias Model =
-  { topicId: Int
-  , text : String
-  }
+import Credentials
+import Opinion
+import OpinionView
+import User exposing (User)
+import Topic exposing (Topic)
 
-init : Int -> Model
-init tid = Model tid ""
+type alias Model = Opinion.Model
+
+
+init : Int -> User -> Topic -> Model
+init oid user topic =
+  let model =
+    Opinion.init oid user topic
+
+  in
+    { model | expanded = True }
+
 
 type Action
   = Save
   | Write String
   | Publish
+  | CredentialsMsg Credentials.Action
+
 
 update : Action -> Model -> (Model, Effects Action)
 update message model =
@@ -42,6 +54,10 @@ update message model =
 
     Publish ->
       ( model, Effects.none )
+
+    CredentialsMsg msg ->
+      ( { model | credentials = Credentials.update msg model.credentials}
+      , Effects.none )
 
 
 view : Signal.Address Action -> Model -> Html
@@ -68,17 +84,21 @@ view address model =
             ]
           ]
         ]
+      , div [ class "t-card" ]
+        [ div [ class "t-card-body" ]
+          [ Credentials.viewForm (Signal.forwardTo address CredentialsMsg) model.credentials
+          ]
+        ]
       ]
     , div [ class "col m12 l6 preview" ]
       [ div [ class "t-card" ]
         [ div [ class "t-card-body" ]
           [ div [ class "subtitle" ] [ text "Preview" ]
-          , div [ class "markdown" ] [ Markdown.toHtml model.text ]
+          , OpinionView.view model
           ]
         ]
+      , button [ class "publish forward-action"] [ text "publish" ]
       ]
-    , div [ class "col s12" ]
-      [ button [ class "publish forward-action"] [ text "publish" ] ]
     ]
 
 

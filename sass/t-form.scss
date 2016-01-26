@@ -1,3 +1,4 @@
+input,
 textarea {
   appearance: none; // Removes awkward default styles on some inputs for iOS
   background-color: transparent;
@@ -12,5 +13,15 @@ textarea {
     border: .1rem solid $primary-color-dark;
     outline: 0;
   }
+
+}
+
+label,
+legend {
+
+	font-size: 1.8rem;
+	font-weight: 500;
+	display: block;
+	margin-bottom: .5rem;
 
 }

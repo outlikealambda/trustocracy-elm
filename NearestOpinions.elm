@@ -5,24 +5,24 @@ import Task
 import Html exposing (Html, div)
 import Html.Attributes exposing (class)
 import Json.Decode as Json exposing ((:=))
-
-import OpinionPathGroup as OPG
-import OpinionPath as OP
 import Dict
 import String
 import Http
 
+import OpinionPathGroup as OPG
+import OpinionPath as OP
+import User exposing (User)
+import Topic exposing (Topic)
+
 
 type alias Key = Int
-type alias Uid = Int
-type alias Tid = Int
 
 type alias Ops = List OP.Model
 
 
 type alias Model =
-  { uid: Uid
-  , tid: Tid
+  { user : User
+  , topic : Topic
   , raw : Ops
   , buckets : Dict.Dict Key OPG.Model -- opinion paths bucketed by key
   }
@@ -30,16 +30,16 @@ type alias Model =
 
 type Action
   = SetRaw Ops
-  | SetUser Uid
+  | SetUser User
+  | SetTopic Topic
   | SetOpinions (List (Key, String))
-  | SetTopic Tid
   | SubMsg Key OPG.Action
 
 
-init : Tid -> Uid -> (Model, Effects Action)
-init tid uid =
-  ( Model tid uid [] Dict.empty
-  , getNearestOpinions tid uid
+init : User -> Topic -> (Model, Effects Action)
+init user topic =
+  ( Model user topic [] Dict.empty
+  , Effects.none
   )
 
 
@@ -54,7 +54,7 @@ update message model =
         ops ->
           let newBuckets =
             bucketList OPG.opinionKeyGen ops Dict.empty
-              |> Dict.map toOPG
+              |> Dict.map (toOPG model.topic)
 
           in
             ( { model
@@ -67,13 +67,13 @@ update message model =
       , Effects.batch (List.map createSetOpinionEffect rawOpinions)
       )
 
-    SetTopic tid ->
-      ( { model | tid = tid }
-      , getNearestOpinions tid model.uid)
+    SetTopic topic ->
+      ( { model | topic = topic }
+      , getNearestOpinions topic model.user)
 
-    SetUser uid ->
-      ( { model | uid = uid }
-      , getNearestOpinions model.tid uid)
+    SetUser user ->
+      ( { model | user = user }
+      , getNearestOpinions model.topic user)
 
     SubMsg key subMsg ->
       let (newBuckets, fx) =
@@ -101,9 +101,9 @@ createSetOpinionEffect rawOpinion =
     |> Task.succeed
     |> Effects.task
 
-getNearestOpinions : Tid -> Uid -> Effects Action
-getNearestOpinions tid uid =
-  buildNearestOpinionsUrl tid uid
+getNearestOpinions : Topic -> User -> Effects Action
+getNearestOpinions topic user =
+  buildNearestOpinionsUrl topic user.id
     |> Http.get opsDecoder
     |> Task.toMaybe
     |> Task.map (Maybe.withDefault [])
@@ -136,7 +136,7 @@ opinionsRawDecoder =
       Json.list opinionDec
 
 
-buildNearestOpinionsUrl : Tid -> Uid -> String
+buildNearestOpinionsUrl : Int -> Int -> String
 buildNearestOpinionsUrl tid uid =
   String.concat
     [ "http://localhost:3714/api/user/"
@@ -165,8 +165,8 @@ viewOPG address (key, opg) =
   OPG.view (Signal.forwardTo address (SubMsg key)) opg
 
 
-toOPG : Key -> List OP.Model -> OPG.Model
-toOPG key ops = OPG.fromOpinionPaths key ops
+toOPG : Topic -> Key -> List OP.Model -> OPG.Model
+toOPG topic key ops = OPG.fromOpinionPaths key topic ops
 
 
 bucketList : (a -> comparable) -> List a -> Dict.Dict comparable (List a) -> Dict.Dict comparable (List a)

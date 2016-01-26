@@ -150,3 +150,13 @@ textarea.write {
 .composer .subtitle {
   font-size: 2rem;
 }
+
+.credentials {
+  border-bottom: 1px solid #ccc;
+  padding: 20px 0;
+
+  .credentials-header {
+    font-size: 1.4rem;
+    color: $text-color-lighter;
+  }
+}

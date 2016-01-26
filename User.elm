@@ -1,18 +1,19 @@
-module User (Model, init, decoder) where
+module User
+  ( User
+  , decoder
+  ) where
 
 import Json.Decode as Json exposing ((:=))
 
-type alias Model = {
+
+type alias User = {
   name: String,
   id: Int
 }
 
-init : String -> Int -> Model
-init name userid =
-  Model name userid
 
-decoder : Json.Decoder Model
+decoder : Json.Decoder User
 decoder =
-  Json.object2 Model
+  Json.object2 User
     ("name" := Json.string)
     ("id" := Json.int)
