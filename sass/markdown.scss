@@ -1,7 +1,5 @@
 .markdown {
 
-  padding: 20px;
-
   strong {
     font-weight: 600;
 
@@ -12,7 +10,8 @@
   }
 
   ul {
-    padding-left: 15px;
+    margin-left: 15px;
+    list-style-position: inside;
     li {
       list-style-type: disc;
       li {
