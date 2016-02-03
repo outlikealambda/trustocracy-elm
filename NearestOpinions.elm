@@ -1,4 +1,10 @@
-module NearestOpinions (Model, Action(SetUser), init, view, update) where
+module NearestOpinions
+  ( Model
+  , Action(SetUser)
+  , init
+  , view
+  , update
+  ) where
 
 import Effects exposing (Effects)
 import Task
@@ -32,7 +38,7 @@ type Action
   | SetUser User
   | SetTopic Topic
   | SetOpinions (List (Key, String))
-  | SubMsg Key OPG.Action
+  | OpgMsg Key OPG.Action
 
 
 init : User -> Topic -> (Model, Effects Action)
@@ -74,7 +80,7 @@ update message model =
       ( { model | user = user }
       , getNearestOpinions model.topic user)
 
-    SubMsg key subMsg ->
+    OpgMsg key subMsg ->
       let (newBuckets, fx) =
             case Dict.get key model.buckets of
               Nothing ->
@@ -91,14 +97,18 @@ update message model =
                     , fx )
       in
           ( { model | buckets = newBuckets }
-          , Effects.map (SubMsg key) fx
+          , Effects.map (OpgMsg key) fx
           )
 
+
+-- not sure if this is the correct way to propogate actions to
+-- child components
 createSetOpinionEffect : (Key, String) -> Effects Action
 createSetOpinionEffect rawOpinion =
-  SubMsg (fst rawOpinion) (OPG.SetOpinion rawOpinion)
+  OpgMsg (fst rawOpinion) (OPG.SetOpinion rawOpinion)
     |> Task.succeed
     |> Effects.task
+
 
 getNearestOpinions : Topic -> User -> Effects Action
 getNearestOpinions topic user =
@@ -161,7 +171,7 @@ view address nops =
 
 viewOPG : Signal.Address Action -> (Key, OPG.Model) -> Html
 viewOPG address (key, opg) =
-  OPG.view (Signal.forwardTo address (SubMsg key)) opg
+  OPG.view (Signal.forwardTo address (OpgMsg key)) opg
 
 
 toOPG : Key -> List OP.Model -> OPG.Model
