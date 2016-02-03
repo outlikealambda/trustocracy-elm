@@ -43,32 +43,37 @@ update message model =
     SetText fullText ->
       ( { model
         | text = fullText
-        , snippet = snippetize 132 fullText
+        , snippet = snippetize 200 fullText
         }
       , Effects.none )
 
 
 view : Model -> Html
 view model =
-  let p =
+  let v =
+      if model.expanded then
         viewFull model
+      else
+        viewSnippet model
       creds =
         Credentials.view model.credentials
   in
       div [ class "opinion" ]
         [ creds
-        , p
+        , v
         ]
 
 
 viewFull : Model -> Html
 viewFull model =
-  div [class "text"] [ Markdown.toHtml model.text ]
+  div [ class "text markdown"] [ Markdown.toHtml model.text ]
 
 
 viewSnippet : Model -> Html
 viewSnippet model =
-  p [ class "snippet" ] [ text model.snippet ]
+  div [ class "text snippet" ]
+    [ p [] [ text model.snippet ]
+    ]
 
 
 snippetize : Int -> String -> String

@@ -93,16 +93,6 @@ h1, h2, h3, h4 {
   margin: .7rem .4rem;
 }
 
-.collapsed .text {
-  max-height: 10rem;
-  overflow: hidden;
-
-  p {
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-}
-
 .op > span {
   float: left;
 }
@@ -153,7 +143,7 @@ textarea.write {
   height: 2rem;
 }
 
-.markdown {
+.preview .markdown {
   min-height: 52rem;
 }
 

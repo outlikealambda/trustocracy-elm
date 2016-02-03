@@ -28,6 +28,8 @@ type Action
   = WriteWork String
   | WritePersonal String
 
+
+
 update : Action -> Model -> Model
 update message model =
   case message of
