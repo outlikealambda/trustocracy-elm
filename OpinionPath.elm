@@ -5,15 +5,18 @@ module OpinionPath
   , viewHeader
   , viewOpiner
   , decoder
-  , compareScore
+  , getOpinionId
   ) where
 
-import Json.Decode as Json exposing ((:=))
+
 import Relationship
 import User exposing (User)
 
+
+import Json.Decode as Json exposing ((:=))
 import Html exposing (Html, div, span, text)
 import Html.Attributes exposing (class)
+
 
 type alias Model = {
   friend: User,
@@ -22,6 +25,7 @@ type alias Model = {
   opinionId: Int,
   score: Int
 }
+
 
 decoder : Json.Decoder Model
 decoder =
@@ -32,19 +36,6 @@ decoder =
     ("opinion" := Json.int)
     ("score" := Json.int)
 
-compareOP : Model -> Model -> Order
-compareOP a b =
-  case compare a.opiner.name b.opiner.name of
-    LT -> LT
-    GT -> GT
-    EQ -> compareScore a b
-
-compareScore : Model -> Model -> Order
-compareScore a b =
-  case compare a.score b.score of
-    LT -> LT
-    GT -> GT
-    EQ -> compare a.friend.name b.friend.name
 
 view : Model -> Html
 view op =
@@ -56,6 +47,7 @@ view op =
       , span [class "single-line path"] relationships
       ]
 
+
 viewHeader : Model -> Int -> Html
 viewHeader op count =
    div [class "opg-header op single-line cf"]
@@ -63,6 +55,7 @@ viewHeader op count =
       , span [class "single-line path"] (List.map Relationship.view op.path)
       , span [class "path-count"] [text <| toString count]
       ]
+
 
 viewAbbreviated : Model -> Html
 viewAbbreviated op =
@@ -74,6 +67,14 @@ viewAbbreviated op =
       , span [class "single-line path"] relationships
       ]
 
+
 viewOpiner : Model -> Html
 viewOpiner op =
   div [class "opiner subtitle"] [ text op.opiner.name ]
+
+
+getOpinionId : List Model -> Int
+getOpinionId paths =
+  case List.head paths of
+    Nothing -> -1
+    Just {opinionId} -> opinionId

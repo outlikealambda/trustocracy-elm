@@ -11,6 +11,8 @@ import Effects exposing (Effects)
 import Html exposing (Html, div, text, p)
 import Html.Attributes exposing (class)
 import Markdown
+import Http
+import Task
 
 import Opinion
 import Credentials
@@ -19,11 +21,16 @@ import Credentials
 type alias Model = Opinion.Model
 
 
-init = Opinion.init
+init : Int -> (Model, Effects Action)
+init oid =
+  ( Opinion.empty
+  , getOpinion oid
+  )
 
 
 type Action
-  = Expand
+  = Init Model
+  | Expand
   | Collapse
   | SetText String
 
@@ -31,6 +38,9 @@ type Action
 update : Action -> Model -> (Model, Effects Action)
 update message model =
   case message of
+    Init retrieved ->
+      ( Debug.log "Initted" retrieved
+      , Effects.none )
 
     Expand ->
       ( { model | expanded = True }
@@ -41,10 +51,7 @@ update message model =
       , Effects.none )
 
     SetText fullText ->
-      ( { model
-        | text = fullText
-        , snippet = snippetize 200 fullText
-        }
+      ( Opinion.setText fullText model
       , Effects.none )
 
 
@@ -76,27 +83,20 @@ viewSnippet model =
     ]
 
 
-snippetize : Int -> String -> String
-snippetize maxLength s =
-  -- add a space on the end to avoid removing the last word every time
-  s ++ " "
-    |> String.indexes " "
-    |> maxValLessThan maxLength
-    |> maybeSlice s
+getOpinion : Int -> Effects Action
+getOpinion opinionId =
+  buildGetOpinionUrl opinionId
+    |> Http.get Opinion.decoder
+    |> Task.map (Debug.log "tasked")
+    |> Task.toMaybe
+    |> Task.map Opinion.init
+    |> Task.map Init
+    |> Effects.task
 
 
-maybeSlice : String -> Maybe Int -> String
-maybeSlice s maybeBound =
-  case maybeBound of
-    Nothing -> s
-    Just bound ->
-      if bound < String.length s then
-        (String.slice 0 bound s) ++ "..."
-      else
-        s
-
-
-maxValLessThan : Int -> List Int -> Maybe Int
-maxValLessThan maxVal ns =
-  List.filter ((>) maxVal) ns
-    |> List.maximum
+buildGetOpinionUrl : Int -> String
+buildGetOpinionUrl opinionId =
+  String.concat
+    [ "http://localhost:3714/api/opinion/"
+    , toString opinionId
+    ]

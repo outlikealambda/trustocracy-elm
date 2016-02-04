@@ -15,62 +15,61 @@ import Dict
 import String
 import Http
 
-import OpinionPathGroup as OPG
-import OpinionPath as OP
+import OpinionPathGroup as OGroup
+import OpinionPath as OPath
 import User exposing (User)
 import Topic exposing (Topic)
 
 
 type alias Key = Int
-type alias Ops = List OP.Model
+type alias OPaths = List OPath.Model
 
 
 type alias Model =
   { user : User
   , topic : Topic
-  , raw : Ops
-  , buckets : Dict.Dict Key OPG.Model -- opinion paths bucketed by key
+  , rawPaths : OPaths
+  , buckets : Dict.Dict Key OGroup.Model -- opinion paths bucketed by key
   }
 
 
 type Action
-  = SetRaw Ops
+  = SetRaw OPaths
   | SetUser User
   | SetTopic Topic
-  | SetOpinions (List (Key, String))
-  | OpgMsg Key OPG.Action
+  | OpgMsg Key OGroup.Action
 
 
 init : User -> Topic -> (Model, Effects Action)
 init user topic =
   ( Model user topic [] Dict.empty
-  , Effects.none
+  , getNearestOpinions topic user
   )
 
 
 update : Action -> Model -> (Model, Effects Action)
 update message model =
   case message of
-    SetRaw ops ->
-      case ops of
+    SetRaw opaths ->
+      case opaths of
 
         [] -> (model, Effects.none)
 
-        ops ->
-          let newBuckets =
-            bucketList OPG.opinionKeyGen ops Dict.empty
-              |> Dict.map toOPG
-
+        opaths ->
+          let
+            (groups, fxs) =
+              OGroup.initGroups opaths
+                |> List.map (\(g, fx) -> (g, Effects.map (OpgMsg g.groupId) fx))
+                |> List.unzip
+            buckets =
+              OGroup.toDict groups
           in
             ( { model
-              | raw = ops
-              , buckets = newBuckets }
-            , getOpinions (Dict.keys newBuckets) )
-
-    SetOpinions rawOpinions ->
-      ( model
-      , Effects.batch (List.map createSetOpinionEffect rawOpinions)
-      )
+              | rawPaths = opaths
+              , buckets = buckets
+              }
+            , Effects.batch fxs
+            )
 
     SetTopic topic ->
       ( { model | topic = topic }
@@ -81,68 +80,37 @@ update message model =
       , getNearestOpinions model.topic user)
 
     OpgMsg key subMsg ->
-      let (newBuckets, fx) =
-            case Dict.get key model.buckets of
-              Nothing ->
-                ( model.buckets
-                , Effects.none )
-              Just bucket ->
-                let
-                    (updatedBucket, fx) =
-                      OPG.update subMsg bucket
-                    updatedBuckets =
-                      Dict.insert key updatedBucket model.buckets
-                in
-                    ( updatedBuckets
-                    , fx )
-      in
-          ( { model | buckets = newBuckets }
-          , Effects.map (OpgMsg key) fx
-          )
+      case Dict.get key model.buckets of
 
+        Nothing ->
+          ( model
+          , Effects.none )
 
--- not sure if this is the correct way to propogate actions to
--- child components
-createSetOpinionEffect : (Key, String) -> Effects Action
-createSetOpinionEffect rawOpinion =
-  OpgMsg (fst rawOpinion) (OPG.SetOpinion rawOpinion)
-    |> Task.succeed
-    |> Effects.task
+        Just bucket ->
+          let
+            (updatedBucket, fx) =
+              OGroup.update subMsg bucket
+            updatedBuckets =
+              Dict.insert key updatedBucket model.buckets
+          in
+            ( { model | buckets = updatedBuckets }
+            , Effects.map (OpgMsg key) fx
+            )
 
 
 getNearestOpinions : Topic -> User -> Effects Action
 getNearestOpinions topic user =
   buildNearestOpinionsUrl topic user.id
-    |> Http.get opsDecoder
+    |> Http.get opathsDecoder
     |> Task.toMaybe
     |> Task.map (Maybe.withDefault [])
     |> Task.map SetRaw
     |> Effects.task
 
 
-opsDecoder : Json.Decoder Ops
-opsDecoder =
-  "paths" := Json.list OP.decoder
-
-
-getOpinions : List Key -> Effects Action
-getOpinions ids =
-  buildOpinionsUrl ids
-    |> Http.get opinionsRawDecoder
-    |> Task.toMaybe
-    |> Task.map (Maybe.withDefault [])
-    |> Task.map SetOpinions
-    |> Effects.task
-
-
-opinionsRawDecoder : Json.Decoder (List (Key, String))
-opinionsRawDecoder =
-  let opinionDec =
-        Json.object2 (,)
-          ("id" := Json.int)
-          ("text" := Json.string)
-  in
-      Json.list opinionDec
+opathsDecoder : Json.Decoder OPaths
+opathsDecoder =
+  "paths" := Json.list OPath.decoder
 
 
 buildNearestOpinionsUrl : Int -> Int -> String
@@ -156,41 +124,12 @@ buildNearestOpinionsUrl tid uid =
     ]
 
 
-buildOpinionsUrl : List Int -> String
-buildOpinionsUrl ids =
-  List.map toString ids
-    |> String.join ","
-    |> (++) "http://localhost:3714/api/opinions/"
-
-
 view : Signal.Address Action -> Model -> List Html
 view address nops =
   Dict.toList nops.buckets
-    |> List.map (viewOPG address)
+    |> List.map (viewOGroup address)
 
 
-viewOPG : Signal.Address Action -> (Key, OPG.Model) -> Html
-viewOPG address (key, opg) =
-  OPG.view (Signal.forwardTo address (OpgMsg key)) opg
-
-
-toOPG : Key -> List OP.Model -> OPG.Model
-toOPG key ops = OPG.fromOpinionPaths key ops
-
-
-bucketList : (a -> comparable) -> List a -> Dict.Dict comparable (List a) -> Dict.Dict comparable (List a)
-bucketList keyGen opinions dict =
-  case opinions of
-    o::os ->
-      bucketListItem (keyGen o) o dict
-      |> bucketList keyGen os
-    [] -> dict
-
-
-bucketListItem : comparable -> a -> Dict.Dict comparable (List a) -> Dict.Dict comparable (List a)
-bucketListItem key v dict =
-  Dict.insert key (v :: safeGetList key dict) dict
-
-
-safeGetList : comparable -> Dict.Dict comparable (List a) -> List a
-safeGetList key dict = Maybe.withDefault [] (Dict.get key dict)
+viewOGroup : Signal.Address Action -> (Key, OGroup.Model) -> Html
+viewOGroup address (key, opg) =
+  OGroup.view (Signal.forwardTo address (OpgMsg key)) opg

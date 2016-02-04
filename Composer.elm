@@ -6,6 +6,7 @@ module Composer
   , view
   ) where
 
+
 import String
 import Char
 import Html exposing (Html, input, div, textarea, text, h3, button)
@@ -15,10 +16,10 @@ import Effects exposing (Effects)
 import Json.Decode as Json exposing ((:=))
 import Markdown
 
+
 import Credentials
-import Opinion
-import OpinionView
-import OpinionCreate as Create
+import OpinionView as OView
+import OpinionCreate as OCreate
 import User exposing (User)
 import Topic exposing (Topic)
 
@@ -26,29 +27,43 @@ import Topic exposing (Topic)
 type alias Model =
   { user : User
   , topic : Topic
-  , opinion : Opinion.Model
+  , opinion : OCreate.Model
   }
 
 
-init : User -> Topic -> Int -> Model
-init user topic oid =
-  Model user topic (Opinion.initExpanded oid)
+init : User -> Topic -> (Model, Effects Action)
+init user topic =
+  let
+    ( opinion, fx ) =
+      OCreate.init user.id topic
+  in
+    ( Model user topic opinion
+    , Effects.map OCreateMsg fx
+    )
 
 
 type Action
-  = CreateMsg Create.Action
+  = OCreateMsg OCreate.Action
+  | Publish
 
 
 update : Action -> Model -> (Model, Effects Action)
 update message model =
   case message of
-    CreateMsg msg ->
+
+    OCreateMsg msg ->
       let
-          (updatedOpinion, fx) =
-            Create.update msg model.opinion
+        (updatedOpinion, fx) =
+          OCreate.update msg model.opinion
       in
-          ( { model | opinion = updatedOpinion }
-          , Effects.map CreateMsg fx )
+        ( { model | opinion = updatedOpinion }
+        , Effects.map OCreateMsg fx
+        )
+
+    Publish ->
+      ( model
+      , Effects.none
+      )
 
 
 view : Signal.Address Action -> Model -> Html
@@ -58,19 +73,19 @@ view address model =
       [ div [ class "t-card" ]
         [ div [ class "t-card-body" ]
           [ div [ class "subtitle" ] [ text "Write" ]
-          , Create.viewCreator (Signal.forwardTo address CreateMsg) model.opinion
+          , OCreate.viewCreator (Signal.forwardTo address OCreateMsg) model.opinion
           ]
         ]
       , div [ class "t-card" ]
         [ div [ class "t-card-body" ]
-          [ Create.viewCredentialsInput (Signal.forwardTo address CreateMsg) model.opinion ]
+          [ OCreate.viewCredentialsInput (Signal.forwardTo address OCreateMsg) model.opinion ]
         ]
       ]
     , div [ class "col m12 l6 preview" ]
       [ div [ class "t-card" ]
         [ div [ class "t-card-body" ]
           [ div [ class "subtitle" ] [ text "Preview" ]
-          , OpinionView.view model.opinion
+          , OView.view model.opinion
           ]
         ]
       , button [ class "publish forward-action"] [ text "publish" ]

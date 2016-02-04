@@ -48,13 +48,16 @@ init =
       User "me" 0
     topic =
       0
-    (nearestModel, fx) =
+    (nearestModel, nearestFx) =
       Nearest.init user topic
-    writeModel =
-      Composer.init user topic 0
+    (writeModel, composerFx) =
+      Composer.init user topic
   in
     ( Model user topic nearestModel writeModel UsersNearestOpinions
-    , Effects.map NearestMsg fx
+    , Effects.batch 
+      [ Effects.map NearestMsg nearestFx
+      , Effects.map ComposerMsg composerFx
+      ]
     )
 
 

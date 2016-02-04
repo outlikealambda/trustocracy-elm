@@ -1,18 +1,16 @@
 module OpinionPathGroup
   ( Model
-  , Action(SetOpinion)
+  , Action
+  , initGroups
   , view
   , update
-  , fromOpinionPaths
-  , opinionKeyGen
+  , toDict
   ) where
 
 
-import OpinionView as Opinion
-import OpinionPath as OP
+import OpinionView as OView
+import OpinionPath as OPath
 import Relationship
-import User as UserMod exposing (User)
-import Topic exposing (Topic)
 
 
 import Effects exposing (Effects)
@@ -21,30 +19,44 @@ import Html exposing (Html, Attribute, div, span, text, button)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
 import Json.Decode as Json exposing ((:=))
+import Dict
 
 
 type alias Model =
-  { expanded : Bool
-  , paths : List OP.Model
-  , opinion : Opinion.Model
+  { groupId : Int
+  , expanded : Bool
+  , paths : List OPath.Model
+  , opinion : OView.Model
   }
 
 
 type Action
   = Expand
   | Collapse
-  | SetOpinion (Int, String)
-  | OpinionMsg Opinion.Action
+  | OpinionMsg OView.Action
 
 
 -- create OPG using a List of OpinionPaths
 -- grab the opiner from the paths
-fromOpinionPaths : Int -> List OP.Model -> Model
-fromOpinionPaths opinionId ops =
+init : Int -> List OPath.Model -> (Model, Effects Action)
+init key opaths =
   let sorted =
-        List.sortBy .score ops
+        List.sortBy .score opaths
+      opinionId =
+        OPath.getOpinionId opaths
+      ( opinion, fx ) =
+        OView.init opinionId
   in
-        Model False sorted (Opinion.init opinionId)
+      ( Model key False sorted opinion
+      , Effects.map OpinionMsg fx
+      )
+
+
+initGroups : List OPath.Model -> List (Model, Effects Action)
+initGroups allPaths =
+  bucketList .opinionId allPaths Dict.empty
+    |> Dict.map init
+    |> Dict.values
 
 
 update : Action -> Model -> (Model, Effects Action)
@@ -52,28 +64,21 @@ update message model =
   case message of
     Expand ->
       ( { model | expanded = True }
-      , OpinionMsg Opinion.Expand
+      , OpinionMsg OView.Expand
           |> Task.succeed
           |> Effects.task
       )
 
     Collapse ->
       ( { model | expanded = False }
-      , OpinionMsg Opinion.Collapse
-          |> Task.succeed
-          |> Effects.task
-      )
-
-    SetOpinion opinion ->
-      ( model
-      , OpinionMsg (Opinion.SetText <| snd opinion)
+      , OpinionMsg OView.Collapse
           |> Task.succeed
           |> Effects.task
       )
 
     OpinionMsg msg ->
       let (opinion, fx) =
-        Opinion.update msg model.opinion
+        OView.update msg model.opinion
       in
         ( { model | opinion = opinion }
         , Effects.map OpinionMsg fx
@@ -98,16 +103,18 @@ viewByOpinion address opg =
   in
     case header of
 
+      Nothing -> div [] []
+
       Just h ->
         let
           opgHeader =
-            OP.viewHeader h (List.length opg.paths)
+            OPath.viewHeader h (List.length opg.paths)
 
           others =
-            List.map OP.viewAbbreviated remainder
+            List.map OPath.viewAbbreviated remainder
 
           opiner =
-            OP.viewOpiner h
+            OPath.viewOpiner h
 
           clickAction =
             if opg.expanded then Collapse else Expand
@@ -124,13 +131,32 @@ viewByOpinion address opg =
                 (opgHeader :: others)
               , div [class "t-card-body"]
                 [ opiner
-                , Opinion.view opg.opinion
+                , OView.view opg.opinion
                 ]
               ]
             ]
 
-      Nothing -> div [] []
+
+bucketList : (a -> comparable) -> List a -> Dict.Dict comparable (List a) -> Dict.Dict comparable (List a)
+bucketList keyGen opinions dict =
+  case opinions of
+    o::os ->
+      bucketListItem (keyGen o) o dict
+      |> bucketList keyGen os
+    [] -> dict
 
 
-opinionKeyGen : (OP.Model -> Int)
-opinionKeyGen = .opinionId
+bucketListItem : comparable -> a -> Dict.Dict comparable (List a) -> Dict.Dict comparable (List a)
+bucketListItem key v dict =
+  Dict.insert key (v :: safeGetList key dict) dict
+
+
+safeGetList : comparable -> Dict.Dict comparable (List a) -> List a
+safeGetList key dict = Maybe.withDefault [] (Dict.get key dict)
+
+-- doesn't handle repeat group ids
+toDict : List Model -> Dict.Dict Int Model
+toDict groups =
+  groups
+   |> List.map (\group -> (group.groupId, group))
+   |> Dict.fromList
