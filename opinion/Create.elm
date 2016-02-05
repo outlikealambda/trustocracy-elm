@@ -1,4 +1,4 @@
-module OpinionCreate
+module Opinion.Create
   ( Model
   , init
   , Action
@@ -17,8 +17,8 @@ import Http
 import Task
 
 
-import Credentials
-import Opinion
+import Opinion.Credentials as Credentials
+import Opinion.Model as Opinion
 
 
 type alias Model = Opinion.Model

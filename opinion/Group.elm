@@ -1,4 +1,4 @@
-module OpinionPathGroup
+module Opinion.Group
   ( Model
   , Action
   , initGroups
@@ -8,9 +8,9 @@ module OpinionPathGroup
   ) where
 
 
-import OpinionView as OView
-import OpinionPath as OPath
-import Relationship
+import Opinion.View as View
+import Opinion.Path as Path
+import Common.Relationship as Relationship
 
 
 import Effects exposing (Effects)
@@ -25,34 +25,34 @@ import Dict
 type alias Model =
   { groupId : Int
   , expanded : Bool
-  , paths : List OPath.Model
-  , opinion : OView.Model
+  , paths : List Path.Model
+  , opinion : View.Model
   }
 
 
 type Action
   = Expand
   | Collapse
-  | OpinionMsg OView.Action
+  | OpinionMsg View.Action
 
 
 -- create OPG using a List of OpinionPaths
 -- grab the opiner from the paths
-init : Int -> List OPath.Model -> (Model, Effects Action)
+init : Int -> List Path.Model -> (Model, Effects Action)
 init key opaths =
   let sorted =
         List.sortBy .score opaths
       opinionId =
-        OPath.getOpinionId opaths
+        Path.getOpinionId opaths
       ( opinion, fx ) =
-        OView.init opinionId
+        View.init opinionId
   in
       ( Model key False sorted opinion
       , Effects.map OpinionMsg fx
       )
 
 
-initGroups : List OPath.Model -> List (Model, Effects Action)
+initGroups : List Path.Model -> List (Model, Effects Action)
 initGroups allPaths =
   bucketList .opinionId allPaths Dict.empty
     |> Dict.map init
@@ -64,21 +64,21 @@ update message model =
   case message of
     Expand ->
       ( { model | expanded = True }
-      , OpinionMsg OView.Expand
+      , OpinionMsg View.Expand
           |> Task.succeed
           |> Effects.task
       )
 
     Collapse ->
       ( { model | expanded = False }
-      , OpinionMsg OView.Collapse
+      , OpinionMsg View.Collapse
           |> Task.succeed
           |> Effects.task
       )
 
     OpinionMsg msg ->
       let (opinion, fx) =
-        OView.update msg model.opinion
+        View.update msg model.opinion
       in
         ( { model | opinion = opinion }
         , Effects.map OpinionMsg fx
@@ -108,13 +108,13 @@ viewByOpinion address opg =
       Just h ->
         let
           opgHeader =
-            OPath.viewHeader h (List.length opg.paths)
+            Path.viewHeader h (List.length opg.paths)
 
           others =
-            List.map OPath.viewAbbreviated remainder
+            List.map Path.viewAbbreviated remainder
 
           opiner =
-            OPath.viewOpiner h
+            Path.viewOpiner h
 
           clickAction =
             if opg.expanded then Collapse else Expand
@@ -131,7 +131,7 @@ viewByOpinion address opg =
                 (opgHeader :: others)
               , div [class "t-card-body"]
                 [ opiner
-                , OView.view opg.opinion
+                , View.view opg.opinion
                 ]
               ]
             ]

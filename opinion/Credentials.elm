@@ -1,4 +1,4 @@
-module Credentials
+module Opinion.Credentials
   ( Model
   , init
   , Action
@@ -13,7 +13,7 @@ import Html exposing (Html, input, div, label, text)
 import Html.Attributes exposing (class, value)
 import Html.Events exposing (on, targetValue)
 
-import LabeledInput
+import Common.LabeledInput as LabeledInput
 
 type alias Model =
   { work: String

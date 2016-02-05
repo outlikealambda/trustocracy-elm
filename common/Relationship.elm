@@ -1,4 +1,7 @@
-module Relationship (Model, view) where
+module Common.Relationship
+  ( Model
+  , view
+  ) where
 
 import Html exposing (Html, div, span)
 import Html.Attributes exposing (class)

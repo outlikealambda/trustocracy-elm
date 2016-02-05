@@ -1,4 +1,4 @@
-module Opinion
+module Opinion.Model
   ( Model
   , ApiModel
   , empty
@@ -12,7 +12,7 @@ module Opinion
 import String
 
 
-import Credentials
+import Opinion.Credentials as Credentials
 import Json.Decode as Json exposing ((:=))
 
 

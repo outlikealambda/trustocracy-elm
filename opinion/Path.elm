@@ -1,4 +1,4 @@
-module OpinionPath
+module Opinion.Path
   ( Model
   , view
   , viewAbbreviated
@@ -9,7 +9,7 @@ module OpinionPath
   ) where
 
 
-import Relationship
+import Common.Relationship as Relationship
 import User exposing (User)
 
 

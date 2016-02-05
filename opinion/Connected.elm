@@ -1,4 +1,4 @@
-module NearestOpinions
+module Opinion.Connected
   ( Model
   , Action(SetUser)
   , init
@@ -15,35 +15,35 @@ import Dict
 import String
 import Http
 
-import OpinionPathGroup as OGroup
-import OpinionPath as OPath
+import Opinion.Group as Group
+import Opinion.Path as Path
 import User exposing (User)
 import Topic exposing (Topic)
 
 
 type alias Key = Int
-type alias OPaths = List OPath.Model
+type alias Paths = List Path.Model
 
 
 type alias Model =
   { user : User
   , topic : Topic
-  , rawPaths : OPaths
-  , buckets : Dict.Dict Key OGroup.Model -- opinion paths bucketed by key
+  , rawPaths : Paths
+  , buckets : Dict.Dict Key Group.Model -- opinion paths bucketed by key
   }
 
 
 type Action
-  = SetRaw OPaths
+  = SetRaw Paths
   | SetUser User
   | SetTopic Topic
-  | OpgMsg Key OGroup.Action
+  | OpgMsg Key Group.Action
 
 
 init : User -> Topic -> (Model, Effects Action)
 init user topic =
   ( Model user topic [] Dict.empty
-  , getNearestOpinions topic user
+  , getConnectedOpinions topic user
   )
 
 
@@ -58,11 +58,11 @@ update message model =
         opaths ->
           let
             (groups, fxs) =
-              OGroup.initGroups opaths
+              Group.initGroups opaths
                 |> List.map (\(g, fx) -> (g, Effects.map (OpgMsg g.groupId) fx))
                 |> List.unzip
             buckets =
-              OGroup.toDict groups
+              Group.toDict groups
           in
             ( { model
               | rawPaths = opaths
@@ -73,11 +73,11 @@ update message model =
 
     SetTopic topic ->
       ( { model | topic = topic }
-      , getNearestOpinions topic model.user)
+      , getConnectedOpinions topic model.user)
 
     SetUser user ->
       ( { model | user = user }
-      , getNearestOpinions model.topic user)
+      , getConnectedOpinions model.topic user)
 
     OpgMsg key subMsg ->
       case Dict.get key model.buckets of
@@ -89,7 +89,7 @@ update message model =
         Just bucket ->
           let
             (updatedBucket, fx) =
-              OGroup.update subMsg bucket
+              Group.update subMsg bucket
             updatedBuckets =
               Dict.insert key updatedBucket model.buckets
           in
@@ -98,9 +98,9 @@ update message model =
             )
 
 
-getNearestOpinions : Topic -> User -> Effects Action
-getNearestOpinions topic user =
-  buildNearestOpinionsUrl topic user.id
+getConnectedOpinions : Topic -> User -> Effects Action
+getConnectedOpinions topic user =
+  buildConnectedOpinionsUrl topic user.id
     |> Http.get opathsDecoder
     |> Task.toMaybe
     |> Task.map (Maybe.withDefault [])
@@ -108,13 +108,13 @@ getNearestOpinions topic user =
     |> Effects.task
 
 
-opathsDecoder : Json.Decoder OPaths
+opathsDecoder : Json.Decoder Paths
 opathsDecoder =
-  "paths" := Json.list OPath.decoder
+  "paths" := Json.list Path.decoder
 
 
-buildNearestOpinionsUrl : Int -> Int -> String
-buildNearestOpinionsUrl tid uid =
+buildConnectedOpinionsUrl : Int -> Int -> String
+buildConnectedOpinionsUrl tid uid =
   String.concat
     [ "http://localhost:3714/api/user/"
     , toString uid
@@ -127,9 +127,9 @@ buildNearestOpinionsUrl tid uid =
 view : Signal.Address Action -> Model -> List Html
 view address nops =
   Dict.toList nops.buckets
-    |> List.map (viewOGroup address)
+    |> List.map (viewGroup address)
 
 
-viewOGroup : Signal.Address Action -> (Key, OGroup.Model) -> Html
-viewOGroup address (key, opg) =
-  OGroup.view (Signal.forwardTo address (OpgMsg key)) opg
+viewGroup : Signal.Address Action -> (Key, Group.Model) -> Html
+viewGroup address (key, opg) =
+  Group.view (Signal.forwardTo address (OpgMsg key)) opg

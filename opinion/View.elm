@@ -1,4 +1,4 @@
-module OpinionView
+module Opinion.View
   ( Model
   , init
   , Action(Expand, Collapse, SetText)
@@ -14,8 +14,8 @@ import Markdown
 import Http
 import Task
 
-import Opinion
-import Credentials
+import Opinion.Model as Opinion
+import Opinion.Credentials as Credentials
 
 
 type alias Model = Opinion.Model

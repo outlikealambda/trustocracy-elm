@@ -1,4 +1,4 @@
-module LabeledInput
+module Common.LabeledInput
   ( view
   ) where
 

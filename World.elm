@@ -12,8 +12,8 @@ import Html.Attributes exposing (class, rel, href, placeholder, value)
 import Html.Events exposing (on, targetValue)
 
 
-import NearestOpinions as Nearest
-import Composer
+import Opinion.Connected as Connected
+import Opinion.Composer as Composer
 import User exposing (User)
 import Topic exposing (Topic)
 
@@ -21,7 +21,7 @@ import Topic exposing (Topic)
 type alias Model =
   { user: User
   , topic: Topic
-  , nearest : Nearest.Model
+  , connected : Connected.Model
   , write : Composer.Model
   , view : View
   }
@@ -29,7 +29,7 @@ type alias Model =
 
 -- not used yet
 type View
-  = UsersNearestOpinions
+  = UsersConnectedOpinions
   | ComposeOpinion
   | UserInfo
 
@@ -37,7 +37,7 @@ type View
 type Action
   = SetUser Int
   | SwitchView View
-  | NearestMsg Nearest.Action
+  | ConnectedMsg Connected.Action
   | ComposerMsg Composer.Action
 
 
@@ -48,14 +48,14 @@ init =
       User "me" 0
     topic =
       0
-    (nearestModel, nearestFx) =
-      Nearest.init user topic
+    (connectedModel, connectedFx) =
+      Connected.init user topic
     (writeModel, composerFx) =
       Composer.init user topic
   in
-    ( Model user topic nearestModel writeModel UsersNearestOpinions
-    , Effects.batch 
-      [ Effects.map NearestMsg nearestFx
+    ( Model user topic connectedModel writeModel UsersConnectedOpinions
+    , Effects.batch
+      [ Effects.map ConnectedMsg connectedFx
       , Effects.map ComposerMsg composerFx
       ]
     )
@@ -67,13 +67,13 @@ update message model =
     SetUser uid ->
       let
           updatedUser = User ("me" ++ (toString uid)) uid
-          (nearestModel, fx) = Nearest.update (Nearest.SetUser updatedUser) model.nearest
+          (connectedModel, fx) = Connected.update (Connected.SetUser updatedUser) model.connected
       in
         ( { model
           | user = updatedUser
-          , nearest = nearestModel
+          , connected = connectedModel
           }
-        , Effects.map NearestMsg fx
+        , Effects.map ConnectedMsg fx
         )
 
     SwitchView view ->
@@ -81,12 +81,12 @@ update message model =
       , Effects.none
       )
 
-    NearestMsg msg ->
+    ConnectedMsg msg ->
       let
-          (nearestModel, fx) = Nearest.update msg model.nearest
+          (connectedModel, fx) = Connected.update msg model.connected
       in
-        ( { model | nearest = nearestModel }
-        , Effects.map NearestMsg fx
+        ( { model | connected = connectedModel }
+        , Effects.map ConnectedMsg fx
         )
 
     ComposerMsg msg ->
@@ -108,8 +108,8 @@ view address model =
           ]
           []
 
-      nearestGroups =
-        Nearest.view (Signal.forwardTo address NearestMsg) model.nearest
+      connectedGroups =
+        Connected.view (Signal.forwardTo address ConnectedMsg) model.connected
 
       write =
         Composer.view (Signal.forwardTo address ComposerMsg) model.write
@@ -121,7 +121,7 @@ view address model =
         , h1 [] [ text model.user.name ]
         , field
         , write
-        , div [class "row"] nearestGroups
+        , div [class "row"] connectedGroups
         ]
 
 -- todo: handle errors better, although we shouldn't be getting invalid users
@@ -132,144 +132,3 @@ processStr raw = String.toInt raw |> Result.withDefault 0
 css : String -> Html
 css path =
   node "link" [rel "stylesheet", href path] []
-
--- VIEW
--- view : String -> Result String (User.Model, List Neighbor.Model) -> String -> Result String NOPG.Model -> Html
--- view uid result tid resultsTopic =
---   div []
---     [ css "css/style.css"
---     , viewUser uid result
---     , viewNearest tid resultsTopic ]
---
---
--- viewNearest : String -> Result String NOPG.Model -> Html
--- viewNearest tid result =
---   let field =
---         input
---           [ placeholder "Topic ID"
---           , value tid
---           , on "input" targetValue (Signal.message topicId.address)
---           ]
---           []
---       paths =
---         case result of
---           Err msg ->
---               [ div [] [ text msg ] ]
---
---           Ok nearestOPGs ->
---               NOPG.view nearestOPGs
---
---   in
---       div [] (field :: paths)
---
---
--- viewUser : String -> Result String (User.Model, List Neighbor.Model) -> Html
--- viewUser string result =
---   let field =
---         input
---           [ placeholder "User ID"
---           , value string
---           , on "input" targetValue (Signal.message userId.address)
---           ]
---           []
---
---       messages =
---         case result of
---           Err msg ->
---               [ div [] [ text msg ] ]
---
---           Ok (user, neighbors) ->
---               [ div []
---                 [ span [] [text (user.name ++ ", " ++ toString user.id)]
---                 , div [] (List.map Neighbor.view neighbors)
---                 ]
---               ]
---   in
---       div [] (field :: messages)
-
-
---
-
--- viewNeighbors : List Neighbor.Model -> Html
--- viewNeighbors neighbors =
---   div [] (List.map Neighbor.view neighbors)
---
---
--- main =
---   Signal.map4 view userId.signal results.signal topicId.signal topicResults.signal
-
-
--- userId : Signal.Mailbox String
--- userId =
---   Signal.mailbox ""
---
---
--- topicId : Signal.Mailbox String
--- topicId =
---   Signal.mailbox ""
---
---
--- topicResults : Signal.Mailbox (Result String NOPG.Model)
--- topicResults =
---   Signal.mailbox (Err "Enter a topic ID")
---
---
--- results : Signal.Mailbox (Result String (User.Model, List Neighbor.Model))
--- results =
---   Signal.mailbox (Err "Please enter a valid user")
---
---
--- port requests : Signal (Task x ())
--- port requests =
---   Signal.map lookupNeighbors userId.signal
---     |> Signal.map (\task -> Task.toResult task `andThen` Signal.send results.address)
---
---
--- port requestsNearest : Signal (Task x ())
--- port requestsNearest =
---   Signal.map2 lookupNearestOpinions userId.signal topicId.signal
---     |> Signal.map (\task -> Task.toResult task `andThen` Signal.send topicResults.address)
-
-
--- lookupNeighbors : String -> Task String (User.Model, List Neighbor.Model)
--- lookupNeighbors rawId =
---   let toUrl =
---         if isNum rawId
---           then succeed ("http://localhost:3714/api/user/" ++ rawId)
---           else fail ("Please enter a valid user")
---   in
---       toUrl `andThen` (mapError errorString << Http.get userInfo)
---       -- toUrl `andThen` (mapError (always "Not found :(") << Http.get userDecode)
---
---
--- lookupNearestOpinions : String -> String -> Task String NOPG.Model
--- lookupNearestOpinions user topic =
---   let toUrl =
---         if isNum user && isNum topic
---           then succeed ("http://localhost:3714/api/user/" ++ user ++ "/topic/" ++ topic ++ "/opinions")
---           else fail ("User-Topic combo is not valid")
---   in
---       toUrl `andThen` (mapError errorString << Http.get OPG.decoder)
---       |> Task.map NOPG.init
-
-
--- isNum : String -> Bool
--- isNum n =
---   not (String.isEmpty n) && String.all Char.isDigit n
---
---
--- userInfo : Json.Decoder (User.Model, List Neighbor.Model)
--- userInfo =
---   Json.object2 (,)
---     ("user" := User.decoder)
---     ("neighbors" := Json.list Neighbor.decoder)
-
-
-
--- errorString : Http.Error -> String
--- errorString error =
---   case error of
---     Http.Timeout -> "timeout"
---     Http.NetworkError -> "network error"
---     Http.UnexpectedPayload msg -> msg
---     Http.BadResponse int msg -> (toString int) ++ ": " ++ msg
