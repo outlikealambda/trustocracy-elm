@@ -115,9 +115,9 @@ view address model =
         Composer.view (Signal.forwardTo address ComposerMsg) model.write
   in
       div [ class "world container" ]
-        [ css "css/normalize.css"
-        , css "css/fonts.css"
-        , css "css/trusto.css"
+        [ css "/css/normalize.css"
+        , css "/css/fonts.css"
+        , css "/css/trusto.css"
         , h1 [] [ text model.user.name ]
         , field
         , write
