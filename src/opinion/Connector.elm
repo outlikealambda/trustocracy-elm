@@ -1,4 +1,4 @@
-module Opinion.Connected
+module Opinion.Connector
   ( Model
   , Action(SetUser)
   , init

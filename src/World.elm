@@ -12,7 +12,7 @@ import Html.Attributes exposing (class, rel, href, placeholder, value)
 import Html.Events exposing (on, targetValue)
 
 
-import Opinion.Connected as Connected
+import Opinion.Connector as Connector
 import Opinion.Composer as Composer
 import User exposing (User)
 import Topic exposing (Topic)
@@ -21,7 +21,7 @@ import Topic exposing (Topic)
 type alias Model =
   { user: User
   , topic: Topic
-  , connected : Connected.Model
+  , connected : Connector.Model
   , write : Composer.Model
   , view : View
   }
@@ -29,7 +29,7 @@ type alias Model =
 
 -- not used yet
 type View
-  = UsersConnectedOpinions
+  = UsersConnectorOpinions
   | ComposeOpinion
   | UserInfo
 
@@ -37,7 +37,7 @@ type View
 type Action
   = SetUser Int
   | SwitchView View
-  | ConnectedMsg Connected.Action
+  | ConnectorMsg Connector.Action
   | ComposerMsg Composer.Action
 
 
@@ -49,13 +49,13 @@ init =
     topic =
       0
     (connectedModel, connectedFx) =
-      Connected.init user topic
+      Connector.init user topic
     (writeModel, composerFx) =
       Composer.init user topic
   in
-    ( Model user topic connectedModel writeModel UsersConnectedOpinions
+    ( Model user topic connectedModel writeModel UsersConnectorOpinions
     , Effects.batch
-      [ Effects.map ConnectedMsg connectedFx
+      [ Effects.map ConnectorMsg connectedFx
       , Effects.map ComposerMsg composerFx
       ]
     )
@@ -67,13 +67,13 @@ update message model =
     SetUser uid ->
       let
           updatedUser = User ("me" ++ (toString uid)) uid
-          (connectedModel, fx) = Connected.update (Connected.SetUser updatedUser) model.connected
+          (connectedModel, fx) = Connector.update (Connector.SetUser updatedUser) model.connected
       in
         ( { model
           | user = updatedUser
           , connected = connectedModel
           }
-        , Effects.map ConnectedMsg fx
+        , Effects.map ConnectorMsg fx
         )
 
     SwitchView view ->
@@ -81,12 +81,12 @@ update message model =
       , Effects.none
       )
 
-    ConnectedMsg msg ->
+    ConnectorMsg msg ->
       let
-          (connectedModel, fx) = Connected.update msg model.connected
+          (connectedModel, fx) = Connector.update msg model.connected
       in
         ( { model | connected = connectedModel }
-        , Effects.map ConnectedMsg fx
+        , Effects.map ConnectorMsg fx
         )
 
     ComposerMsg msg ->
@@ -109,7 +109,7 @@ view address model =
           []
 
       connectedGroups =
-        Connected.view (Signal.forwardTo address ConnectedMsg) model.connected
+        Connector.view (Signal.forwardTo address ConnectorMsg) model.connected
 
       write =
         Composer.view (Signal.forwardTo address ComposerMsg) model.write
