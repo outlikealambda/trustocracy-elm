@@ -1,6 +1,7 @@
 module Opinion.Connector
   ( Model
   , Action(SetUser)
+  , empty
   , init
   , view
   , update
@@ -38,6 +39,10 @@ type Action
   | SetUser User
   | SetTopic Topic
   | OpgMsg Key Group.Action
+
+
+empty : Model
+empty = Model (User "" -1) -1 [] Dict.empty
 
 
 init : User -> Topic -> (Model, Effects Action)

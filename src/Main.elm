@@ -1,15 +1,18 @@
 import Effects exposing (Never)
-import World exposing (init, update, view)
+import World
 import StartApp
 import Task
 
 
+port initialPath : String
+
+
 app =
   StartApp.start
-    { init = init
-    , update = update
-    , view = view
-    , inputs = []
+    { init = World.init initialPath
+    , update = World.update
+    , view = World.view
+    , inputs = [ World.actions ]
     }
 
 

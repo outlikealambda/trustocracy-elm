@@ -1,5 +1,6 @@
 module Opinion.Composer
   ( Model
+  , empty
   , init
   , Action
   , update
@@ -11,13 +12,13 @@ import String
 import Char
 import Html exposing (Html, input, div, textarea, text, h3, button)
 import Html.Attributes exposing (class, placeholder, value)
-import Html.Events exposing (on, targetValue, keyCode)
+import Html.Events exposing (on, targetValue)
 import Effects exposing (Effects)
 import Json.Decode as Json exposing ((:=))
 import Markdown
 
 
-import Opinion.Credentials
+import Opinion.Model as Opinion
 import Opinion.View as View
 import Opinion.Create as Create
 import User exposing (User)
@@ -29,6 +30,10 @@ type alias Model =
   , topic : Topic
   , opinion : Create.Model
   }
+
+
+empty : Model
+empty = Model (User "" -1) -1 Opinion.empty
 
 
 init : User -> Topic -> (Model, Effects Action)
