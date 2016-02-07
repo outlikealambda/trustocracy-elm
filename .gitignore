@@ -7,3 +7,5 @@ elm.js
 .sass-cache
 css/trusto.css*
 
+.DS_Store
+**/DS_Store
