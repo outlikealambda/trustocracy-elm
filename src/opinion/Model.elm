@@ -38,7 +38,7 @@ empty =
 
 init : Maybe ApiModel -> Model
 init apiModel =
-  case Debug.log "opinion initted" apiModel of
+  case apiModel of
     Nothing -> empty
     Just {oid, text} ->
       Model oid False "" "" Credentials.init

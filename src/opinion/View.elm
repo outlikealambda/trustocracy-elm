@@ -39,7 +39,7 @@ update : Action -> Model -> (Model, Effects Action)
 update message model =
   case message of
     Init retrieved ->
-      ( Debug.log "Initted" retrieved
+      ( retrieved
       , Effects.none )
 
     Expand ->
@@ -87,7 +87,6 @@ getOpinion : Int -> Effects Action
 getOpinion opinionId =
   buildGetOpinionUrl opinionId
     |> Http.get Opinion.decoder
-    |> Task.map (Debug.log "tasked")
     |> Task.toMaybe
     |> Task.map Opinion.init
     |> Task.map Init

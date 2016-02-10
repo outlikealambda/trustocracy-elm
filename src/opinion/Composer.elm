@@ -33,7 +33,7 @@ type alias Model =
 
 
 empty : Model
-empty = Model (User "" -1) -1 Opinion.empty
+empty = Model User.empty -1 Opinion.empty
 
 
 init : User -> Topic -> (Model, Effects Action)

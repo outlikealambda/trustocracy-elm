@@ -17,6 +17,7 @@ import Opinion.Connector as Connector
 import Opinion.Composer as Composer
 import User exposing (User)
 import Topic exposing (Topic)
+import LocalStorage
 import Login
 import Header
 import Routes exposing (Route)
@@ -42,12 +43,15 @@ type Action
   | ComposerMsg Composer.Action
   | RouterAction (TransitRouter.Action Routes.Route)
   | NoOp
+  | LoadUserState (Maybe User)
 
 
 actions : Signal Action
 actions =
   -- use mergeMany if you have other mailboxes or signals to feed into StartApp
-  Signal.map RouterAction TransitRouter.actions
+  Signal.merge
+    (Signal.map LoadUserState LocalStorage.saveActiveUserSignal)
+    (Signal.map RouterAction TransitRouter.actions)
 
 
 mountRoute : Route -> Route -> Model -> (Model, Effects Action)
@@ -85,15 +89,15 @@ routerConfig =
   }
 
 
-init : String -> (Model, Effects Action)
-init path =
-  TransitRouter.init routerConfig path initialModel
+init : String -> Maybe User -> (Model, Effects Action)
+init path maybeUser =
+  TransitRouter.init routerConfig path (initialModel maybeUser)
 
 
-initialModel : Model
-initialModel =
+initialModel : Maybe User -> Model
+initialModel maybeUser =
   { transitRouter = TransitRouter.empty Routes.Home
-  , user = User "" -1
+  , user = Maybe.withDefault User.empty maybeUser
   , topic = 0
   , connector = Connector.empty
   , composer = Composer.empty
@@ -103,7 +107,7 @@ initialModel =
 
 update : Action -> Model -> (Model, Effects Action)
 update message model =
-  case Debug.log "World message" message of
+  case message of
 
     LoginMsg msg ->
       let
@@ -114,8 +118,16 @@ update message model =
         , Debug.log "Login msg fx" (Effects.map worldAction fx) )
 
     LoginSuccess ->
-        ( { model | user = Debug.log "Success Update" (Login.getUser model.login) }
-        , Effects.map (\_ -> NoOp) (Routes.redirect (Routes.Connect model.topic))
+        ( { model
+          | user = Debug.log "Success Update" (Login.getUser model.login)
+          , login = Login.init
+          }
+        , Effects.batch
+          [ Effects.map (\_ -> NoOp) (Routes.redirect (Routes.Connect model.topic))
+          , Signal.send LocalStorage.saveActiveUserAddress (Login.getUser model.login)
+            |> Effects.task
+            |> Effects.map (\_ -> NoOp)
+          ]
         )
 
     RouterAction routeAction ->
@@ -142,6 +154,18 @@ update message model =
       , Effects.none
       )
 
+    LoadUserState maybeUser ->
+      case maybeUser of
+
+        Just user ->
+          ( { model | user = Debug.log "Loaded user" user }
+          , Effects.none
+          )
+
+        Nothing ->
+          ( { model | user = Debug.log "Logging out user" User.empty }
+          , Effects.map (\_ -> NoOp) (Routes.redirect Routes.Home)
+          )
 
 loginContext : Login.Context Action
 loginContext =
@@ -154,7 +178,7 @@ view : Signal.Address Action -> Model -> Html
 view address model =
 
   div [ class "world container" ]
-    [ Header.view (Debug.log "header" model.user)
+    [ Header.view model.user
     , div
       [ class "content"
       , style (TransitStyle.fadeSlideLeft 100 (TransitRouter.getTransition model))

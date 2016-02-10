@@ -42,7 +42,7 @@ type Action
 
 
 empty : Model
-empty = Model (User "" -1) -1 [] Dict.empty
+empty = Model User.empty -1 [] Dict.empty
 
 
 init : User -> Topic -> (Model, Effects Action)

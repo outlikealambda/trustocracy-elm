@@ -13,7 +13,28 @@
   </body>
 
   <script type="text/javascript">
-    var elmApp = Elm.fullscreen(Elm.Main, {initialPath: window.location.pathname});
+
+    var activeUserJson = window.localStorage.getItem('activeUser');
+    var activeUser = activeUserJson ?
+      JSON.parse(activeUserJson) :
+      null;
+
+    console.log('activeUser is', activeUser);
+
+    var elmApp = Elm.fullscreen(Elm.Main,
+      { initialPath: window.location.pathname,
+        activeUser: activeUser });
+
+    elmApp.ports.saveActiveUser.subscribe(user => {
+      if (user) {
+        console.log('saving user to localStorage', user);
+        window.localStorage.setItem('activeUser', JSON.stringify(user));
+      } else {
+        console.log('clearing active user...');
+        window.localStorage.removeItem('activeUser');
+      }
+    })
+
   </script>
 
 </html>

@@ -32,7 +32,7 @@ type alias Model =
 
 init : Model
 init =
-  { user = User "" -1
+  { user = User.empty
   , message = "Welcome, please enter your user id"
   , input = Empty
   }
