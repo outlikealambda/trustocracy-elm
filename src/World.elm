@@ -79,6 +79,9 @@ mountRoute prevRoute route model =
         , Effects.map ConnectorMsg fx
         )
 
+    Routes.EmptyRoute ->
+      ( model, Effects.none )
+
 
 routerConfig : TransitRouter.Config Route Action Model
 routerConfig =
@@ -96,7 +99,7 @@ init path activeUser =
 
 initialModel : ActiveUser -> Model
 initialModel activeUser =
-  { transitRouter = TransitRouter.empty Routes.Home
+  { transitRouter = TransitRouter.empty Routes.EmptyRoute
   , user =
       case activeUser of
         LoggedIn user -> Debug.log "init logged in" user
@@ -187,14 +190,20 @@ view address model =
       , style (TransitStyle.fadeSlideLeft 100 (TransitRouter.getTransition model))
       ]
       [ case (TransitRouter.getRoute model) of
+
         Routes.Home ->
           div []
           [ Login.view (Signal.forwardTo address LoginMsg) model.login
           ]
+
         Routes.Connect _ ->
           div [ class "row" ]
           (Connector.view (Signal.forwardTo address ConnectorMsg) model.connector)
+
         Routes.Compose _ ->
           Composer.view (Signal.forwardTo address ComposerMsg) model.composer
+
+        Routes.EmptyRoute ->
+          text ""
       ]
     ]

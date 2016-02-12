@@ -9,6 +9,7 @@ type Route
   = Home
   | Connect Int
   | Compose Int
+  | EmptyRoute
 
 
 routeParsers : List (RouteParser.Matcher Route)
@@ -31,6 +32,7 @@ encode route =
     Home -> "/"
     Connect topicId -> "/topic/" ++ toString topicId ++ "/connect"
     Compose topicId -> "/topic/" ++ toString topicId ++ "/compose"
+    EmptyRoute -> "/"
 
 
 redirect : Route -> Effects ()
