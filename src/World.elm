@@ -17,7 +17,7 @@ import Opinion.Connector as Connector
 import Opinion.Composer as Composer
 import User exposing (User)
 import Topic exposing (Topic)
-import LocalStorage
+import LocalStorage exposing (ActiveUser(LoggedIn,LoggedOut))
 import Login
 import Header
 import Routes exposing (Route)
@@ -43,7 +43,7 @@ type Action
   | ComposerMsg Composer.Action
   | RouterAction (TransitRouter.Action Routes.Route)
   | NoOp
-  | LoadUserState (Maybe User)
+  | LoadUserState ActiveUser
 
 
 actions : Signal Action
@@ -89,15 +89,18 @@ routerConfig =
   }
 
 
-init : String -> Maybe User -> (Model, Effects Action)
-init path maybeUser =
-  TransitRouter.init routerConfig path (initialModel maybeUser)
+init : String -> ActiveUser -> (Model, Effects Action)
+init path activeUser =
+  TransitRouter.init routerConfig path (initialModel activeUser)
 
 
-initialModel : Maybe User -> Model
-initialModel maybeUser =
+initialModel : ActiveUser -> Model
+initialModel activeUser =
   { transitRouter = TransitRouter.empty Routes.Home
-  , user = Maybe.withDefault User.empty maybeUser
+  , user =
+      case activeUser of
+        LoggedIn user -> Debug.log "init logged in" user
+        LoggedOut -> Debug.log "init logged out" User.empty
   , topic = 0
   , connector = Connector.empty
   , composer = Composer.empty
@@ -154,15 +157,15 @@ update message model =
       , Effects.none
       )
 
-    LoadUserState maybeUser ->
-      case maybeUser of
+    LoadUserState activeUser ->
+      case activeUser of
 
-        Just user ->
+        LoggedIn user ->
           ( { model | user = Debug.log "Loaded user" user }
           , Effects.none
           )
 
-        Nothing ->
+        LoggedOut ->
           ( { model | user = Debug.log "Logging out user" User.empty }
           , Effects.map (\_ -> NoOp) (Routes.redirect Routes.Home)
           )

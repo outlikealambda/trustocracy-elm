@@ -13,7 +13,7 @@ port activeUser : Maybe User
 
 app =
   StartApp.start
-    { init = World.init initialPath activeUser
+    { init = World.init initialPath (LocalStorage.fromMaybe activeUser)
     , update = World.update
     , view = World.view
     , inputs = [ World.actions ]
@@ -31,4 +31,4 @@ port tasks =
 
 port saveActiveUser : Signal (Maybe User)
 port saveActiveUser =
-  LocalStorage.saveActiveUserSignal
+  Signal.map LocalStorage.toMaybe LocalStorage.saveActiveUserSignal
