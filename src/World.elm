@@ -17,7 +17,7 @@ import Opinion.Connector as Connector
 import Opinion.Composer as Composer
 import User exposing (User)
 import Topic exposing (Topic)
-import LocalStorage exposing (ActiveUser(LoggedIn,LoggedOut))
+import ActiveUser exposing (ActiveUser(LoggedIn,LoggedOut))
 import Login
 import Header
 import Routes exposing (Route)
@@ -50,7 +50,7 @@ actions : Signal Action
 actions =
   -- use mergeMany if you have other mailboxes or signals to feed into StartApp
   Signal.merge
-    (Signal.map LoadUserState LocalStorage.saveActiveUserSignal)
+    (Signal.map LoadUserState ActiveUser.updates)
     (Signal.map RouterAction TransitRouter.actions)
 
 
@@ -127,7 +127,7 @@ update message model =
           }
         , Effects.batch
           [ Effects.map (\_ -> NoOp) (Routes.redirect (Routes.Connect model.topic))
-          , Signal.send LocalStorage.saveActiveUserAddress (Login.getUser model.login)
+          , Signal.send ActiveUser.save (Login.getUser model.login)
             |> Effects.task
             |> Effects.map (\_ -> NoOp)
           ]

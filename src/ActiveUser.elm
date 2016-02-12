@@ -1,8 +1,8 @@
-module LocalStorage
+module ActiveUser
     ( ActiveUser(LoggedIn, LoggedOut)
-    , saveActiveUserAddress
-    , clearActiveUserAddress
-    , saveActiveUserSignal
+    , save
+    , clear
+    , updates
     , toMaybe
     , fromMaybe
     ) where
@@ -14,15 +14,15 @@ import Signal exposing (Address, Mailbox)
 import User exposing (User)
 
 
+type ActiveUser
+  = LoggedOut
+  | LoggedIn User
+
+
 type Action
   = NoOp
   | SaveActiveUser User
   | ClearActiveUser
-
-
-type ActiveUser
-  = LoggedOut
-  | LoggedIn User
 
 
 mailbox : Mailbox Action
@@ -30,22 +30,22 @@ mailbox =
   Signal.mailbox NoOp
 
 
-clearActiveUserAddress : Address ()
-clearActiveUserAddress =
+clear : Address ()
+clear =
   Signal.forwardTo mailbox.address (\_ -> ClearActiveUser)
 
 
-saveActiveUserAddress : Address User
-saveActiveUserAddress =
+save : Address User
+save =
   Signal.forwardTo mailbox.address SaveActiveUser
 
 
-saveActiveUserSignal : Signal ActiveUser
-saveActiveUserSignal =
+updates : Signal ActiveUser
+updates =
   let
     extractActiveUser : Action -> Maybe ActiveUser
     extractActiveUser action =
-      case action of
+      case (Debug.log "activeUser signal" action) of
         SaveActiveUser user ->
           Just (LoggedIn user)
 

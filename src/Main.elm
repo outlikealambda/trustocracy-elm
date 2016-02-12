@@ -3,7 +3,7 @@ import World
 import StartApp
 import Task
 
-import LocalStorage
+import ActiveUser
 import User exposing (User)
 
 
@@ -13,7 +13,7 @@ port activeUser : Maybe User
 
 app =
   StartApp.start
-    { init = World.init initialPath (LocalStorage.fromMaybe activeUser)
+    { init = World.init initialPath (ActiveUser.fromMaybe activeUser)
     , update = World.update
     , view = World.view
     , inputs = [ World.actions ]
@@ -31,4 +31,4 @@ port tasks =
 
 port saveActiveUser : Signal (Maybe User)
 port saveActiveUser =
-  Signal.map LocalStorage.toMaybe LocalStorage.saveActiveUserSignal
+  Signal.map ActiveUser.toMaybe ActiveUser.updates

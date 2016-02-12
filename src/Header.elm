@@ -4,7 +4,7 @@ module Header
 
 
 import User exposing (User)
-import LocalStorage
+import ActiveUser exposing (ActiveUser(LoggedOut))
 
 import String
 import Html exposing (Html, div, text, button)
@@ -27,7 +27,7 @@ view user =
       else
         [ div [ class "user" ]
           [ button
-            [ onClick LocalStorage.clearActiveUserAddress () ]
+            [ onClick ActiveUser.clear () ]
             [ text "Logout"]
           ]
         ]
