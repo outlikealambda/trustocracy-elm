@@ -19,7 +19,7 @@ import Http
 import Opinion.Group as Group
 import Opinion.Path as Path
 import User exposing (User)
-import Topic exposing (Topic)
+import Topic.Model exposing (Topic)
 
 
 type alias Key = Int
@@ -42,7 +42,7 @@ type Action
 
 
 empty : Model
-empty = Model User.empty Topic.empty [] Dict.empty
+empty = Model User.empty Topic.Model.empty [] Dict.empty
 
 
 init : User -> Topic -> (Model, Effects Action)

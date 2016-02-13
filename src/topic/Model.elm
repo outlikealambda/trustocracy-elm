@@ -1,4 +1,4 @@
-module Topic
+module Topic.Model
   ( Topic
   , empty
   , get

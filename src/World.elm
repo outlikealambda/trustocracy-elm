@@ -17,7 +17,7 @@ import Task
 import Opinion.Connector as Connector
 import Opinion.Composer as Composer
 import User exposing (User)
-import Topic exposing (Topic)
+import Topic.Model exposing (Topic)
 import ActiveUser exposing (ActiveUser(LoggedIn, LoggedOut))
 import Login
 import Header
@@ -66,7 +66,7 @@ mountRoute prevRoute route model =
 
     Routes.Compose topicId ->
       ( model
-      , Topic.get topicId
+      , Topic.Model.get topicId
           |> Task.toMaybe
           |> Task.map ComposerLoad
           |> Effects.task
@@ -74,7 +74,7 @@ mountRoute prevRoute route model =
 
     Routes.Connect topicId ->
       ( model
-      , Topic.get topicId -- Task Error Topic
+      , Topic.Model.get topicId -- Task Error Topic
          |> Task.toMaybe -- Task Never (Maybe Topic)
          |> Task.map ConnectorLoad
          |> Effects.task
@@ -105,7 +105,7 @@ initialModel activeUser =
       case activeUser of
         LoggedIn user -> Debug.log "init logged in" user
         LoggedOut -> Debug.log "init logged out" User.empty
-  , topic = Topic.empty
+  , topic = Topic.Model.empty
   , connector = Connector.empty
   , composer = Composer.empty
   , login = Login.init

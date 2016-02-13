@@ -22,7 +22,7 @@ import Opinion.Model as Opinion
 import Opinion.View as View
 import Opinion.Create as Create
 import User exposing (User)
-import Topic exposing (Topic)
+import Topic.Model exposing (Topic)
 
 
 type alias Model =
@@ -33,7 +33,7 @@ type alias Model =
 
 
 empty : Model
-empty = Model User.empty Topic.empty Opinion.empty
+empty = Model User.empty Topic.Model.empty Opinion.empty
 
 
 init : User -> Topic -> (Model, Effects Action)
