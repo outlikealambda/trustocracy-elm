@@ -11,13 +11,14 @@ import Html exposing (Html, input, div, node, h1, text)
 import Effects exposing (Effects)
 import Html.Attributes exposing (class, rel, href, placeholder, value, style)
 import Html.Events exposing (on, targetValue)
+import Task
 
 
 import Opinion.Connector as Connector
 import Opinion.Composer as Composer
 import User exposing (User)
 import Topic exposing (Topic)
-import ActiveUser exposing (ActiveUser(LoggedIn,LoggedOut))
+import ActiveUser exposing (ActiveUser(LoggedIn, LoggedOut))
 import Login
 import Header
 import Routes exposing (Route)
@@ -39,11 +40,13 @@ type alias Model = TransitRouter.WithRoute Routes.Route
 type Action
   = LoginMsg Login.Action
   | LoginSuccess
+  | ConnectorLoad (Maybe Topic)
   | ConnectorMsg Connector.Action
+  | ComposerLoad (Maybe Topic)
   | ComposerMsg Composer.Action
   | RouterAction (TransitRouter.Action Routes.Route)
-  | NoOp
   | LoadUserState ActiveUser
+  | NoOp
 
 
 actions : Signal Action
@@ -62,22 +65,20 @@ mountRoute prevRoute route model =
       ( model, Effects.none )
 
     Routes.Compose topicId ->
-      let
-        (composer, fx) =
-          Composer.init model.user topicId
-      in
-        ( { model | composer = composer }
-        , Effects.map ComposerMsg fx
-        )
+      ( model
+      , Topic.get topicId
+          |> Task.toMaybe
+          |> Task.map ComposerLoad
+          |> Effects.task
+      )
 
     Routes.Connect topicId ->
-      let
-        (connector, fx) =
-          Connector.init model.user topicId
-      in
-        ( { model | connector = connector }
-        , Effects.map ConnectorMsg fx
-        )
+      ( model
+      , Topic.get topicId -- Task Error Topic
+         |> Task.toMaybe -- Task Never (Maybe Topic)
+         |> Task.map ConnectorLoad
+         |> Effects.task
+      )
 
     Routes.EmptyRoute ->
       ( model, Effects.none )
@@ -104,7 +105,7 @@ initialModel activeUser =
       case activeUser of
         LoggedIn user -> Debug.log "init logged in" user
         LoggedOut -> Debug.log "init logged out" User.empty
-  , topic = 0
+  , topic = Topic.empty
   , connector = Connector.empty
   , composer = Composer.empty
   , login = Login.init
@@ -129,7 +130,7 @@ update message model =
           , login = Login.init
           }
         , Effects.batch
-          [ Effects.map (\_ -> NoOp) (Routes.redirect (Routes.Connect model.topic))
+          [ Effects.map (\_ -> NoOp) (Routes.redirect (Routes.Connect 0))
           , Signal.send ActiveUser.save (Login.getUser model.login)
             |> Effects.task
             |> Effects.map (\_ -> NoOp)
@@ -139,21 +140,51 @@ update message model =
     RouterAction routeAction ->
       TransitRouter.update routerConfig routeAction model
 
+    ConnectorLoad maybeTopic ->
+      case maybeTopic of
+        Nothing ->
+          ( model, goHome )
+
+        Just topic ->
+          let
+            (connector, fx) =
+              Connector.init model.user topic
+          in
+            ( { model | connector = connector }
+            , Effects.map ConnectorMsg fx
+            )
+
     ConnectorMsg msg ->
       let
-          (connector, fx) = Connector.update msg model.connector
+        (connector, fx) =
+          Connector.update msg model.connector
       in
         ( { model | connector = connector }
         , Effects.map ConnectorMsg fx
         )
 
+    ComposerLoad maybeTopic ->
+      case maybeTopic of
+        Nothing ->
+          ( model, goHome )
+
+        Just topic ->
+          let
+            (composer, fx) =
+              Composer.init model.user topic
+          in
+            ( { model | composer = composer }
+            , Effects.map ComposerMsg fx
+            )
+
     ComposerMsg msg ->
       let
-          (composer, fx) = Composer.update msg model.composer
+        (composer, fx) =
+          Composer.update msg model.composer
       in
-          ( { model | composer = composer }
-          , Effects.map ComposerMsg fx
-          )
+        ( { model | composer = composer }
+        , Effects.map ComposerMsg fx
+        )
 
     NoOp ->
       ( model
@@ -170,7 +201,7 @@ update message model =
 
         LoggedOut ->
           ( { model | user = Debug.log "Logging out user" User.empty }
-          , Effects.map (\_ -> NoOp) (Routes.redirect Routes.Home)
+          , goHome
           )
 
 loginContext : Login.Context Action
@@ -207,3 +238,7 @@ view address model =
           text ""
       ]
     ]
+
+goHome : Effects Action
+goHome =
+  Effects.map (\_ -> NoOp) (Routes.redirect Routes.Home)

@@ -42,7 +42,7 @@ type Action
 
 
 empty : Model
-empty = Model User.empty -1 [] Dict.empty
+empty = Model User.empty Topic.empty [] Dict.empty
 
 
 init : User -> Topic -> (Model, Effects Action)
@@ -105,7 +105,7 @@ update message model =
 
 getConnectedOpinions : Topic -> User -> Effects Action
 getConnectedOpinions topic user =
-  buildConnectedOpinionsUrl topic user.id
+  buildConnectedOpinionsUrl topic.id user.id
     |> Http.get opathsDecoder
     |> Task.toMaybe
     |> Task.map (Maybe.withDefault [])

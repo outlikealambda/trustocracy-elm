@@ -33,14 +33,14 @@ type alias Model =
 
 
 empty : Model
-empty = Model User.empty -1 Opinion.empty
+empty = Model User.empty Topic.empty Opinion.empty
 
 
 init : User -> Topic -> (Model, Effects Action)
 init user topic =
   let
     ( opinion, fx ) =
-      Create.init user.id topic
+      Create.init user.id topic.id
   in
     ( Model user topic opinion
     , Effects.map CreateMsg fx
