@@ -1,4 +1,4 @@
-module Header
+module Navigate
   ( view
   ) where
 
