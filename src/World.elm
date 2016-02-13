@@ -18,6 +18,7 @@ import Opinion.Connector as Connector
 import Opinion.Composer as Composer
 import User exposing (User)
 import Topic.Model exposing (Topic)
+import Topic.View
 import ActiveUser exposing (ActiveUser(LoggedIn, LoggedOut))
 import Login
 import Header
@@ -29,8 +30,9 @@ import TransitStyle
 
 
 type alias Model = TransitRouter.WithRoute Routes.Route
-  { user: User
-  , topic: Topic
+  { user : User
+  , topic : Topic
+  , topics : List Topic
   , connector : Connector.Model
   , composer : Composer.Model
   , login : Login.Model
@@ -44,6 +46,7 @@ type Action
   | ConnectorMsg Connector.Action
   | ComposerLoad (Maybe Topic)
   | ComposerMsg Composer.Action
+  | TopicsLoad (List Topic)
   | RouterAction (TransitRouter.Action Routes.Route)
   | LoadUserState ActiveUser
   | NoOp
@@ -80,6 +83,17 @@ mountRoute prevRoute route model =
          |> Effects.task
       )
 
+    -- map to [] if fail, since this will probably be the
+    -- home page and we don't want to continually redirect
+    Routes.Topics ->
+      ( model
+      , Topic.Model.getAll
+        |> Task.toMaybe
+        |> Task.map (Maybe.withDefault [])
+        |> Task.map TopicsLoad
+        |> Effects.task
+      )
+
     Routes.EmptyRoute ->
       ( model, Effects.none )
 
@@ -106,6 +120,7 @@ initialModel activeUser =
         LoggedIn user -> Debug.log "init logged in" user
         LoggedOut -> Debug.log "init logged out" User.empty
   , topic = Topic.Model.empty
+  , topics = []
   , connector = Connector.empty
   , composer = Composer.empty
   , login = Login.init
@@ -130,7 +145,7 @@ update message model =
           , login = Login.init
           }
         , Effects.batch
-          [ Effects.map (\_ -> NoOp) (Routes.redirect (Routes.Connect 0))
+          [ goHome
           , Signal.send ActiveUser.save (Login.getUser model.login)
             |> Effects.task
             |> Effects.map (\_ -> NoOp)
@@ -186,6 +201,10 @@ update message model =
         , Effects.map ComposerMsg fx
         )
 
+    TopicsLoad topics ->
+      ( { model | topics = topics }
+      , Effects.none )
+
     NoOp ->
       ( model
       , Effects.none
@@ -217,19 +236,22 @@ view address model =
   div [ class "world container" ]
     [ Header.view model.user
     , div
-      [ class "content"
-      , style (TransitStyle.fadeSlideLeft 100 (TransitRouter.getTransition model))
-      ]
+      [ class "content" ]
       [ case (TransitRouter.getRoute model) of
+
+        Routes.Topics ->
+          div
+            [ style (TransitStyle.fadeSlideLeft 1000 (TransitRouter.getTransition model)) ]
+            [ Topic.View.viewAll model.topics ]
 
         Routes.Home ->
           div []
-          [ Login.view (Signal.forwardTo address LoginMsg) model.login
-          ]
+            [ Login.view (Signal.forwardTo address LoginMsg) model.login ]
 
         Routes.Connect _ ->
-          div [ class "row" ]
-          (Connector.view (Signal.forwardTo address ConnectorMsg) model.connector)
+          div
+            [ class "row" ]
+            (Connector.view (Signal.forwardTo address ConnectorMsg) model.connector)
 
         Routes.Compose _ ->
           Composer.view (Signal.forwardTo address ComposerMsg) model.composer
@@ -241,4 +263,4 @@ view address model =
 
 goHome : Effects Action
 goHome =
-  Effects.map (\_ -> NoOp) (Routes.redirect Routes.Home)
+  Effects.map (\_ -> NoOp) (Routes.redirect Routes.Topics)

@@ -5,6 +5,8 @@
 @import "t-form";
 @import "t-button";
 
+$header-font: 'Merriweather';
+
 .cf:before,
 .cf:after {
   content:"";
@@ -31,7 +33,7 @@ body {
   font-size: 1.6rem;
 }
 h1, h2, h3, h4 {
-  font-family: 'Merriweather';
+  font-family: $header-font
 }
 
 .t-card {
@@ -47,7 +49,7 @@ h1, h2, h3, h4 {
   line-height: 2.4rem;
   padding: 20px;
 
-  font-family: 'Merriweather';
+  font-family: $header-font;
 
   background-color: $primary-color;
   color: $text-color;
@@ -61,7 +63,7 @@ h1, h2, h3, h4 {
 .subtitle {
   font-size: 1.6rem;
   line-height: 2.2rem;
-  font-family: 'Merriweather';
+  font-family: $header-font;
   padding-bottom: 16px;
 
   border-bottom: 1px solid #ccc;
@@ -182,5 +184,19 @@ textarea.write {
 
   > .content {
     margin-top: 2.4rem;
+  }
+}
+
+.topic {
+  text-transform: capitalize;
+  font-size: 1.8rem;
+  font-family: $header-font;
+  line-height: 2.4rem;
+  padding: 16px;
+  border-bottom: 1px solid #eeeeee;
+
+  &:hover {
+    // background-color: $primary-color;
+    // cursor: pointer;
   }
 }

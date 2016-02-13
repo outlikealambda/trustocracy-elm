@@ -7,6 +7,7 @@ import TransitRouter
 
 type Route
   = Home
+  | Topics
   | Connect Int
   | Compose Int
   | EmptyRoute
@@ -15,6 +16,7 @@ type Route
 routeParsers : List (RouteParser.Matcher Route)
 routeParsers =
   [ RouteParser.static Home "/"
+  , RouteParser.static Topics "/topics"
   , RouteParser.dyn1 Connect "/topic/" RouteParser.int "/connect"
   , RouteParser.dyn1 Compose "/topic/" RouteParser.int "/compose"
   ]
@@ -30,6 +32,7 @@ encode : Route -> String
 encode route =
   case route of
     Home -> "/"
+    Topics -> "/topics"
     Connect topicId -> "/topic/" ++ toString topicId ++ "/connect"
     Compose topicId -> "/topic/" ++ toString topicId ++ "/compose"
     EmptyRoute -> "/"
