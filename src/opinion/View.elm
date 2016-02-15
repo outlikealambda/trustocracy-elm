@@ -11,8 +11,6 @@ import Effects exposing (Effects)
 import Html exposing (Html, div, text, p)
 import Html.Attributes exposing (class)
 import Markdown
-import Http
-import Task
 
 import Opinion.Model as Opinion
 import Opinion.Credentials as Credentials
@@ -24,7 +22,8 @@ type alias Model = Opinion.Model
 init : Int -> (Model, Effects Action)
 init oid =
   ( Opinion.empty
-  , getOpinion oid
+  , Opinion.fetch oid
+    |> Effects.map Init
   )
 
 
@@ -80,22 +79,4 @@ viewSnippet : Model -> Html
 viewSnippet model =
   div [ class "text snippet" ]
     [ p [] [ text model.snippet ]
-    ]
-
-
-getOpinion : Int -> Effects Action
-getOpinion opinionId =
-  buildGetOpinionUrl opinionId
-    |> Http.get Opinion.decoder
-    |> Task.toMaybe
-    |> Task.map Opinion.init
-    |> Task.map Init
-    |> Effects.task
-
-
-buildGetOpinionUrl : Int -> String
-buildGetOpinionUrl opinionId =
-  String.concat
-    [ "http://localhost:3714/api/opinion/"
-    , toString opinionId
     ]

@@ -26,14 +26,12 @@ import Topic.Model exposing (Topic)
 
 
 type alias Model =
-  { user : User
-  , topic : Topic
-  , opinion : Create.Model
+  { opinion : Create.Model
   }
 
 
 empty : Model
-empty = Model User.empty Topic.Model.empty Opinion.empty
+empty = Model Opinion.empty
 
 
 init : User -> Topic -> (Model, Effects Action)
@@ -42,7 +40,7 @@ init user topic =
     ( opinion, fx ) =
       Create.init user.id topic.id
   in
-    ( Model user topic opinion
+    ( Model opinion
     , Effects.map CreateMsg fx
     )
 

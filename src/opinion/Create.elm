@@ -13,8 +13,6 @@ import Html exposing (Html, div, textarea, text)
 import Html.Attributes exposing (class, placeholder, value)
 import Html.Events exposing (on, targetValue)
 import Effects exposing (Effects)
-import Http
-import Task
 
 
 import Opinion.Credentials as Credentials
@@ -27,7 +25,8 @@ type alias Model = Opinion.Model
 init : Int -> Int -> (Model, Effects Action)
 init userId topicId =
   ( Opinion.empty
-  , getOpinion userId topicId
+  , Opinion.fetchByUserTopic userId topicId
+    |> Effects.map Init
   )
 
 
@@ -41,7 +40,7 @@ update : Action -> Model -> (Model, Effects Action)
 update message model =
   case message of
     Init retrieved ->
-      ( retrieved
+      ( Opinion.setExpanded retrieved
       , Effects.none
       )
 
@@ -53,27 +52,6 @@ update message model =
     CredentialsMsg msg ->
       ( { model | credentials = Credentials.update msg model.credentials}
       , Effects.none )
-
-
-getOpinion : Int -> Int -> Effects Action
-getOpinion userId topicId =
-  buildGetOpinionUrl userId topicId
-    |> Http.get Opinion.decoder
-    |> Task.toMaybe
-    |> Task.map Opinion.initExpanded
-    |> Task.map Init
-    |> Effects.task
-
-
-buildGetOpinionUrl : Int -> Int -> String
-buildGetOpinionUrl userId topicId =
-  String.concat
-    [ "http://localhost:3714/api/user/"
-    , toString userId
-    , "/topic/"
-    , toString topicId
-    , "/opinion"
-    ]
 
 
 viewCreator : Signal.Address Action -> Model -> Html

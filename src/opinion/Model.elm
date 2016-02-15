@@ -1,19 +1,22 @@
 module Opinion.Model
   ( Model
-  , ApiModel
   , empty
-  , init
-  , initExpanded
   , decoder
+  , setExpanded
   , setText
+  , fetch
+  , fetchByUserTopic
   ) where
 
 
 import String
+import Json.Decode as Json exposing ((:=))
+import Http
+import Task
+import Effects exposing (Effects)
 
 
 import Opinion.Credentials as Credentials
-import Json.Decode as Json exposing ((:=))
 
 
 type alias Model =
@@ -25,38 +28,27 @@ type alias Model =
   }
 
 
-type alias ApiModel =
-  { oid : Int
-  , text : String
+fromApi : Int -> String -> Model
+fromApi oid text =
+  { oid = oid
+  , expanded = False
+  , text = text
+  , snippet = snippetize 200 text
+  , credentials = Credentials.init
   }
-
 
 empty : Model
 empty =
   Model -1 False "" "" Credentials.init
-
-
-init : Maybe ApiModel -> Model
-init apiModel =
-  case apiModel of
-    Nothing -> empty
-    Just {oid, text} ->
-      Model oid False "" "" Credentials.init
-        |> setText text
-
-
-initExpanded : Maybe ApiModel -> Model
-initExpanded = setExpanded << init
-
 
 setExpanded : Model -> Model
 setExpanded m =
   { m | expanded = True }
 
 
-decoder : Json.Decoder ApiModel
+decoder : Json.Decoder Model
 decoder =
-  Json.object2 ApiModel
+  Json.object2 fromApi
     ( "id" := Json.int )
     ( "text" := Json.string )
 
@@ -92,3 +84,40 @@ maxValLessThan : Int -> List Int -> Maybe Int
 maxValLessThan maxVal ns =
   List.filter ((>) maxVal) ns
     |> List.maximum
+
+
+fetch : Int -> Effects Model
+fetch opinionId =
+  buildFetchUrl opinionId
+    |> Http.get decoder
+    |> Task.toMaybe
+    |> Task.map (Maybe.withDefault empty)
+    |> Effects.task
+
+
+buildFetchUrl : Int -> String
+buildFetchUrl opinionId =
+  String.concat
+    [ "http://localhost:3714/api/opinion/"
+    , toString opinionId
+    ]
+
+
+fetchByUserTopic : Int -> Int -> Effects Model
+fetchByUserTopic userId topicId =
+  buildFetchByUserTopicUrl userId topicId
+    |> Http.get decoder
+    |> Task.toMaybe
+    |> Task.map (Maybe.withDefault empty)
+    |> Effects.task
+
+
+buildFetchByUserTopicUrl : Int -> Int -> String
+buildFetchByUserTopicUrl userId topicId =
+  String.concat
+    [ "http://localhost:3714/api/user/"
+    , toString userId
+    , "/topic/"
+    , toString topicId
+    , "/opinion"
+    ]

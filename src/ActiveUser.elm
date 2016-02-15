@@ -5,6 +5,7 @@ module ActiveUser
     , updates
     , toMaybe
     , fromMaybe
+    , toUser
     ) where
 
 
@@ -76,3 +77,11 @@ fromMaybe maybeUser =
 
     Just user ->
       LoggedIn user
+
+toUser : ActiveUser -> User
+toUser maybeActive =
+  case maybeActive of
+    LoggedIn user ->
+      user
+    LoggedOut ->
+      User.empty
