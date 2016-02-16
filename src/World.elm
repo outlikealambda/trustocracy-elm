@@ -132,7 +132,10 @@ update message model =
     LoginMsg msg ->
       let
         (loginModel, fx) =
-          Login.update loginContext (Debug.log "Login msg" msg) model.login
+          Login.update
+            { next = LoginMsg , complete = (\_ -> LoginSuccess) }
+            (Debug.log "Login msg" msg)
+            model.login
       in
         ( { model | login = loginModel }
         , fx -- the Login module uses the context to create a World.Action
@@ -175,13 +178,6 @@ update message model =
             , goHome
             ]
           )
-
-
-loginContext : Login.Context Action
-loginContext =
-  Login.Context
-    LoginMsg
-    (\_ -> LoginSuccess)
 
 
 updateSession : Session.Action -> Effects Action

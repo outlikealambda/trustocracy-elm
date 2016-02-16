@@ -102,30 +102,14 @@ update action session =
     TopicMsg topicAction ->
       let
         (topicUpdate, topicFx) =
-          Topic.update topicAction session.topic
-
-        -- If the state of the topic.isComplete has changed
-        -- from False -> True, then we need to update the child components.
-        --
-        -- When we load a connector/composer view, we first need to load the
-        -- Topic, then wait for the Effects to finish (since the effect is what
-        -- goes to the DB and retrieves the Topic).  Once the Topic is
-        -- retrieved we can then go ahead and load the composer/connector.
-        --
-        -- Maybe there's a better way to do this, but chaining effects is
-        -- difficult (impossible?), so we can't do Topic.update `andThen` ...
-        propagationFx =
-          if Topic.justCompleted session.topic topicUpdate then
-            Task.succeed PropagateTopic |> Effects.task
-          else
-            Effects.none
+          Topic.update
+            { complete = (\_ -> PropagateTopic) }
+            topicAction
+            session.topic
 
       in
         ( { session | topic = topicUpdate }
-        , Effects.batch
-          [ Effects.map TopicMsg topicFx
-          , propagationFx
-          ]
+        , topicFx
         )
 
     PropagateTopic ->

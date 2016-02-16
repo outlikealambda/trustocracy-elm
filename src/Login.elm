@@ -50,12 +50,9 @@ type Action
   | NoOp
 
 
-type alias ActionMap b = (Action -> b)
-
-
 type alias Context a =
-  { next : ActionMap a
-  , complete : ActionMap a
+  { next : (Action -> a)
+  , complete : (Action -> a)
   }
 
 

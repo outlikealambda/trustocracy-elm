@@ -1,13 +1,12 @@
 module Topic.Model
   ( Topic
   , Action
-    ( FetchComplete )
+  , Context
   , empty
   , init
   , update
   , fetch
   , fetchAll
-  , justCompleted
   ) where
 
 
@@ -27,6 +26,7 @@ type alias Topic =
 
 type Action
   = FetchComplete (Maybe Topic)
+  | NoOp
 
 
 empty : Topic
@@ -49,8 +49,12 @@ init topicId =
     )
 
 
-update : Action -> Topic -> (Topic, Effects Action)
-update action topic =
+type alias Context a =
+  { complete : (Action -> a) }
+
+
+update : Context a -> Action -> Topic -> (Topic, Effects a)
+update context action topic =
   case action of
 
     FetchComplete maybeTopic ->
@@ -58,8 +62,13 @@ update action topic =
         Maybe.withDefault empty maybeTopic
       in
         ( { model | isComplete = True }
-        , Effects.none
+        , Task.succeed NoOp
+          |> Effects.task
+          |> Effects.map context.complete
         )
+
+    NoOp ->
+      ( topic, Effects.none )
 
 
 decoder : Json.Decoder Topic
@@ -94,8 +103,3 @@ fetchAll =
 topicsUrl : String
 topicsUrl =
   "http://localhost:3714/api/topic"
-
-
-justCompleted : Topic -> Topic -> Bool
-justCompleted a b =
-  a.id /= b.id
