@@ -131,11 +131,12 @@ update message model =
 
     LoginMsg msg ->
       let
-        (loginModel, fx, worldAction) =
+        (loginModel, fx) =
           Login.update loginContext (Debug.log "Login msg" msg) model.login
       in
         ( { model | login = loginModel }
-        , Effects.map worldAction fx )
+        , fx -- the Login module uses the context to create a World.Action
+        )
 
     LoginSuccess ->
         ( model

@@ -53,13 +53,13 @@ type Action
 type alias ActionMap b = (Action -> b)
 
 
-type alias Context b =
-  { actions : ActionMap b
-  , complete : ActionMap b
+type alias Context a =
+  { next : ActionMap a
+  , complete : ActionMap a
   }
 
 
-update : Context b -> Action -> Model -> (Model, Effects Action, ActionMap b)
+update : Context a -> Action -> Model -> (Model, Effects a)
 update context message model =
   case message of
 
@@ -70,7 +70,6 @@ update context message model =
         "" ->
           ( { model | input = Empty }
           , Effects.none
-          , context.actions
           )
 
         raw ->
@@ -79,13 +78,11 @@ update context message model =
             Err _ ->
               ( model
               , Effects.none
-              , context.actions
               )
 
             Ok inputInt ->
               ( { model | input = UserId inputInt }
               , Effects.none
-              , context.actions
               )
 
     LoadUser ->
@@ -99,8 +96,7 @@ update context message model =
             Effects.none
       in
         ( model
-        , fx
-        , context.actions
+        , Effects.map context.next fx
         )
 
     ValidateUser maybeUser ->
@@ -112,7 +108,6 @@ update context message model =
             | message = "nope, please try again"
             , input = Empty }
           , Effects.none
-          , context.actions
           )
 
         Just user ->
@@ -120,12 +115,11 @@ update context message model =
           , NoOp
             |> Task.succeed
             |> Effects.task
-          , context.complete
+            |> Effects.map context.complete
           )
     NoOp ->
       ( model
       , Effects.none
-      , context.actions
       )
 
 
