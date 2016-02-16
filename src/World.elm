@@ -14,27 +14,22 @@ import Html.Events exposing (on, targetValue)
 import Task
 
 
-import Opinion.Connector as Connector
-import Opinion.Composer as Composer
-import User exposing (User)
+import Session exposing (Session)
 import Topic.Model exposing (Topic)
 import Topic.View
 import ActiveUser exposing (ActiveUser(LoggedIn, LoggedOut))
 import Login
 import Navigate
+
+
 import Routes exposing (Route)
-
-
 import TransitRouter
 import TransitStyle
 
 
 type alias Model = TransitRouter.WithRoute Routes.Route
-  { user : User
-  , topic : Topic
+  { session : Session
   , topics : List Topic
-  , connector : Connector.Model
-  , composer : Composer.Model
   , login : Login.Model
   }
 
@@ -42,10 +37,7 @@ type alias Model = TransitRouter.WithRoute Routes.Route
 type Action
   = LoginMsg Login.Action
   | LoginSuccess
-  | ConnectorLoad (Maybe Topic)
-  | ConnectorMsg Connector.Action
-  | ComposerLoad (Maybe Topic)
-  | ComposerMsg Composer.Action
+  | SessionMsg Session.Action
   | TopicsLoad (List Topic)
   | RouterAction (TransitRouter.Action Routes.Route)
   | LoadUserState ActiveUser
@@ -69,25 +61,21 @@ mountRoute prevRoute route model =
 
     Routes.Compose topicId ->
       ( model
-      , Topic.Model.get topicId
-          |> Task.toMaybe
-          |> Task.map ComposerLoad
-          |> Effects.task
+      -- since User and Topic live inside Session, we handle a topic update
+      -- by updating the Session
+      , updateSession <| Session.GoCompose topicId
       )
 
     Routes.Connect topicId ->
       ( model
-      , Topic.Model.get topicId -- Task Error Topic
-         |> Task.toMaybe -- Task Never (Maybe Topic)
-         |> Task.map ConnectorLoad
-         |> Effects.task
+      , updateSession <| Session.GoConnect topicId
       )
 
     -- map to [] if fail, since this will probably be the
     -- home page and we don't want to continually redirect
     Routes.Topics ->
       ( model
-      , Topic.Model.getAll
+      , Topic.Model.fetchAll
         |> Task.toMaybe
         |> Task.map (Maybe.withDefault [])
         |> Task.map TopicsLoad
@@ -109,41 +97,52 @@ routerConfig =
 
 init : String -> ActiveUser -> (Model, Effects Action)
 init path activeUser =
-  TransitRouter.init routerConfig path (initialModel activeUser)
+  let
+    (model, fx) =
+      TransitRouter.init routerConfig path initialModel
+
+  in
+    ( model
+    , Effects.batch
+      [ fx
+      , updateSession <| Session.SetUser (ActiveUser.toUser activeUser)])
 
 
-initialModel : ActiveUser -> Model
-initialModel activeUser =
+initialModel : Model
+initialModel =
   { transitRouter = TransitRouter.empty Routes.EmptyRoute
-  , user =
-      case activeUser of
-        LoggedIn user -> Debug.log "init logged in" user
-        LoggedOut -> Debug.log "init logged out" User.empty
-  , topic = Topic.Model.empty
   , topics = []
-  , connector = Connector.empty
-  , composer = Composer.empty
   , login = Login.init
+  , session = Session.init
   }
 
 
 update : Action -> Model -> (Model, Effects Action)
 update message model =
   case message of
+    SessionMsg sessionAction ->
+      let
+        (update, updateFx) =
+          Session.update sessionAction model.session
+      in
+        ( { model | session = update }
+        , Effects.map SessionMsg updateFx
+        )
 
     LoginMsg msg ->
       let
-        (loginModel, fx, worldAction) =
-          Login.update loginContext (Debug.log "Login msg" msg) model.login
+        (loginModel, fx) =
+          Login.update
+            { next = LoginMsg , complete = (\_ -> LoginSuccess) }
+            (Debug.log "Login msg" msg)
+            model.login
       in
         ( { model | login = loginModel }
-        , Debug.log "Login msg fx" (Effects.map worldAction fx) )
+        , fx -- the Login module uses the context to create a World.Action
+        )
 
     LoginSuccess ->
-        ( { model
-          | user = Debug.log "Success Update" (Login.getUser model.login)
-          , login = Login.init
-          }
+        ( model
         , Effects.batch
           [ goHome
           , Signal.send ActiveUser.save (Login.getUser model.login)
@@ -154,52 +153,6 @@ update message model =
 
     RouterAction routeAction ->
       TransitRouter.update routerConfig routeAction model
-
-    ConnectorLoad maybeTopic ->
-      case maybeTopic of
-        Nothing ->
-          ( model, goHome )
-
-        Just topic ->
-          let
-            (connector, fx) =
-              Connector.init model.user topic
-          in
-            ( { model | connector = connector }
-            , Effects.map ConnectorMsg fx
-            )
-
-    ConnectorMsg msg ->
-      let
-        (connector, fx) =
-          Connector.update msg model.connector
-      in
-        ( { model | connector = connector }
-        , Effects.map ConnectorMsg fx
-        )
-
-    ComposerLoad maybeTopic ->
-      case maybeTopic of
-        Nothing ->
-          ( model, goHome )
-
-        Just topic ->
-          let
-            (composer, fx) =
-              Composer.init model.user topic
-          in
-            ( { model | composer = composer }
-            , Effects.map ComposerMsg fx
-            )
-
-    ComposerMsg msg ->
-      let
-        (composer, fx) =
-          Composer.update msg model.composer
-      in
-        ( { model | composer = composer }
-        , Effects.map ComposerMsg fx
-        )
 
     TopicsLoad topics ->
       ( { model | topics = topics }
@@ -214,30 +167,34 @@ update message model =
       case activeUser of
 
         LoggedIn user ->
-          ( { model | user = Debug.log "Loaded user" user }
-          , Effects.none
+          ( model
+          , updateSession <| Session.SetUser user
           )
 
         LoggedOut ->
-          ( { model | user = Debug.log "Logging out user" User.empty }
-          , goHome
+          ( model
+          , Effects.batch
+            [ updateSession <| Session.ClearUser
+            , goHome
+            ]
           )
 
-loginContext : Login.Context Action
-loginContext =
-  Login.Context
-    LoginMsg
-    (\_ -> LoginSuccess)
+
+updateSession : Session.Action -> Effects Action
+updateSession sessionAction =
+  Task.succeed sessionAction
+    |> Task.map SessionMsg
+    |> Effects.task
 
 
 view : Signal.Address Action -> Model -> Html
 view address model =
 
   div [ class "world container" ]
-    [ Navigate.view model.user
+    [ Navigate.view model.session.user
     , div
       [ class "content" ]
-      [ case (TransitRouter.getRoute model) of
+      [ case TransitRouter.getRoute model of
 
         Routes.Topics ->
           div
@@ -249,17 +206,17 @@ view address model =
             [ Login.view (Signal.forwardTo address LoginMsg) model.login ]
 
         Routes.Connect _ ->
-          div
-            [ class "row" ]
-            (Connector.view (Signal.forwardTo address ConnectorMsg) model.connector)
+          Session.view (Signal.forwardTo address SessionMsg)
+            <| model.session
 
         Routes.Compose _ ->
-          Composer.view (Signal.forwardTo address ComposerMsg) model.composer
+          Session.view (Signal.forwardTo address SessionMsg) model.session
 
         Routes.EmptyRoute ->
           text ""
       ]
     ]
+
 
 goHome : Effects Action
 goHome =

@@ -1,6 +1,6 @@
 module Opinion.Connector
   ( Model
-  , Action(SetUser)
+  , Action
   , empty
   , init
   , view
@@ -27,27 +27,23 @@ type alias Paths = List Path.Model
 
 
 type alias Model =
-  { user : User
-  , topic : Topic
-  , rawPaths : Paths
+  { rawPaths : Paths
   , buckets : Dict.Dict Key Group.Model -- opinion paths bucketed by key
   }
 
 
 type Action
   = SetRaw Paths
-  | SetUser User
-  | SetTopic Topic
   | OpgMsg Key Group.Action
 
 
 empty : Model
-empty = Model User.empty Topic.Model.empty [] Dict.empty
+empty = Model [] Dict.empty
 
 
 init : User -> Topic -> (Model, Effects Action)
 init user topic =
-  ( Model user topic [] Dict.empty
+  ( Model [] Dict.empty
   , getConnectedOpinions topic user
   )
 
@@ -75,14 +71,6 @@ update message model =
               }
             , Effects.batch fxs
             )
-
-    SetTopic topic ->
-      ( { model | topic = topic }
-      , getConnectedOpinions topic model.user)
-
-    SetUser user ->
-      ( { model | user = user }
-      , getConnectedOpinions model.topic user)
 
     OpgMsg key subMsg ->
       case Dict.get key model.buckets of
