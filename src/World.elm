@@ -1,16 +1,15 @@
 module World
   ( Action
+  , Model
   , init
   , view
   , actions
   , update) where
 
 
-import String
 import Html exposing (Html, input, div, node, h1, text)
 import Effects exposing (Effects)
 import Html.Attributes exposing (class, rel, href, placeholder, value, style)
-import Html.Events exposing (on, targetValue)
 import Task
 
 

@@ -8,10 +8,8 @@ module Opinion.Credentials
   ) where
 
 import String
-import Effects exposing (Effects)
 import Html exposing (Html, input, div, label, text)
 import Html.Attributes exposing (class, value)
-import Html.Events exposing (on, targetValue)
 
 import Common.LabeledInput as LabeledInput
 

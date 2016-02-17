@@ -10,7 +10,6 @@ module Opinion.Connector
 import Effects exposing (Effects)
 import Task
 import Html exposing (Html, div)
-import Html.Attributes exposing (class)
 import Json.Decode as Json exposing ((:=))
 import Dict
 import String

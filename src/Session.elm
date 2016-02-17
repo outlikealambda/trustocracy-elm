@@ -21,7 +21,6 @@ import Opinion.Composer as Composer
 import Html exposing (Html, div, h2, text)
 import Html.Attributes exposing (class)
 import Effects exposing (Effects)
-import Task
 
 
 type alias Session =

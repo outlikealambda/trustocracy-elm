@@ -7,7 +7,6 @@ module Topic.View
 import Html exposing (Html, div, text)
 import Html.Attributes exposing (class, href)
 import Html.Events exposing (onWithOptions)
-import String
 import Json.Decode as Json
 
 

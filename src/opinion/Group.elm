@@ -10,7 +10,6 @@ module Opinion.Group
 
 import Opinion.View as View
 import Opinion.Path as Path
-import Common.Relationship as Relationship
 
 
 import Effects exposing (Effects)

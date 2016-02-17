@@ -15,7 +15,6 @@ import Http
 import Html exposing (Html, h2, div, text, input)
 import Html.Attributes exposing (placeholder, value, class)
 import Html.Events exposing (on, targetValue, keyCode)
-import Common.LabeledInput as LabeledInput
 import Effects exposing (Effects)
 import Json.Decode as Json
 

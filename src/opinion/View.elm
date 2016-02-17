@@ -6,7 +6,6 @@ module Opinion.View
   , update
   ) where
 
-import String
 import Effects exposing (Effects)
 import Html exposing (Html, div, text, p)
 import Html.Attributes exposing (class)

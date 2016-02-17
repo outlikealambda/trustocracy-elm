@@ -10,7 +10,6 @@ module Topic.Model
   ) where
 
 
-import String
 import Json.Decode as Json exposing ((:=))
 import Http
 import Task exposing (Task)

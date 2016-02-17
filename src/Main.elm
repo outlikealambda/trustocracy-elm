@@ -1,4 +1,5 @@
 import Effects exposing (Never)
+import Html exposing (Html)
 import World
 import StartApp
 import Task
@@ -11,6 +12,7 @@ port initialPath : String
 port activeUser : Maybe User
 
 
+app : StartApp.App World.Model
 app =
   StartApp.start
     { init = World.init initialPath (ActiveUser.fromMaybe activeUser)
@@ -20,6 +22,7 @@ app =
     }
 
 
+main : Signal Html
 main =
   app.html
 

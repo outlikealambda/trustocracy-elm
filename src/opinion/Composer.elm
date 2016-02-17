@@ -8,14 +8,9 @@ module Opinion.Composer
   ) where
 
 
-import String
-import Char
 import Html exposing (Html, input, div, textarea, text, h3, button)
 import Html.Attributes exposing (class, placeholder, value)
-import Html.Events exposing (on, targetValue)
 import Effects exposing (Effects)
-import Json.Decode as Json exposing ((:=))
-import Markdown
 
 
 import Opinion.Model as Opinion

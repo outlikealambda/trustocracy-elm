@@ -1,7 +1,7 @@
 module Neighbor (Model, view, decoder) where
 
-import User
-import Relationship
+import User exposing (User)
+import Common.Relationship as Relationship
 
 import Html exposing (Html, div, span, text)
 import Html.Attributes exposing (class)
@@ -9,7 +9,7 @@ import Json.Decode as Json exposing((:=))
 
 
 type alias Model = {
-  user: User.Model,
+  user: User,
   relationship: Relationship.Model
 }
 
