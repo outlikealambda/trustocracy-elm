@@ -18,7 +18,7 @@ import Topic.Model exposing (Topic)
 import Topic.View
 import ActiveUser exposing (ActiveUser(LoggedIn, LoggedOut))
 import Login
-import Navigate
+import Header
 
 
 import Routes exposing (Route)
@@ -190,7 +190,7 @@ view : Signal.Address Action -> Model -> Html
 view address model =
 
   div [ class "world container" ]
-    [ Navigate.view model.session.user
+    [ Header.view model.session.user
     , div
       [ class "content" ]
       [ case TransitRouter.getRoute model of
