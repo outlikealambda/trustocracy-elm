@@ -11,6 +11,7 @@ import Html exposing (Html, input, div, node, h1, text)
 import Effects exposing (Effects)
 import Html.Attributes exposing (class, rel, href, placeholder, value, style)
 import Task
+import String
 
 
 import Session exposing (Session)
@@ -19,6 +20,7 @@ import Topic.View
 import ActiveUser exposing (ActiveUser(LoggedIn, LoggedOut))
 import Login
 import Header
+import User exposing (User)
 
 
 import Routes exposing (Route)
@@ -36,44 +38,45 @@ type alias Model = TransitRouter.WithRoute Routes.Route
 type Action
   = LoginMsg Login.Action
   | LoginSuccess
+  | LogoutSuccess
+  | SetUser ActiveUser
   | SessionMsg Session.Action
   | TopicsLoad (List Topic)
   | RouterAction (TransitRouter.Action Routes.Route)
-  | LoadUserState ActiveUser
-  | NoOp
+  | SNoOp String
 
 
 actions : Signal Action
 actions =
   -- use mergeMany if you have other mailboxes or signals to feed into StartApp
   Signal.merge
-    (Signal.map LoadUserState ActiveUser.updates)
     (Signal.map RouterAction TransitRouter.actions)
+    (Signal.map SetUser ActiveUser.signal)
 
 
 mountRoute : Route -> Route -> Model -> (Model, Effects Action)
-mountRoute prevRoute route model =
+mountRoute prevRoute route world =
   case route of
 
     Routes.Home ->
-      ( model, Effects.none )
+      ( world, Effects.none )
 
     Routes.Compose topicId ->
-      ( model
+      ( world
       -- since User and Topic live inside Session, we handle a topic update
       -- by updating the Session
       , updateSession <| Session.GoCompose topicId
       )
 
     Routes.Connect topicId ->
-      ( model
+      ( world
       , updateSession <| Session.GoConnect topicId
       )
 
     -- map to [] if fail, since this will probably be the
     -- home page and we don't want to continually redirect
     Routes.Topics ->
-      ( model
+      ( world
       , Topic.Model.fetchAll
         |> Task.toMaybe
         |> Task.map (Maybe.withDefault [])
@@ -82,7 +85,7 @@ mountRoute prevRoute route model =
       )
 
     Routes.EmptyRoute ->
-      ( model, Effects.none )
+      ( world, Effects.none )
 
 
 routerConfig : TransitRouter.Config Route Action Model
@@ -97,11 +100,11 @@ routerConfig =
 init : String -> ActiveUser -> (Model, Effects Action)
 init path activeUser =
   let
-    (model, fx) =
+    (world, fx) =
       TransitRouter.init routerConfig path initialModel
 
   in
-    ( model
+    ( world
     , Effects.batch
       [ fx
       , updateSession <| Session.SetUser (ActiveUser.toUser activeUser)])
@@ -117,66 +120,86 @@ initialModel =
 
 
 update : Action -> Model -> (Model, Effects Action)
-update message model =
+update message world =
   case message of
     SessionMsg sessionAction ->
       let
         (update, updateFx) =
-          Session.update sessionAction model.session
+          Session.update sessionAction world.session
       in
-        ( { model | session = update }
+        ( { world | session = update }
         , Effects.map SessionMsg updateFx
         )
 
     LoginMsg msg ->
       let
-        (loginModel, fx) =
+        (update, updateFx) =
           Login.update
             { next = LoginMsg , complete = (\_ -> LoginSuccess) }
             (Debug.log "Login msg" msg)
-            model.login
+            world.login
       in
-        ( { model | login = loginModel }
-        , fx -- the Login module uses the context to create a World.Action
+        ( { world | login = update }
+        , updateFx -- the Login module uses the context to create a World.Action
         )
 
     LoginSuccess ->
-        ( model
-        , Effects.batch
-          [ goHome
-          , Signal.send ActiveUser.save (Login.getUser model.login)
-            |> Effects.task
-            |> Effects.map (\_ -> NoOp)
-          ]
+        ( world
+        , addUser <| Login.getUser world.login
+        )
+
+    LogoutSuccess ->
+        ( world
+        , clearUser
         )
 
     RouterAction routeAction ->
-      TransitRouter.update routerConfig routeAction model
+      TransitRouter.update routerConfig routeAction world
 
     TopicsLoad topics ->
-      ( { model | topics = topics }
+      ( { world | topics = topics }
       , Effects.none )
 
-    NoOp ->
-      ( model
-      , Effects.none
-      )
+    SNoOp str ->
+      let
+        _ = Debug.log "SNoOp" str
+      in
+        ( world
+        , Effects.none
+        )
 
-    LoadUserState activeUser ->
+    SetUser activeUser ->
       case activeUser of
-
         LoggedIn user ->
-          ( model
-          , updateSession <| Session.SetUser user
+          ( world
+          , Effects.batch
+            [ updateSession <| Session.SetUser user
+            , goHome
+            ]
           )
 
         LoggedOut ->
-          ( model
+          ( world
           , Effects.batch
             [ updateSession <| Session.ClearUser
             , goHome
             ]
           )
+
+
+addUser : User -> Effects Action
+addUser user =
+  Signal.send ActiveUser.save user
+    |> Effects.task
+    |> Effects.map (\_ -> SNoOp "added user")
+
+
+clearUser : Effects Action
+clearUser =
+  Signal.send ActiveUser.clear ()
+    |> Effects.task
+    |> Effects.map (\_ -> SNoOp "cleared user")
+
 
 
 updateSession : Session.Action -> Effects Action
@@ -187,29 +210,29 @@ updateSession sessionAction =
 
 
 view : Signal.Address Action -> Model -> Html
-view address model =
+view address world =
 
   div [ class "world container" ]
-    [ Header.view model.session.user
+    [ Header.view world.session.user
     , div
       [ class "content" ]
-      [ case TransitRouter.getRoute model of
+      [ case TransitRouter.getRoute world of
 
         Routes.Topics ->
           div
-            [ style (TransitStyle.fadeSlideLeft 1000 (TransitRouter.getTransition model)) ]
-            [ Topic.View.viewAll model.topics ]
+            [ style (TransitStyle.fadeSlideLeft 1000 (TransitRouter.getTransition world)) ]
+            [ Topic.View.viewAll world.topics ]
 
         Routes.Home ->
           div []
-            [ Login.view (Signal.forwardTo address LoginMsg) model.login ]
+            [ Login.view (Signal.forwardTo address LoginMsg) world.login ]
 
         Routes.Connect _ ->
           Session.view (Signal.forwardTo address SessionMsg)
-            <| model.session
+            <| world.session
 
         Routes.Compose _ ->
-          Session.view (Signal.forwardTo address SessionMsg) model.session
+          Session.view (Signal.forwardTo address SessionMsg) world.session
 
         Routes.EmptyRoute ->
           text ""
@@ -219,4 +242,4 @@ view address model =
 
 goHome : Effects Action
 goHome =
-  Effects.map (\_ -> NoOp) (Routes.redirect Routes.Topics)
+  Effects.map (\_ -> SNoOp "going home") (Routes.redirect Routes.Topics)

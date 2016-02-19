@@ -34,4 +34,4 @@ port tasks =
 
 port saveActiveUser : Signal (Maybe User)
 port saveActiveUser =
-  Signal.map ActiveUser.toMaybe ActiveUser.updates
+  Signal.map ActiveUser.toMaybe ActiveUser.signal

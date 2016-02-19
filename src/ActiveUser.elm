@@ -1,8 +1,11 @@
 module ActiveUser
-    ( ActiveUser(LoggedIn, LoggedOut)
+    ( ActiveUser
+      ( LoggedIn
+      , LoggedOut
+      )
     , save
     , clear
-    , updates
+    , signal
     , toMaybe
     , fromMaybe
     , toUser
@@ -20,43 +23,24 @@ type ActiveUser
   | LoggedIn User
 
 
-type Action
-  = NoOp
-  | SaveActiveUser User
-  | ClearActiveUser
-
-
-mailbox : Mailbox Action
+mailbox : Mailbox ActiveUser
 mailbox =
-  Signal.mailbox NoOp
+  Signal.mailbox LoggedOut
 
 
 clear : Address ()
 clear =
-  Signal.forwardTo mailbox.address (\_ -> ClearActiveUser)
+  Signal.forwardTo mailbox.address (\_ -> LoggedOut)
 
 
 save : Address User
 save =
-  Signal.forwardTo mailbox.address SaveActiveUser
+  Signal.forwardTo mailbox.address LoggedIn
 
 
-updates : Signal ActiveUser
-updates =
-  let
-    extractActiveUser : Action -> Maybe ActiveUser
-    extractActiveUser action =
-      case (Debug.log "activeUser signal" action) of
-        SaveActiveUser user ->
-          Just (LoggedIn user)
-
-        ClearActiveUser ->
-          Just LoggedOut
-
-        _ ->
-          Nothing
-  in
-    Signal.filterMap extractActiveUser LoggedOut mailbox.signal
+signal : Signal ActiveUser
+signal =
+  mailbox.signal
 
 
 toMaybe : ActiveUser -> Maybe User
@@ -78,10 +62,12 @@ fromMaybe maybeUser =
     Just user ->
       LoggedIn user
 
+
 toUser : ActiveUser -> User
-toUser maybeActive =
-  case maybeActive of
+toUser activeUser =
+  case activeUser of
     LoggedIn user ->
       user
+
     LoggedOut ->
       User.empty
