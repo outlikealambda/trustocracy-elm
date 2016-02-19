@@ -174,9 +174,16 @@ textarea.write {
   width: 100%;
   background: pink;
 
-  .user {
+  .user, .login, .logout {
     float: right;
+    margin-right: 8px;
   }
+
+  .home {
+    float: left;
+    margin-left: 8px;
+  }
+
 }
 
 .world {
@@ -198,5 +205,26 @@ textarea.write {
   &:hover {
     background-color: $primary-color;
     cursor: pointer;
+  }
+}
+
+.login-form {
+  position: fixed;
+  top: -1500px;
+  width: 100%;
+  height: 100%;
+  background: orange;
+  transition: top .5s;
+
+  z-index: 10;
+
+  &.visible {
+    top: 0px;
+  }
+
+  > div {
+    margin: auto;
+    margin-top: 10em;
+    max-width: 500px;
   }
 }

@@ -1,6 +1,7 @@
 module Login
   ( Model
   , Action
+    ( Show )
   , Context
   , init
   , update
@@ -26,6 +27,7 @@ type alias Model =
   { user : User
   , message : String
   , input : InputId
+  , visible : Bool
   }
 
 
@@ -34,6 +36,7 @@ init =
   { user = User.empty
   , message = "Welcome, please enter your user id"
   , input = Empty
+  , visible = False
   }
 
 
@@ -45,6 +48,7 @@ type InputId
 type Action
   = UpdateInput String
   | ValidateUser (Maybe User)
+  | Show
   | LoadUser
   | NoOp
 
@@ -107,12 +111,20 @@ update context message model =
           )
 
         Just user ->
-          ( { model | user = user }
+          ( { model
+            | user = user
+            , visible = False
+            }
           , NoOp
             |> Task.succeed
             |> Effects.task
             |> Effects.map context.complete
           )
+
+    Show ->
+      ( { model | visible = Debug.log "setting visible to True" True }
+      , Effects.none )
+
     NoOp ->
       ( model
       , Effects.none
@@ -121,21 +133,28 @@ update context message model =
 
 view : Signal.Address Action -> Model -> Html
 view address model =
-  let currentInput =
-    case model.input of
-      Empty -> ""
-      UserId userId -> toString userId
+  let
+    currentInput =
+      case model.input of
+        Empty -> ""
+        UserId userId -> toString userId
+    toggleClass =
+      if model.visible then "login-form visible" else "login-form"
+
   in
-    div []
-      [ h2 [] [ text <| "Login" ]
-      , text <| "Eventually this will be a login; for now just input the id of the user you'd like to impersonate"
-      , div []
-        [ input
-          [ placeholder "User Id"
-          , value <| currentInput
-          , on "input" targetValue (Signal.message address << UpdateInput)
-          , onEnter address LoadUser
-          ] []
+    div
+      [ class toggleClass ]
+      [ div []
+        [ h2 [] [ text <| "Login" ]
+        , text <| "Eventually this will be a login; for now just input the id of the user you'd like to impersonate"
+        , div []
+          [ input
+            [ placeholder "User Id"
+            , value <| currentInput
+            , on "input" targetValue (Signal.message address << UpdateInput)
+            , onEnter address LoadUser
+            ] []
+          ]
         ]
       ]
 

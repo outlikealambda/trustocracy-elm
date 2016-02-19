@@ -38,7 +38,7 @@ type alias Model = TransitRouter.WithRoute Routes.Route
 type Action
   = LoginMsg Login.Action
   | LoginSuccess
-  | LogoutSuccess
+  | Logout
   | SetUser ActiveUser
   | SessionMsg Session.Action
   | TopicsLoad (List Topic)
@@ -148,7 +148,7 @@ update message world =
         , addUser <| Login.getUser world.login
         )
 
-    LogoutSuccess ->
+    Logout ->
         ( world
         , clearUser
         )
@@ -211,33 +211,43 @@ updateSession sessionAction =
 
 view : Signal.Address Action -> Model -> Html
 view address world =
+  let
+    headerContext =
+      Header.Context
+        (Signal.forwardTo address (\_ -> Logout))
+        (Signal.forwardTo address (\_ -> LoginMsg Login.Show))
 
-  div [ class "world container" ]
-    [ Header.view world.session.user
-    , div
-      [ class "content" ]
-      [ case TransitRouter.getRoute world of
+  in
+    div []
+      [ Login.view (Signal.forwardTo address LoginMsg) world.login
+      , Header.view headerContext world.session.user
+      , div [ class "world container" ]
+        [ div
+          [ class "content" ]
+          [ case TransitRouter.getRoute world of
 
-        Routes.Topics ->
-          div
-            [ style (TransitStyle.fadeSlideLeft 1000 (TransitRouter.getTransition world)) ]
-            [ Topic.View.viewAll world.topics ]
+            Routes.Topics ->
+              div
+                []
+                [ Topic.View.viewAll world.topics ]
 
-        Routes.Home ->
-          div []
-            [ Login.view (Signal.forwardTo address LoginMsg) world.login ]
+            Routes.Home ->
+              div
+                []
+                [ Topic.View.viewAll world.topics ]
 
-        Routes.Connect _ ->
-          Session.view (Signal.forwardTo address SessionMsg)
-            <| world.session
+            Routes.Connect _ ->
+              Session.view (Signal.forwardTo address SessionMsg)
+                <| world.session
 
-        Routes.Compose _ ->
-          Session.view (Signal.forwardTo address SessionMsg) world.session
+            Routes.Compose _ ->
+              Session.view (Signal.forwardTo address SessionMsg) world.session
 
-        Routes.EmptyRoute ->
-          text ""
+            Routes.EmptyRoute ->
+              text ""
+          ]
+        ]
       ]
-    ]
 
 
 goHome : Effects Action
