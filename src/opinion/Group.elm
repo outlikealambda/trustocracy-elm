@@ -125,7 +125,7 @@ viewByOpinion address opg =
             if opg.expanded then "expanded" else "collapsed"
 
         in
-          div [class "opg col m12 l6"]
+          div [class "opg col s12 "]
             [ div [class ("t-card " ++ toggleClass)]
               [ div
                 [ class "t-card-title toggles "

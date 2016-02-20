@@ -15,6 +15,6 @@ view relationship =
 getCircleType : Model -> String
 getCircleType relationship =
   case relationship of
-    "TRUSTS_EXPLICITLY" -> "circle-explicit light-green accent-4"
-    "TRUSTS" -> "circle-regular orange accent-2"
+    "TRUSTS_EXPLICITLY" -> "circle-explicit"
+    "TRUSTS" -> "circle-regular"
     _ -> "circle-unknown"

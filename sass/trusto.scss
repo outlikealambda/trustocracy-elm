@@ -82,17 +82,19 @@ h1, h2, h3, h4 {
 }
 
 .circle-explicit {
-  height: 1.2rem;
-  width: 1.2rem;
-  border-radius: 0.7rem;
-  margin: .6rem .3rem;
+  height: 2.4rem;
+  width: 2.4rem;
+  border-radius: 1.2rem;
+  margin: 0rem .2rem;
+  background: green;
 }
 
 .circle-regular {
-  height: 1rem;
-  width: 1rem;
-  border-radius: 0.6rem;
-  margin: .7rem .4rem;
+  height: 1.4rem;
+  width: 1.4rem;
+  border-radius: 0.8rem;
+  margin: .5rem 0.7rem;
+  background: orange;
 }
 
 .op > span {
@@ -100,7 +102,7 @@ h1, h2, h3, h4 {
 }
 
 .op .friend {
-  min-width: 200px;
+  min-width: 240px;
 }
 
 .op .path-count {
@@ -236,6 +238,9 @@ textarea.write {
     .text {
       transition: margin-top 1s 0.1s;
       margin-top: -200px;
+      max-width: 480px;
+      margin-left: auto;
+      margin-right: auto;
     }
 
     &.fetched .text {
