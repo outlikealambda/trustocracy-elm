@@ -1,7 +1,11 @@
 module Opinion.View
   ( Model
   , init
-  , Action(Expand, Collapse, SetText)
+  , Action
+    ( Expand
+    , Collapse
+    , SetText
+    )
   , view
   , update
   ) where
@@ -10,6 +14,7 @@ import Effects exposing (Effects)
 import Html exposing (Html, div, text, p)
 import Html.Attributes exposing (class)
 import Markdown
+import String
 
 import Opinion.Model as Opinion
 import Opinion.Credentials as Credentials
@@ -55,15 +60,20 @@ update message model =
 
 view : Model -> Html
 view model =
-  let v =
+  let
+    v =
       if model.expanded then
         viewFull model
       else
         viewSnippet model
-      creds =
-        Credentials.view model.credentials
+    creds =
+      Credentials.view model.credentials
+    fetched =
+      if model.fetched then "fetched" else ""
+
   in
-      div [ class "opinion" ]
+      div
+        [ class <| String.join " " ["opinion", fetched] ]
         [ creds
         , v
         ]

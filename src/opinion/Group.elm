@@ -45,7 +45,11 @@ init key opaths =
       ( opinion, fx ) =
         View.init opinionId
   in
-      ( Model key False sorted opinion
+      ( { groupId = key
+        , expanded = False
+        , paths = sorted
+        , opinion = opinion
+        }
       , Effects.map OpinionMsg fx
       )
 

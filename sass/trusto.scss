@@ -228,3 +228,18 @@ textarea.write {
     max-width: 500px;
   }
 }
+
+.opg {
+  .opinion {
+    overflow: hidden;
+
+    .text {
+      transition: margin-top 1s 0.1s;
+      margin-top: -200px;
+    }
+
+    &.fetched .text {
+      margin-top: 0px;
+    }
+  }
+}

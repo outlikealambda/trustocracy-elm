@@ -59,7 +59,13 @@ mountRoute prevRoute route world =
   case route of
 
     Routes.Home ->
-      ( world, Effects.none )
+      ( world
+      , Topic.Model.fetchAll
+        |> Task.toMaybe
+        |> Task.map (Maybe.withDefault [])
+        |> Task.map TopicsLoad
+        |> Effects.task
+      )
 
     Routes.Compose topicId ->
       ( world

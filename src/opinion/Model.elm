@@ -25,6 +25,7 @@ type alias Model =
   , text : String
   , snippet : String
   , credentials : Credentials.Model
+  , fetched : Bool
   }
 
 
@@ -35,11 +36,20 @@ fromApi oid text =
   , text = text
   , snippet = snippetize 200 text
   , credentials = Credentials.init
+  , fetched = True
   }
+
 
 empty : Model
 empty =
-  Model -1 False "" "" Credentials.init
+  { oid = -1
+  , expanded = False
+  , text = ""
+  , snippet = ""
+  , credentials = Credentials.init
+  , fetched = False
+  }
+
 
 setExpanded : Model -> Model
 setExpanded m =
