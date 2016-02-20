@@ -1,5 +1,5 @@
 module Opinion.Group
-  ( Model
+  ( Group
   , Action
   , initGroups
   , view
@@ -20,11 +20,12 @@ import Html.Events exposing (onClick)
 import Dict
 
 
-type alias Model =
+type alias Group =
   { groupId : Int
   , expanded : Bool
   , paths : List Path.Model
   , opinion : View.Model
+  , shortestPath : Int
   }
 
 
@@ -36,32 +37,37 @@ type Action
 
 -- create OPG using a List of OpinionPaths
 -- grab the opiner from the paths
-init : Int -> List Path.Model -> (Model, Effects Action)
+init : Int -> List Path.Model -> (Group, Effects Action)
 init key opaths =
-  let sorted =
-        List.sortBy .score opaths
-      opinionId =
-        Path.getOpinionId opaths
-      ( opinion, fx ) =
-        View.init opinionId
+  let
+    sorted =
+      List.sortBy Path.getLength opaths
+    opinionId =
+      Path.getOpinionId opaths
+    ( opinion, fx ) =
+      View.init opinionId
   in
-      ( { groupId = key
-        , expanded = False
-        , paths = sorted
-        , opinion = opinion
-        }
-      , Effects.map OpinionMsg fx
-      )
+    ( { groupId = key
+      , expanded = False
+      , paths = sorted
+      , opinion = opinion
+      , shortestPath =
+        List.map Path.getLength sorted
+        |> List.minimum
+        |> Maybe.withDefault 0
+      }
+    , Effects.map OpinionMsg fx
+    )
 
 
-initGroups : List Path.Model -> List (Model, Effects Action)
+initGroups : List Path.Model -> List (Group, Effects Action)
 initGroups allPaths =
   bucketList .opinionId allPaths Dict.empty
     |> Dict.map init
     |> Dict.values
 
 
-update : Action -> Model -> (Model, Effects Action)
+update : Action -> Group -> (Group, Effects Action)
 update message model =
   case message of
     Expand ->
@@ -87,11 +93,11 @@ update message model =
         )
 
 
-view : Signal.Address Action -> Model -> Html
+view : Signal.Address Action -> Group -> Html
 view = viewByOpinion
 
 
-viewByOpinion : Signal.Address Action -> Model -> Html
+viewByOpinion : Signal.Address Action -> Group -> Html
 viewByOpinion address opg =
   let
     header =
@@ -157,7 +163,7 @@ safeGetList : comparable -> Dict.Dict comparable (List a) -> List a
 safeGetList key dict = Maybe.withDefault [] (Dict.get key dict)
 
 -- doesn't handle repeat group ids
-toDict : List Model -> Dict.Dict Int Model
+toDict : List Group -> Dict.Dict Int Group
 toDict groups =
   groups
    |> List.map (\group -> (group.groupId, group))

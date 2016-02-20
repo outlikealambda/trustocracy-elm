@@ -6,6 +6,7 @@ module Opinion.Path
   , viewOpiner
   , decoder
   , getOpinionId
+  , getLength
   ) where
 
 
@@ -78,3 +79,7 @@ getOpinionId paths =
   case List.head paths of
     Nothing -> -1
     Just {opinionId} -> opinionId
+
+
+getLength : Model -> Int
+getLength = List.length << .path

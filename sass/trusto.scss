@@ -248,3 +248,13 @@ textarea.write {
     }
   }
 }
+
+.group-section-header {
+  color: $primary-color-dark;
+  margin-left: 16px;
+  margin-top: 16px;
+}
+
+.topic-title {
+  text-transform: capitalize;
+}

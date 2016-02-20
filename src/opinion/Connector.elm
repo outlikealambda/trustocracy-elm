@@ -9,13 +9,14 @@ module Opinion.Connector
 
 import Effects exposing (Effects)
 import Task
-import Html exposing (Html, div)
+import Html exposing (Html, div, text, h4)
+import Html.Attributes exposing (class)
 import Json.Decode as Json exposing ((:=))
 import Dict
 import String
 import Http
 
-import Opinion.Group as Group
+import Opinion.Group as Group exposing (Group)
 import Opinion.Path as Path
 import User exposing (User)
 import Topic.Model exposing (Topic)
@@ -27,7 +28,8 @@ type alias Paths = List Path.Model
 
 type alias Model =
   { rawPaths : Paths
-  , buckets : Dict.Dict Key Group.Model -- opinion paths bucketed by key
+  , buckets : Dict.Dict Key Group-- opinion paths bucketed by key
+  , longestGroupPath : Int
   }
 
 
@@ -37,12 +39,16 @@ type Action
 
 
 empty : Model
-empty = Model [] Dict.empty
+empty =
+  { rawPaths = []
+  , buckets = Dict.empty
+  , longestGroupPath = 0
+  }
 
 
 init : User -> Topic -> (Model, Effects Action)
 init user topic =
-  ( Model [] Dict.empty
+  ( empty
   , getConnectedOpinions topic user
   )
 
@@ -67,6 +73,11 @@ update message model =
             ( { model
               | rawPaths = opaths
               , buckets = buckets
+              , longestGroupPath =
+                Dict.values buckets
+                |> List.map .shortestPath
+                |> List.maximum
+                |> Maybe.withDefault 0
               }
             , Effects.batch fxs
             )
@@ -117,11 +128,59 @@ buildConnectedOpinionsUrl tid uid =
 
 
 view : Signal.Address Action -> Model -> List Html
-view address nops =
-  Dict.toList nops.buckets
-    |> List.map (viewGroup address)
+view address {buckets, longestGroupPath} =
+  let
+    sectionCreators =
+      List.map (viewGroupSection address) [0..longestGroupPath]
+    maybeSections =
+      -- mapping a value (here, a list) over a list of functions is a little
+      -- bit tricky
+      List.map ((|>) (Dict.toList buckets)) sectionCreators
+    sections =
+      List.filterMap identity maybeSections
+  in
+    sections
 
 
-viewGroup : Signal.Address Action -> (Key, Group.Model) -> Html
+viewGroupSection : Signal.Address Action -> Int -> List (Key, Group) -> Maybe Html
+viewGroupSection address pathLength keyGroups =
+  let
+    groupDivs =
+      groupsOfLength pathLength keyGroups
+        |> List.map (viewGroup address)
+    header =
+      h4
+        [ class "group-section-header" ]
+        [ text <| (degreeLabel pathLength) ++ " connections"]
+    section =
+      div
+        [ class "group-section" ]
+        (header :: groupDivs)
+  in
+    case groupDivs of
+      [] ->
+        Nothing
+      divs ->
+        Just section
+
+
+viewGroup : Signal.Address Action -> (Key, Group) -> Html
 viewGroup address (key, opg) =
   Group.view (Signal.forwardTo address (OpgMsg key)) opg
+
+
+groupsOfLength : Int -> List (Key, Group) -> List (Key, Group)
+groupsOfLength pathLength groups =
+  List.filter
+    (\keyGroup -> pathLength == (.shortestPath <| snd keyGroup))
+    groups
+
+
+degreeLabel : Int -> String
+degreeLabel n =
+  case n of
+    0 -> "Direct"
+    1 -> "1st degree"
+    2 -> "2nd degree"
+    3 -> "3rd degree"
+    k -> (toString k) ++ "th degree"
