@@ -4,8 +4,14 @@
 @import "markdown";
 @import "t-form";
 @import "t-button";
+@import "t-help";
 
-$header-font: 'Merriweather';
+$header-font: "EB Garamond";
+
+html {
+  font-family: "EB Garamond", serif;
+  line-height: 1.5;
+}
 
 .cf:before,
 .cf:after {
@@ -29,7 +35,7 @@ html {
 }
 
 body {
-  background: #fafafa;
+  background: #fff;
   font-size: 1.6rem;
 }
 h1, h2, h3, h4 {
@@ -45,34 +51,33 @@ h1, h2, h3, h4 {
 
 
 .t-card-title {
-  font-size: 1.8rem;
+  font-size: 2.4rem;
   line-height: 2.4rem;
   padding: 20px;
 
   font-family: $header-font;
 
-  background-color: $primary-color;
+  background-color: $primary-color-light;
   color: $text-color;
 
 }
 
 .t-card-title:hover {
-  background-color: $primary-color-light;
+  background-color: $primary-color;
 }
 
 .subtitle {
-  font-size: 1.6rem;
-  line-height: 2.2rem;
+  font-size: 2.1rem;
+  line-height: 2.6rem;
   font-family: $header-font;
-  padding-bottom: 16px;
+  padding-bottom: 3.2rem;
 
-  border-bottom: 1px solid #ccc;
-
-  color: $text-color;
+  color: $text-color-lighter;
 }
 
 .t-card-body {
-  padding: 20px;
+  padding: 3.2rem;
+  padding-bottom: 0;
   border-top: 1px solid rgba(160, 160, 160, 0.2);
   font-size: 1.6rem;
 }
@@ -238,9 +243,17 @@ textarea.write {
     .text {
       transition: margin-top 1s 0.1s;
       margin-top: -200px;
-      max-width: 480px;
       margin-left: auto;
       margin-right: auto;
+      font-size: 2.1rem;
+      line-height: 2.8rem;
+      font-weight: 400;
+      color: #444;
+
+      p {
+        margin-top: 0;
+        margin-bottom:3.2rem;
+      }
     }
 
     &.fetched .text {
@@ -249,12 +262,23 @@ textarea.write {
   }
 }
 
+.group-section {
+  margin-bottom: 3.2rem;
+}
+
 .group-section-header {
   color: $primary-color-dark;
-  margin-left: 16px;
-  margin-top: 16px;
+  margin-top: 3.2rem;
+  font-family: 'EB Garamond SC';
+  font-size: 3.0rem;
 }
 
 .topic-title {
   text-transform: capitalize;
+  font-size: 5.2rem;
+}
+
+.content {
+  max-width: 640px;
+  margin: auto;
 }

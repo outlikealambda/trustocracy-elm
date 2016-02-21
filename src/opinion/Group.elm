@@ -131,18 +131,18 @@ viewByOpinion address opg =
             if opg.expanded then "expanded" else "collapsed"
 
         in
-          div [class "opg col s12 "]
-            [ div [class ("t-card " ++ toggleClass)]
-              [ div
-                [ class "t-card-title toggles "
-                , onClick address clickAction ]
-                (opgHeader :: others)
-              , div [class "t-card-body"]
-                [ opiner
-                , View.view opg.opinion
-                ]
+          div
+            [ class ("opg t-card " ++ toggleClass) ]
+            [ div
+              [ class "t-card-title toggles "
+              , onClick address clickAction ]
+              (opgHeader :: others)
+            , div [class "t-card-body"]
+              [ opiner
+              , View.view opg.opinion
               ]
             ]
+
 
 
 bucketList : (a -> comparable) -> List a -> Dict.Dict comparable (List a) -> Dict.Dict comparable (List a)

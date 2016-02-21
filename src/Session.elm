@@ -18,7 +18,7 @@ import Opinion.Connector as Connector
 import Opinion.Composer as Composer
 
 
-import Html exposing (Html, div, h3, text)
+import Html exposing (Html, div, h1, text)
 import Html.Attributes exposing (class)
 import Effects exposing (Effects)
 
@@ -153,7 +153,7 @@ view : Signal.Address Action -> Session -> Html
 view address session =
   let
     header =
-      h3 [ class "topic-title" ] [ text session.topic.text ]
+      h1 [ class "topic-title" ] [ text session.topic.text ]
     content =
       case session.currentView of
         Empty ->
