@@ -11,9 +11,6 @@
 
 }
 
-
-
-
 @font-face {
     font-family: 'Merriweather';
     src: url('/fonts/merriweather/merriweather_ultrabold-webfont.eot');
@@ -26,9 +23,6 @@
     font-style: normal;
 
 }
-
-
-
 
 @font-face {
     font-family: 'Merriweather';
@@ -43,9 +37,6 @@
 
 }
 
-
-
-
 @font-face {
     font-family: 'Merriweather';
     src: url('/fonts/merriweather/merriweather-boldit-webfont.eot');
@@ -58,9 +49,6 @@
     font-style: italic;
 
 }
-
-
-
 
 @font-face {
     font-family: 'Merriweather';
@@ -75,9 +63,6 @@
 
 }
 
-
-
-
 @font-face {
     font-family: 'Merriweather';
     src: url('/fonts/merriweather/merriweather-lightit-webfont.eot');
@@ -91,9 +76,6 @@
 
 }
 
-
-
-
 @font-face {
     font-family: 'Merriweather';
     src: url('/fonts/merriweather/merriweather-regular-webfont.eot');
@@ -106,9 +88,6 @@
     font-style: normal;
 
 }
-
-
-
 
 @font-face {
     font-family: 'Merriweather';
@@ -304,9 +283,6 @@
 
 }
 
-
-
-
 @font-face {
     font-family: 'EB Garamond';
     src: url('/fonts/garamond/ebgaramond12-regular-webfont.eot');
@@ -321,7 +297,7 @@
 }
 
 @font-face {
-    font-family: 'EB Garamond SC';
+    font-family: 'EB Garamond 08 SC';
     src: url('/fonts/garamond/ebgaramondsc08-regular-webfont.eot');
     src: url('/fonts/garamond/ebgaramondsc08-regular-webfont.eot?#iefix') format('embedded-opentype'),
          url('/fonts/garamond/ebgaramondsc08-regular-webfont.woff2') format('woff2'),
@@ -331,4 +307,16 @@
     font-weight: normal;
     font-style: normal;
 
+}
+
+@font-face {
+    font-family: 'EB Garamond 12 SC';
+    src: url('/fonts/garamond/ebgaramondsc12-regular-webfont.eot');
+    src: url('/fonts/garamond/ebgaramondsc12-regular-webfont.eot?#iefix') format('embedded-opentype'),
+         url('/fonts/garamond/ebgaramondsc12-regular-webfont.woff2') format('woff2'),
+         url('/fonts/garamond/ebgaramondsc12-regular-webfont.woff') format('woff'),
+         url('/fonts/garamond/ebgaramondsc12-regular-webfont.ttf') format('truetype'),
+         url('/fonts/garamond/ebgaramondsc12-regular-webfont.svg#eb_garamond_sc08_regular') format('svg');
+    font-weight: normal;
+    font-style: normal;
 }
