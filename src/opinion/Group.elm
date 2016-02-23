@@ -8,6 +8,7 @@ module Opinion.Group
   ) where
 
 
+import Opinion.Model as Opinion
 import Opinion.View as View
 import Opinion.Path as Path
 
@@ -122,7 +123,21 @@ viewByOpinion address opg =
             List.map Path.viewAbbreviated remainder
 
           opiner =
-            Path.viewOpiner h
+            div
+              [ class "opinion-header cf" ]
+              [ div
+                [ class "opiner" ]
+                [ text <| Path.getOpinerName h ]
+              , div
+                [ class "numbered-badge influence" ]
+                [ span
+                  [ class "numbered-count" ]
+                  [ text <| toString <| Opinion.getInfluence opg.opinion ]
+                , span
+                  [ class "numbered-label" ]
+                  [ text "influenced people" ]
+                ]
+              ]
 
           clickAction =
             if opg.expanded then Collapse else Expand
@@ -134,15 +149,14 @@ viewByOpinion address opg =
           div
             [ class ("opg t-card " ++ toggleClass) ]
             [ div
-              [ class "t-card-title toggles "
+              [ class "t-card-title toggles"
               , onClick address clickAction ]
-              (opgHeader :: others)
+              ( opgHeader :: others )
             , div [class "t-card-body"]
               [ opiner
               , View.view opg.opinion
               ]
             ]
-
 
 
 bucketList : (a -> comparable) -> List a -> Dict.Dict comparable (List a) -> Dict.Dict comparable (List a)
@@ -161,6 +175,7 @@ bucketListItem key v dict =
 
 safeGetList : comparable -> Dict.Dict comparable (List a) -> List a
 safeGetList key dict = Maybe.withDefault [] (Dict.get key dict)
+
 
 -- doesn't handle repeat group ids
 toDict : List Group -> Dict.Dict Int Group

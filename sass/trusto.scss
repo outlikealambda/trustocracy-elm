@@ -53,7 +53,7 @@ h1, h2, h3, h4 {
 .t-card-title {
   font-size: 2.4rem;
   line-height: 2.4rem;
-  padding: 20px;
+  padding: 2.0rem 3.2rem;
 
   font-family: $header-font;
 
@@ -67,19 +67,18 @@ h1, h2, h3, h4 {
 }
 
 .subtitle {
-  font-size: 2.1rem;
-  line-height: 2.6rem;
+  font-size: 2.4rem;
+  line-height: 2.4rem;
   font-family: $header-font;
   padding-bottom: 3.2rem;
 
-  color: $text-color-lighter;
+  color: $text-color;
 }
 
 .t-card-body {
   padding: 3.2rem;
   padding-bottom: 0;
   border-top: 1px solid rgba(160, 160, 160, 0.2);
-  font-size: 1.6rem;
 }
 
 .toggles {
@@ -102,7 +101,7 @@ h1, h2, h3, h4 {
   background: orange;
 }
 
-.op > span {
+.op > div {
   float: left;
 }
 
@@ -110,8 +109,39 @@ h1, h2, h3, h4 {
   min-width: 240px;
 }
 
+.numbered-badge {
+  font-family: 'Roboto';
+  overflow: hidden;
+  font-size: 1.4rem;
+  line-height: 2.4rem;
+  border-radius: 1.2rem;
+  padding-left: 1.2rem;
+  padding-right: 1.2rem;
+
+  .numbered-label {
+    margin-right: -30rem;
+    margin-left: 1.2rem;
+    transition: margin-right 0.3s, margin-left 0.3s;
+  }
+
+  &:hover .numbered-label {
+    margin-right: 0rem;
+    margin-left: 0.6rem;
+  }
+
+  > span {
+    float : left;
+  }
+}
+
 .op .path-count {
   float: right;
+  background: lightskyblue;
+}
+
+.opinion-header .influence {
+  float: right;
+  background-color: plum;
 }
 
 .expanded .op {
@@ -248,7 +278,7 @@ textarea.write {
       font-size: 2.1rem;
       line-height: 2.8rem;
       font-weight: 400;
-      color: #444;
+      color: $text-color;
 
       p {
         margin-top: 0;
@@ -260,6 +290,17 @@ textarea.write {
       margin-top: 0px;
     }
   }
+
+  .opinion-header {
+    margin-bottom: 3.2rem;
+
+    .opiner {
+      float: left;
+      font-size: 2.4rem;
+      line-height: 2.4rem;
+    }
+
+  }
 }
 
 .group-section {
@@ -269,7 +310,8 @@ textarea.write {
 .group-section-header {
   color: $primary-color-dark;
   margin-top: 3.2rem;
-  font-family: 'EB Garamond SC';
+  text-align: center;
+  font-family: 'EB Garamond 12 SC';
   font-size: 3.0rem;
 }
 
@@ -281,4 +323,9 @@ textarea.write {
 .content {
   max-width: 640px;
   margin: auto;
+}
+
+.session-overview {
+  text-align: center;
+  border-bottom: 1px solid #ccc;
 }

@@ -3,8 +3,8 @@ module Opinion.Path
   , view
   , viewAbbreviated
   , viewHeader
-  , viewOpiner
   , decoder
+  , getOpinerName
   , getOpinionId
   , getLength
   ) where
@@ -51,11 +51,20 @@ view op =
 
 viewHeader : Model -> Int -> Html
 viewHeader op count =
-   div [class "opg-header op single-line cf"]
-      [ span [class "op-text friend"] [ text op.friend.name ]
-      , span [class "single-line path"] (List.map Relationship.view op.path)
-      , span [class "path-count"] [text <| toString count]
+   div
+    [ class "opg-header op single-line cf" ]
+    [ div [class "op-text friend"] [ text op.friend.name ]
+    , div [class "single-line path"] (List.map Relationship.view op.path)
+    , div
+      [ class "path-count numbered-badge" ]
+      [ span
+        [ class "numbered-count" ]
+        [ text <| toString count ]
+      , span
+        [ class "numbered-label" ]
+        [ text "other connections" ]
       ]
+    ]
 
 
 viewAbbreviated : Model -> Html
@@ -64,14 +73,13 @@ viewAbbreviated op =
     List.map Relationship.view op.path
   in
     div [class "op single-line cf"]
-      [ span [class "op-text friend"] [text op.friend.name]
-      , span [class "single-line path"] relationships
+      [ div [class "op-text friend"] [text op.friend.name]
+      , div [class "single-line path"] relationships
       ]
 
 
-viewOpiner : Model -> Html
-viewOpiner op =
-  div [class "opiner subtitle"] [ text op.opiner.name ]
+getOpinerName : Model -> String
+getOpinerName = .opiner >> .name
 
 
 getOpinionId : List Model -> Int

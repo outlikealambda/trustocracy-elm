@@ -227,32 +227,25 @@ view address world =
     div []
       [ Login.view (Signal.forwardTo address LoginMsg) world.login
       , Header.view headerContext world.session.user
-      , div [ class "world container" ]
-        [ div
-          [ class "content" ]
-          [ case TransitRouter.getRoute world of
+      , div
+        [ class "world" ]
+        ( case TransitRouter.getRoute world of
 
-            Routes.Topics ->
-              div
-                []
-                [ Topic.View.viewAll world.topics ]
+          Routes.Topics ->
+            [ Topic.View.viewAll world.topics ]
 
-            Routes.Home ->
-              div
-                []
-                [ Topic.View.viewAll world.topics ]
+          Routes.Home ->
+            [ Topic.View.viewAll world.topics ]
 
-            Routes.Connect _ ->
-              Session.view (Signal.forwardTo address SessionMsg)
-                <| world.session
+          Routes.Connect _ ->
+            [ Session.view (Signal.forwardTo address SessionMsg) world.session ]
 
-            Routes.Compose _ ->
-              Session.view (Signal.forwardTo address SessionMsg) world.session
+          Routes.Compose _ ->
+            [ Session.view (Signal.forwardTo address SessionMsg) world.session ]
 
-            Routes.EmptyRoute ->
-              text ""
-          ]
-        ]
+          Routes.EmptyRoute ->
+            [ text "" ]
+        )
       ]
 
 

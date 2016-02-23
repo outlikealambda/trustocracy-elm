@@ -4,6 +4,7 @@ module Opinion.Model
   , decoder
   , setExpanded
   , setText
+  , getInfluence
   , fetch
   , fetchByUserTopic
   ) where
@@ -21,21 +22,23 @@ import Opinion.Credentials as Credentials
 
 type alias Model =
   { oid: Int
-  , expanded: Bool
   , text : String
-  , snippet : String
+  , influence : Int
   , credentials : Credentials.Model
+  , expanded: Bool
+  , snippet : String
   , fetched : Bool
   }
 
 
-fromApi : Int -> String -> Model
-fromApi oid text =
+fromApi : Int -> Int -> String -> Model
+fromApi oid influence text =
   { oid = oid
-  , expanded = False
+  , influence = influence
   , text = text
-  , snippet = snippetize 200 text
   , credentials = Credentials.init
+  , snippet = snippetize 200 text
+  , expanded = False
   , fetched = True
   }
 
@@ -43,10 +46,11 @@ fromApi oid text =
 empty : Model
 empty =
   { oid = -1
-  , expanded = False
+  , influence = 0
   , text = ""
-  , snippet = ""
   , credentials = Credentials.init
+  , expanded = False
+  , snippet = ""
   , fetched = False
   }
 
@@ -58,8 +62,9 @@ setExpanded m =
 
 decoder : Json.Decoder Model
 decoder =
-  Json.object2 fromApi
+  Json.object3 fromApi
     ( "id" := Json.int )
+    ( "influence" := Json.int )
     ( "text" := Json.string )
 
 
@@ -94,6 +99,10 @@ maxValLessThan : Int -> List Int -> Maybe Int
 maxValLessThan maxVal ns =
   List.filter ((>) maxVal) ns
     |> List.maximum
+
+
+getInfluence : Model -> Int
+getInfluence = .influence
 
 
 fetch : Int -> Effects Model

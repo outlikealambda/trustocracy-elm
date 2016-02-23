@@ -153,14 +153,18 @@ view : Signal.Address Action -> Session -> Html
 view address session =
   let
     header =
-      h1 [ class "topic-title" ] [ text session.topic.text ]
+      div
+        [ class "session-overview" ]
+        [ h1 [ class "topic-title" ] [ text session.topic.text ]
+        ]
+
     content =
       case session.currentView of
         Empty ->
           div [] [ text "whoops, why we here?" ]
         Connect ->
           div
-            [ class "row" ]
+            [ class "content" ]
             (Connector.view (Signal.forwardTo address ConnectorMsg) session.connector)
         Compose ->
           Composer.view (Signal.forwardTo address ComposerMsg) session.composer
