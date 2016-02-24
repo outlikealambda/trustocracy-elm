@@ -54,6 +54,12 @@ init user topic =
   )
 
 
+updateWritable : Writable.OnUpdate Composer
+updateWritable =
+  { write = writeText
+  }
+
+
 update : Action -> Composer -> (Composer, Effects Action)
 update action composer =
   case action of
@@ -68,7 +74,7 @@ update action composer =
     WriteMsg message ->
       let
         (update, updateFx) =
-          Writable.update message composer
+          Writable.update message updateWritable composer
       in
         ( update
         , Effects.map WriteMsg updateFx )
@@ -81,7 +87,7 @@ view address composer =
       [ div [ class "t-card" ]
         [ div [ class "t-card-body" ]
           [ div [ class "subtitle" ] [ text "Write" ]
-          , Writable.view (Signal.forwardTo address WriteMsg) composer
+          , Writable.view (Signal.forwardTo address WriteMsg) (.opinion >> .text) composer
           ]
         ]
       ]
@@ -94,3 +100,16 @@ view address composer =
         ]
       ]
     ]
+
+
+-- private
+getOpinion : Composer -> Opinion
+getOpinion = .opinion
+
+
+-- write text to opinion from writable
+writeText : Composer -> String -> Composer
+writeText composer t =
+  { composer
+  | opinion = Opinion.setText (getOpinion composer) t
+  }

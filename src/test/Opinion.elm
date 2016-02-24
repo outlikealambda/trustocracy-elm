@@ -2,6 +2,7 @@ module Test.Opinion
   ( Opinion
   , empty
   , setText
+  , fetchById
   , fetchByUserTopic
   ) where
 
@@ -10,6 +11,7 @@ import Http
 import Task
 import String
 import Json.Decode as Json exposing ((:=))
+
 
 type alias Opinion =
   { id : Int
@@ -67,4 +69,20 @@ buildFetchByUserTopicUrl userId topicId =
     , "/topic/"
     , toString topicId
     , "/opinion"
+    ]
+
+fetchById : Int -> Effects Opinion
+fetchById opinionId =
+  buildFetchUrl opinionId
+    |> Http.get decoder
+    |> Task.toMaybe
+    |> Task.map (Maybe.withDefault empty)
+    |> Effects.task
+
+
+buildFetchUrl : Int -> String
+buildFetchUrl opinionId =
+  String.concat
+    [ "http://localhost:3714/api/opinion/"
+    , toString opinionId
     ]

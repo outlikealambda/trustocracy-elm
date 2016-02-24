@@ -2,6 +2,9 @@ module Test.Displayable
   ( AsDisplayable
   , Displayable
   , Action
+    ( Expand
+    , Collapse
+    )
   , empty
   , init
   , update
