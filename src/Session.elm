@@ -15,7 +15,7 @@ module Session
 import User exposing (User)
 import Topic.Model as Topic exposing (Topic)
 import Opinion.Connector as Connector
-import Test.Composer as Composer
+import Flat.Composer as Composer
 import Routes
 
 
@@ -43,6 +43,7 @@ type Action
   | ClearUser
   | GoCompose Int
   | GoConnect Int
+
   -- private
   | TopicMsg Topic.Action
   | PropagateTopic
