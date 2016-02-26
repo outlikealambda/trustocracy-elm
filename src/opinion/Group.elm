@@ -1,4 +1,4 @@
-module Flat.Group
+module Opinion.Group
   ( Group
   , Action
   , initGroups
@@ -8,9 +8,9 @@ module Flat.Group
   ) where
 
 
-import Flat.Opinion as Opinion exposing (Opinion)
-import Flat.Presenter as Presenter
-import Flat.Path as Path
+import Opinion.Opinion as Opinion exposing (Opinion)
+import Opinion.Presenter as Presenter
+import Opinion.Path as Path
 
 
 import Effects exposing (Effects)

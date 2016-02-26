@@ -1,4 +1,4 @@
-module Flat.Writer
+module Opinion.Writer
   ( Writer
   , Action
   , update

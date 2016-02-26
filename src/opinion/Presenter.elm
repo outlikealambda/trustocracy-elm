@@ -1,4 +1,4 @@
-module Flat.Presenter
+module Opinion.Presenter
   ( Presenter
   , prepare
   , view

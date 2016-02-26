@@ -1,4 +1,4 @@
-module Flat.Composer
+module Opinion.Composer
   ( Composer
   , Action
   , empty
@@ -8,9 +8,9 @@ module Flat.Composer
   ) where
 
 
-import Flat.Opinion as Opinion exposing (Opinion)
-import Flat.Writer as Writer
-import Flat.Presenter as Presenter
+import Opinion.Opinion as Opinion exposing (Opinion)
+import Opinion.Writer as Writer
+import Opinion.Presenter as Presenter
 import User exposing (User)
 import Topic.Model exposing (Topic)
 

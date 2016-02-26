@@ -1,4 +1,4 @@
-module Flat.Opinion
+module Opinion.Opinion
   ( Opinion
   , empty
   , fetchById

@@ -14,8 +14,8 @@ module Session
 
 import User exposing (User)
 import Topic.Model as Topic exposing (Topic)
-import Flat.Connector as Connector
-import Flat.Composer as Composer
+import Opinion.Connector as Connector
+import Opinion.Composer as Composer
 import Routes
 
 
