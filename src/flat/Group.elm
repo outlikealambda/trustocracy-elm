@@ -10,7 +10,7 @@ module Flat.Group
 
 import Flat.Opinion as Opinion exposing (Opinion)
 import Flat.Presenter as Presenter
-import Opinion.Path as Path
+import Flat.Path as Path
 
 
 import Effects exposing (Effects)

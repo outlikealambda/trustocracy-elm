@@ -1,4 +1,4 @@
-module Opinion.Connector
+module Flat.Connector
   ( Model
   , Action
   , empty
@@ -17,7 +17,7 @@ import String
 import Http
 
 import Flat.Group as Group exposing (Group)
-import Opinion.Path as Path
+import Flat.Path as Path
 import User exposing (User)
 import Topic.Model exposing (Topic)
 

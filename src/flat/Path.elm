@@ -1,4 +1,4 @@
-module Opinion.Path
+module Flat.Path
   ( Model
   , view
   , viewAbbreviated
