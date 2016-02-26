@@ -1,91 +1,74 @@
 module Opinion.Composer
-  ( Model
+  ( Composer
+  , Action
   , empty
   , init
-  , Action
   , update
   , view
   ) where
 
 
-import Html exposing (Html, input, div, textarea, text, h3, button)
-import Html.Attributes exposing (class, placeholder, value)
-import Effects exposing (Effects)
-
-
-import Opinion.Model as Opinion
-import Opinion.View as View
-import Opinion.Create as Create
+import Opinion.Opinion as Opinion exposing (Opinion)
+import Opinion.Writer as Writer
+import Opinion.Presenter as Presenter
 import User exposing (User)
 import Topic.Model exposing (Topic)
 
-
-type alias Model =
-  { opinion : Create.Model
-  }
-
-
-empty : Model
-empty = Model Opinion.empty
+import Effects exposing (Effects)
+import Html exposing (Html, div, text)
+import Html.Attributes exposing (class, placeholder, value)
 
 
-init : User -> Topic -> (Model, Effects Action)
-init user topic =
-  let
-    ( opinion, fx ) =
-      Create.init user.id topic.id
-  in
-    ( Model opinion
-    , Effects.map CreateMsg fx
-    )
+type alias Composer = Opinion
 
 
 type Action
-  = CreateMsg Create.Action
-  | Publish
+  = FetchComplete Opinion
+  | WriterMsg Writer.Action
 
 
-update : Action -> Model -> (Model, Effects Action)
-update message model =
-  case message of
-
-    CreateMsg msg ->
-      let
-        (updatedOpinion, fx) =
-          Create.update msg model.opinion
-      in
-        ( { model | opinion = updatedOpinion }
-        , Effects.map CreateMsg fx
-        )
-
-    Publish ->
-      ( model
-      , Effects.none
-      )
+empty : Composer
+empty = Opinion.empty
 
 
-view : Signal.Address Action -> Model -> Html
-view address model =
+init : User -> Topic -> (Composer, Effects Action)
+init user topic =
+  ( empty
+  , Opinion.fetchByUserTopic user.id topic.id
+    |> Effects.map FetchComplete
+  )
+
+
+update : Action -> Composer -> (Composer, Effects Action)
+update action composer =
+  case action of
+
+    FetchComplete opinion ->
+      ( (Presenter.prepare << Presenter.expand) opinion
+      , Effects.none )
+
+    WriterMsg msg ->
+      ( Debug.log "write update" <| Writer.update msg composer
+      , Effects.none )
+
+
+view : Signal.Address Action -> Composer -> Html
+view address composer =
   div [ class "row composer" ]
     [ div [ class "col m12 l6" ]
       [ div [ class "t-card" ]
         [ div [ class "t-card-body" ]
           [ div [ class "subtitle" ] [ text "Write" ]
-          , Create.viewCreator (Signal.forwardTo address CreateMsg) model.opinion
+          , Writer.view (Signal.forwardTo address WriterMsg) composer
           ]
-        ]
-      , div [ class "t-card" ]
-        [ div [ class "t-card-body" ]
-          [ Create.viewCredentialsInput (Signal.forwardTo address CreateMsg) model.opinion ]
         ]
       ]
     , div [ class "col m12 l6 preview" ]
       [ div [ class "t-card" ]
         [ div [ class "t-card-body" ]
           [ div [ class "subtitle" ] [ text "Preview" ]
-          , View.view model.opinion
+          , Presenter.view composer
           ]
         ]
-      , button [ class "publish forward-action"] [ text "publish" ]
       ]
     ]

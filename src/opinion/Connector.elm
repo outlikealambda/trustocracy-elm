@@ -35,7 +35,7 @@ type alias Model =
 
 type Action
   = SetRaw Paths
-  | OpgMsg Key Group.Action
+  | GroupMsg Key Group.Action
 
 
 empty : Model
@@ -65,7 +65,7 @@ update message model =
           let
             (groups, fxs) =
               Group.initGroups opaths
-                |> List.map (\(g, fx) -> (g, Effects.map (OpgMsg g.groupId) fx))
+                |> List.map (\(g, fx) -> (g, Effects.map (GroupMsg g.groupId) fx))
                 |> List.unzip
             buckets =
               Group.toDict groups
@@ -82,7 +82,7 @@ update message model =
             , Effects.batch fxs
             )
 
-    OpgMsg key subMsg ->
+    GroupMsg key subMsg ->
       case Dict.get key model.buckets of
 
         Nothing ->
@@ -97,7 +97,7 @@ update message model =
               Dict.insert key updatedBucket model.buckets
           in
             ( { model | buckets = updatedBuckets }
-            , Effects.map (OpgMsg key) fx
+            , Effects.map (GroupMsg key) fx
             )
 
 
@@ -166,7 +166,7 @@ viewGroupSection address pathLength keyGroups =
 
 viewGroup : Signal.Address Action -> (Key, Group) -> Html
 viewGroup address (key, opg) =
-  Group.view (Signal.forwardTo address (OpgMsg key)) opg
+  Group.view (Signal.forwardTo address (GroupMsg key)) opg
 
 
 groupsOfLength : Int -> List (Key, Group) -> List (Key, Group)
