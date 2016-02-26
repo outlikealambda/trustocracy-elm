@@ -47,6 +47,18 @@ fetchById opinionId =
     |> Effects.task
 
 
+-- used by the topics page to get browsable opinions
+fetchAllByTopic : Int -> Effects (List Opinion)
+fetchAllByTopic topicId =
+    "http://localhost:3714/api/topic/" ++ (toString topicId) ++ "/opinion"
+    |> Http.get (Json.list decoder)
+    |> Task.toMaybe
+    |> Task.map (Maybe.withDefault [])
+    |> Effects.task
+
+
+-- used by Writer; we don't have the opinionId to load the opinion,
+-- we only have the user and topic
 fetchByUserTopic : Int -> Int -> Effects Opinion
 fetchByUserTopic userId topicId =
   buildFetchByUserTopicUrl userId topicId
