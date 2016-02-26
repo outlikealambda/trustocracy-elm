@@ -1,57 +1,48 @@
-module Test.Writable
-  ( AsWritable
+module Opinion.Writer
+  ( Writer
   , Action
-  , OnUpdate
   , update
   , view
   ) where
-
-
-import Test.Opinion as Opinion exposing (Opinion)
 
 
 import String
 import Html exposing (Html, div, textarea, text)
 import Html.Attributes exposing (class, placeholder, value)
 import Html.Events exposing (on, targetValue)
-import Effects exposing (Effects)
 
 
-type alias AsWritable m = m
+type alias Writer a =
+  { a
+  | text : String
+  }
 
 
 type Action
   = Write String
 
 
-type alias OnUpdate m =
-  { write : AsWritable m -> String -> AsWritable m
-  }
-
-
-update : Action -> OnUpdate m -> AsWritable m -> (AsWritable m, Effects Action)
-update action onUpdate model =
+update : Action -> Writer a -> Writer a
+update action writer =
   case action of
     Write raw ->
-      ( onUpdate.write model raw
-      , Effects.none
-      )
+      { writer | text = raw }
 
 
-view : Signal.Address Action -> (m -> String) -> AsWritable m -> Html
-view address f model =
+view : Signal.Address Action -> Writer a -> Html
+view address writer =
   div [ class "opinion-creator" ]
     [ div [ class "input-field" ]
       [ textarea
         [ class "write"
         , placeholder "Let's write something!"
-        , value (f model)
+        , value writer.text
         , on "input" targetValue (Signal.message address << Write)
         ]
         []
       ]
     , div [ class "character-count" ]
-      [ String.length (f model)
+      [ String.length writer.text
         |> toString
         |> flip (++) " characters written"
         |> text

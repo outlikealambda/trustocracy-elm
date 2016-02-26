@@ -1,22 +1,28 @@
-module Test.Opinion
+module Opinion.Opinion
   ( Opinion
   , empty
-  , setText
   , fetchById
   , fetchByUserTopic
   ) where
 
+
 import Effects exposing (Effects)
+import String
 import Http
 import Task
-import String
 import Json.Decode as Json exposing ((:=))
 
 
 type alias Opinion =
+
+  -- from API
   { id : Int
   , text : String
   , influence : Int
+
+  -- derived
+  , snippet : String
+  , expanded : Bool
   , fetched : Bool
   }
 
@@ -25,31 +31,20 @@ empty : Opinion
 empty =
   { id = -1
   , text = ""
-  , influence = 0
+  , influence = -1
+  , snippet = ""
+  , expanded = False
   , fetched = False
   }
 
 
-decoder : Json.Decoder Opinion
-decoder =
-  Json.object3 fromApi
-    ( "id" := Json.int )
-    ( "influence" := Json.int )
-    ( "text" := Json.string )
-
-
-fromApi : Int -> Int -> String -> Opinion
-fromApi id influence text =
-  { id = id
-  , influence = influence
-  , text = text
-  , fetched = True
-  }
-
-
-setText : Opinion -> String -> Opinion
-setText opinion text =
-  { opinion | text = text }
+fetchById : Int -> Effects Opinion
+fetchById opinionId =
+  "http://localhost:3714/api/opinion/" ++ (toString opinionId)
+    |> Http.get decoder
+    |> Task.toMaybe
+    |> Task.map (Maybe.withDefault empty)
+    |> Effects.task
 
 
 fetchByUserTopic : Int -> Int -> Effects Opinion
@@ -71,18 +66,20 @@ buildFetchByUserTopicUrl userId topicId =
     , "/opinion"
     ]
 
-fetchById : Int -> Effects Opinion
-fetchById opinionId =
-  buildFetchUrl opinionId
-    |> Http.get decoder
-    |> Task.toMaybe
-    |> Task.map (Maybe.withDefault empty)
-    |> Effects.task
+
+decoder : Json.Decoder Opinion
+decoder =
+  Json.object3 fromApi
+    ( "id" := Json.int )
+    ( "text" := Json.string )
+    ( "influence" := Json.int )
 
 
-buildFetchUrl : Int -> String
-buildFetchUrl opinionId =
-  String.concat
-    [ "http://localhost:3714/api/opinion/"
-    , toString opinionId
-    ]
+fromApi : Int -> String -> Int -> Opinion
+fromApi id text influence =
+  { empty
+  | id = id
+  , text = text
+  , influence = influence
+  , fetched = True
+  }

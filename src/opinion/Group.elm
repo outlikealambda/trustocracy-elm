@@ -8,13 +8,12 @@ module Opinion.Group
   ) where
 
 
-import Opinion.Model as Opinion
-import Opinion.View as View
+import Opinion.Opinion as Opinion exposing (Opinion)
+import Opinion.Presenter as Presenter
 import Opinion.Path as Path
 
 
 import Effects exposing (Effects)
-import Task
 import Html exposing (Html, Attribute, div, span, text, button)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
@@ -22,18 +21,18 @@ import Dict
 
 
 type alias Group =
-  { groupId : Int
-  , expanded : Bool
-  , paths : List Path.Model
-  , opinion : View.Model
-  , shortestPath : Int
-  }
+    { groupId : Int
+    , paths : List Path.Model
+    , shortestPath : Int
+    , expanded : Bool
+    , opinion : Opinion
+    }
 
 
 type Action
   = Expand
   | Collapse
-  | OpinionMsg View.Action
+  | FetchComplete Opinion
 
 
 -- create OPG using a List of OpinionPaths
@@ -43,55 +42,51 @@ init key opaths =
   let
     sorted =
       List.sortBy Path.getLength opaths
+
     opinionId =
       Path.getOpinionId opaths
-    ( opinion, fx ) =
-      View.init opinionId
+
+    shortest =
+      List.map Path.getLength sorted
+      |> List.minimum
+      |> Maybe.withDefault 0
+
   in
     ( { groupId = key
-      , expanded = False
       , paths = sorted
-      , opinion = opinion
-      , shortestPath =
-        List.map Path.getLength sorted
-        |> List.minimum
-        |> Maybe.withDefault 0
+      , shortestPath = shortest
+      , expanded = False
+      , opinion = Opinion.empty
       }
-    , Effects.map OpinionMsg fx
+    , Opinion.fetchById opinionId
+      |> Effects.map FetchComplete
     )
 
 
-initGroups : List Path.Model -> List (Group, Effects Action)
-initGroups allPaths =
-  bucketList .opinionId allPaths Dict.empty
-    |> Dict.map init
-    |> Dict.values
-
-
 update : Action -> Group -> (Group, Effects Action)
-update message model =
+update message group =
   case message of
-    Expand ->
-      ( { model | expanded = True }
-      , OpinionMsg View.Expand
-          |> Task.succeed
-          |> Effects.task
+
+    FetchComplete opinion ->
+      ( { group
+        | opinion = Presenter.prepare opinion
+        }
+      , Effects.none
       )
+
+    Expand ->
+      ( { group
+        | expanded = True
+        , opinion = Presenter.expand group.opinion
+        }
+      , Effects.none )
 
     Collapse ->
-      ( { model | expanded = False }
-      , OpinionMsg View.Collapse
-          |> Task.succeed
-          |> Effects.task
-      )
-
-    OpinionMsg msg ->
-      let (opinion, fx) =
-        View.update msg model.opinion
-      in
-        ( { model | opinion = opinion }
-        , Effects.map OpinionMsg fx
-        )
+      ( { group
+        | expanded = False
+        , opinion = Presenter.collapse group.opinion
+        }
+      , Effects.none )
 
 
 view : Signal.Address Action -> Group -> Html
@@ -99,29 +94,30 @@ view = viewByOpinion
 
 
 viewByOpinion : Signal.Address Action -> Group -> Html
-viewByOpinion address opg =
+viewByOpinion address {opinion, paths, expanded} =
   let
-    header =
-      List.head opg.paths
 
     remainder =
-      if opg.expanded then
-        List.tail opg.paths |> Maybe.withDefault []
+      if expanded then
+        List.tail paths |> Maybe.withDefault []
       else []
 
   in
-    case header of
+    case List.head paths of
 
+      -- somehow, no paths, so render nothing
       Nothing -> div [] []
 
+      -- hooray, at least one path
       Just h ->
         let
-          opgHeader =
-            Path.viewHeader h (List.length opg.paths)
+          groupHeader =
+            Path.viewHeader h (List.length paths)
 
           others =
             List.map Path.viewAbbreviated remainder
 
+          -- this could go into Presenter if we add an Opinion.User
           opiner =
             div
               [ class "opinion-header cf" ]
@@ -132,7 +128,7 @@ viewByOpinion address opg =
                 [ class "numbered-badge influence" ]
                 [ span
                   [ class "numbered-count" ]
-                  [ text <| toString <| Opinion.getInfluence opg.opinion ]
+                  [ text <| toString opinion.influence ]
                 , span
                   [ class "numbered-label" ]
                   [ text "influenced people" ]
@@ -140,10 +136,12 @@ viewByOpinion address opg =
               ]
 
           clickAction =
-            if opg.expanded then Collapse else Expand
+            if expanded then Collapse else Expand
 
           toggleClass =
-            if opg.expanded then "expanded" else "collapsed"
+            if expanded then
+              "expanded"
+            else "collapsed"
 
         in
           div
@@ -151,12 +149,20 @@ viewByOpinion address opg =
             [ div
               [ class "t-card-title toggles"
               , onClick address clickAction ]
-              ( opgHeader :: others )
+              ( groupHeader :: others )
             , div [class "t-card-body"]
               [ opiner
-              , View.view opg.opinion
+              , Presenter.view opinion
               ]
             ]
+
+
+initGroups : List Path.Model -> List (Group, Effects Action)
+initGroups allPaths =
+  bucketList .opinionId allPaths Dict.empty
+    |> Dict.map init
+    |> Dict.values
+
 
 
 bucketList : (a -> comparable) -> List a -> Dict.Dict comparable (List a) -> Dict.Dict comparable (List a)
