@@ -7,15 +7,20 @@ module Opinion.Presenter
   ) where
 
 
-import Html exposing (Html, div, text, p)
+import Html exposing (Html, div, text, p, span)
 import Html.Attributes exposing (class)
 import Markdown
 import String
 
 
+import User exposing (User)
+
+
 type alias Presenter a =
   { a
   | text : String
+  , influence : Int
+  , user : User
   , snippet : String
   , expanded : Bool
   , fetched : Bool
@@ -37,13 +42,15 @@ collapse presenter =
 
 
 view : Presenter a -> Html
-view {text, expanded, snippet, fetched} =
+view {text, expanded, snippet, fetched, user, influence} =
   let
-    v =
+    opinionBody =
       if expanded then
-        viewFull text
+        [ viewOpiner user influence
+        , viewOpinion text
+        ]
       else
-        viewSnippet snippet
+        [ viewSnippet snippet ]
 
     presenterClasses =
       "opinion " ++
@@ -52,11 +59,11 @@ view {text, expanded, snippet, fetched} =
   in
     div
       [ class presenterClasses ]
-      [ v ]
+      opinionBody
 
 
-viewFull : String -> Html
-viewFull text =
+viewOpinion : String -> Html
+viewOpinion text =
   div [ class "text markdown"] [ Markdown.toHtml text ]
 
 
@@ -64,6 +71,24 @@ viewSnippet : String -> Html
 viewSnippet snippet =
   div [ class "text snippet" ]
     [ p [] [ text snippet ]
+    ]
+
+viewOpiner : User -> Int -> Html
+viewOpiner user influence =
+  div
+    [ class "opinion-header cf" ]
+    [ div
+      [ class "opiner" ]
+      [ text <| user.name ]
+    , div
+      [ class "numbered-badge influence" ]
+      [ span
+        [ class "numbered-count" ]
+        [ text <| toString influence ]
+      , span
+        [ class "numbered-label" ]
+        [ text "influenced people" ]
+      ]
     ]
 
 

@@ -117,24 +117,6 @@ viewByOpinion address {opinion, paths, expanded} =
           others =
             List.map Path.viewAbbreviated remainder
 
-          -- this could go into Presenter if we add an Opinion.User
-          opiner =
-            div
-              [ class "opinion-header cf" ]
-              [ div
-                [ class "opiner" ]
-                [ text <| Path.getOpinerName h ]
-              , div
-                [ class "numbered-badge influence" ]
-                [ span
-                  [ class "numbered-count" ]
-                  [ text <| toString opinion.influence ]
-                , span
-                  [ class "numbered-label" ]
-                  [ text "influenced people" ]
-                ]
-              ]
-
           clickAction =
             if expanded then Collapse else Expand
 
@@ -151,8 +133,7 @@ viewByOpinion address {opinion, paths, expanded} =
               , onClick address clickAction ]
               ( groupHeader :: others )
             , div [class "t-card-body"]
-              [ opiner
-              , Presenter.view opinion
+              [ Presenter.view opinion
               ]
             ]
 
