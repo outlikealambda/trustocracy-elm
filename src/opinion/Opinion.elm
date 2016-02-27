@@ -6,6 +6,9 @@ module Opinion.Opinion
   ) where
 
 
+import User exposing (User)
+
+
 import Effects exposing (Effects)
 import String
 import Http
@@ -19,6 +22,7 @@ type alias Opinion =
   { id : Int
   , text : String
   , influence : Int
+  , user : User
 
   -- derived
   , snippet : String
@@ -32,6 +36,7 @@ empty =
   { id = -1
   , text = ""
   , influence = -1
+  , user = User.empty
   , snippet = ""
   , expanded = False
   , fetched = False
@@ -81,17 +86,19 @@ buildFetchByUserTopicUrl userId topicId =
 
 decoder : Json.Decoder Opinion
 decoder =
-  Json.object3 fromApi
+  Json.object4 fromApi
     ( "id" := Json.int )
     ( "text" := Json.string )
     ( "influence" := Json.int )
+    ( "user" := User.decoder )
 
 
-fromApi : Int -> String -> Int -> Opinion
-fromApi id text influence =
+fromApi : Int -> String -> Int -> User -> Opinion
+fromApi id text influence user =
   { empty
   | id = id
   , text = text
   , influence = influence
+  , user = user
   , fetched = True
   }
