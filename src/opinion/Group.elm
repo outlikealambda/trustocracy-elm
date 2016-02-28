@@ -77,14 +77,14 @@ update message group =
     Expand ->
       ( { group
         | expanded = True
-        , opinion = Presenter.expand group.opinion
+        -- , opinion = Presenter.expand group.opinion
         }
       , Effects.none )
 
     Collapse ->
       ( { group
         | expanded = False
-        , opinion = Presenter.collapse group.opinion
+        -- , opinion = Presenter.collapse group.opinion
         }
       , Effects.none )
 
@@ -129,7 +129,7 @@ viewByOpinion address {opinion, paths, expanded} =
           div
             [ class ("opg t-card " ++ toggleClass) ]
             [ div
-              [ class "t-card-title toggles"
+              [ class "t-card-title connections toggles"
               , onClick address clickAction ]
               ( groupHeader :: others )
             , div [class "t-card-body"]

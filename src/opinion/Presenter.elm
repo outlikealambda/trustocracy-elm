@@ -7,8 +7,8 @@ module Opinion.Presenter
   ) where
 
 
-import Html exposing (Html, div, text, p, span)
-import Html.Attributes exposing (class)
+import Html exposing (Html, div, text, p, span, a)
+import Html.Attributes exposing (class, href)
 import Markdown
 import String
 
@@ -50,7 +50,10 @@ view {text, expanded, snippet, fetched, user, influence} =
         , viewOpinion text
         ]
       else
-        [ viewSnippet snippet ]
+        [ viewOpiner user influence
+        , viewSnippet snippet
+        , span [ class "read-more" ] [ Html.text "Read more..."]
+        ]
 
     presenterClasses =
       "opinion " ++
@@ -76,9 +79,9 @@ viewSnippet snippet =
 viewOpiner : User -> Int -> Html
 viewOpiner user influence =
   div
-    [ class "opinion-header cf" ]
+    [ class "opiner cf" ]
     [ div
-      [ class "opiner" ]
+      [ class "opiner-name" ]
       [ text <| user.name ]
     , div
       [ class "numbered-badge influence" ]
