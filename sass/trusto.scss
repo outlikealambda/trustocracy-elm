@@ -45,7 +45,6 @@ h1, h2, h3, h4 {
 }
 
 .t-card {
-  margin-bottom: 20px;
   background-color: $card-bg-color;
 
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
@@ -79,7 +78,6 @@ h1, h2, h3, h4 {
 }
 
 .t-card-body {
-  // padding: 3.2rem;
   padding-bottom: 0;
   border-top: 1px solid rgba(160, 160, 160, 0.2);
 }
@@ -366,4 +364,30 @@ $opinion-link-color : #aaa;
 .session-overview {
   text-align: center;
   border-bottom: 1px solid #ccc;
+}
+
+.opinion-browser {
+  .opinion {
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+    border: 1px solid rgba(0,0,0,0.04);
+  }
+}
+
+.session-link {
+  width: 5em;
+  height: 5em;
+  background: orange;
+  display: inline-block;
+  vertical-align: top;
+  padding: 1em;
+  margin: 1em;
+  cursor: pointer;
+}
+
+.session-link.active {
+  background: purple;
+}
+
+.session-links {
+  margin: 0 auto;
 }

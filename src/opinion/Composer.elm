@@ -5,6 +5,7 @@ module Opinion.Composer
   , init
   , update
   , view
+  , navButton
   ) where
 
 
@@ -72,3 +73,16 @@ view address composer =
         ]
       ]
     ]
+
+navButton : Composer -> Html
+navButton composer =
+  let
+    actionText =
+      if composer.id == -1 then
+        "Compose"
+      else
+        "Edit"
+  in
+    div
+      [ class "compose" ]
+      [ text actionText ]

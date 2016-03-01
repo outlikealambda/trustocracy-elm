@@ -1,9 +1,10 @@
 module Opinion.Connector
-  ( Model
+  ( Connector
   , Action
   , empty
   , init
   , view
+  , navButton
   , update
   ) where
 
@@ -26,7 +27,7 @@ type alias Key = Int
 type alias Paths = List Path.Model
 
 
-type alias Model =
+type alias Connector =
   { rawPaths : Paths
   , buckets : Dict.Dict Key Group-- opinion paths bucketed by key
   , longestGroupPath : Int
@@ -38,7 +39,7 @@ type Action
   | GroupMsg Key Group.Action
 
 
-empty : Model
+empty : Connector
 empty =
   { rawPaths = []
   , buckets = Dict.empty
@@ -46,14 +47,14 @@ empty =
   }
 
 
-init : User -> Topic -> (Model, Effects Action)
+init : User -> Topic -> (Connector, Effects Action)
 init user topic =
   ( empty
   , getConnectedOpinions topic user
   )
 
 
-update : Action -> Model -> (Model, Effects Action)
+update : Action -> Connector -> (Connector, Effects Action)
 update message model =
   case message of
     SetRaw opaths ->
@@ -127,7 +128,7 @@ buildConnectedOpinionsUrl tid uid =
     ]
 
 
-view : Signal.Address Action -> Model -> List Html
+view : Signal.Address Action -> Connector -> List Html
 view address {buckets, longestGroupPath} =
   let
     sectionCreators =
@@ -184,3 +185,13 @@ degreeLabel n =
     2 -> "2nd degree"
     3 -> "3rd degree"
     k -> (toString k) ++ "th degree"
+
+
+navButton : Connector -> Html
+navButton {buckets} =
+  let
+    count = Dict.size buckets
+  in
+    div
+      [ class "connect" ]
+      [ text <| (toString count) ++ " connected opinions" ]

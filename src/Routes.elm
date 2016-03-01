@@ -10,6 +10,7 @@ type Route
   | Topics
   | Connect Int
   | Compose Int
+  | Browse Int
   | EmptyRoute
 
 
@@ -19,6 +20,7 @@ routeParsers =
   , RouteParser.static Topics "/topics"
   , RouteParser.dyn1 Connect "/topic/" RouteParser.int "/connect"
   , RouteParser.dyn1 Compose "/topic/" RouteParser.int "/compose"
+  , RouteParser.dyn1 Browse "/topic/" RouteParser.int "/browse"
   ]
 
 
@@ -35,6 +37,7 @@ encode route =
     Topics -> "/topics"
     Connect topicId -> "/topic/" ++ toString topicId ++ "/connect"
     Compose topicId -> "/topic/" ++ toString topicId ++ "/compose"
+    Browse topicId -> "/topic/" ++ toString topicId ++ "/browse"
     EmptyRoute -> "/"
 
 

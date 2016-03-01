@@ -4,14 +4,14 @@ module World
   , init
   , view
   , actions
-  , update) where
+  , update
+  ) where
 
 
 import Html exposing (Html, input, div, node, h1, text)
 import Effects exposing (Effects)
 import Html.Attributes exposing (class, rel, href, placeholder, value, style)
 import Task
-import String
 
 
 import Session exposing (Session)
@@ -25,7 +25,6 @@ import User exposing (User)
 
 import Routes exposing (Route)
 import TransitRouter
-import TransitStyle
 
 
 type alias Model = TransitRouter.WithRoute Routes.Route
@@ -78,6 +77,12 @@ mountRoute prevRoute route world =
       ( world
       , updateSession <| Session.GoConnect topicId
       )
+
+    Routes.Browse topicId ->
+      ( world
+      , updateSession <| Session.GoBrowse topicId
+      )
+
 
     -- map to [] if fail, since this will probably be the
     -- home page and we don't want to continually redirect
@@ -241,6 +246,9 @@ view address world =
             [ Session.view (Signal.forwardTo address SessionMsg) world.session ]
 
           Routes.Compose _ ->
+            [ Session.view (Signal.forwardTo address SessionMsg) world.session ]
+
+          Routes.Browse _ ->
             [ Session.view (Signal.forwardTo address SessionMsg) world.session ]
 
           Routes.EmptyRoute ->
