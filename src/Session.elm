@@ -6,6 +6,7 @@ module Session
     , ClearUser
     , GoCompose
     , GoConnect
+    , GoBrowse
     )
   , update
   , view
@@ -16,13 +17,15 @@ import User exposing (User)
 import Topic.Model as Topic exposing (Topic)
 import Opinion.Connector as Connector
 import Opinion.Composer as Composer
+import Opinion.Browser as Browser
 import Routes
 
 
 import Effects exposing (Effects)
-import Html exposing (Html, div, a, h1, text, Attribute)
-import Html.Attributes exposing (class, href)
-import Html.Events exposing (onWithOptions)
+import String
+import Html exposing (Html, div, h1, text, Attribute)
+import Html.Attributes exposing (class)
+import Html.Events exposing (on)
 import Json.Decode as Json
 import TransitRouter
 
@@ -31,9 +34,10 @@ import TransitRouter
 type alias Session =
   { user: User
   , topic: Topic
-  , currentView: CurrentView
+  , currentView: SessionView
   , composer: Composer.Composer
-  , connector: Connector.Model
+  , connector: Connector.Connector
+  , browser: Browser.Browser
   }
 
 
@@ -43,18 +47,23 @@ type Action
   | ClearUser
   | GoCompose Int
   | GoConnect Int
+  | GoBrowse Int
 
   -- private
   | TopicMsg Topic.Action
   | PropagateTopic
   | ComposerMsg Composer.Action
   | ConnectorMsg Connector.Action
+  | BrowserMsg Browser.Action
   | NoOp
 
 
-type CurrentView
+-- the current view
+-- we could reuse Routes.Route here, but it feels a little awkward
+type SessionView
   = Compose
   | Connect
+  | Browse
   | Empty
 
 
@@ -65,6 +74,7 @@ init =
   , currentView = Empty
   , composer = Composer.empty
   , connector = Connector.empty
+  , browser = Browser.empty
   }
 
 
@@ -103,6 +113,15 @@ update action session =
         , Effects.map TopicMsg topicUpdateFx
         )
 
+    GoBrowse topicId ->
+      let
+        (topicUpdate, topicUpdateFx) =
+          Topic.init topicId
+      in
+        ( { session | currentView = Browse }
+        , Effects.map TopicMsg topicUpdateFx
+        )
+
     -- PRIVATE
     TopicMsg topicAction ->
       let
@@ -123,14 +142,18 @@ update action session =
           Composer.init session.user session.topic
         (connectorUpdate, connectorUpdateFx) =
           Connector.init session.user session.topic
+        (browserUpdate, browserUpdateFx) =
+          Browser.init session.topic
       in
         ( { session
           | composer = composerUpdate
           , connector = connectorUpdate
+          , browser = browserUpdate
           }
         , Effects.batch
           [ Effects.map ComposerMsg composerUpdateFx
           , Effects.map ConnectorMsg connectorUpdateFx
+          , Effects.map BrowserMsg browserUpdateFx
           ]
         )
 
@@ -144,12 +167,23 @@ update action session =
         )
 
     ConnectorMsg connectAction ->
-      let (update, updateFx) =
+      let
+        (update, updateFx) =
           Connector.update connectAction session.connector
       in
         ( { session | connector = update }
         , Effects.map ConnectorMsg updateFx
         )
+
+    BrowserMsg browserAction ->
+      let
+        (update, updateFx) =
+          Browser.update browserAction session.browser
+      in
+        ( { session | browser = update }
+        , Effects.map BrowserMsg updateFx
+        )
+
 
     NoOp ->
       ( session, Effects.none )
@@ -163,27 +197,77 @@ view address session =
     , sessionContent address session
     ]
 
-sessionHeader : Session -> Html
-sessionHeader session =
+
+-- used to help create the nav links
+type alias SessionLinker a =
+  { routeView : SessionView
+  , buildRoute : Int -> Routes.Route
+  , makeHtml : a -> Html
+  , getter : Session -> a
+  }
+
+
+-- builds a link, setting it to active if it matches the current view
+buildLink : SessionLinker a -> Session -> Html
+buildLink {routeView, buildRoute, makeHtml, getter} session =
   let
-    link =
-      case session.currentView of
-        Connect ->
-          a
-            (clickTo <| Routes.Compose session.topic.id )
-            [ text <| "Compose" ]
-        Compose ->
-          a
-            (clickTo <| Routes.Connect session.topic.id )
-            [ text <| "Connect" ]
-        Empty ->
-          div [] []
+    classes =
+      -- we need to examine the current view to determine whether this
+      -- link is active or not
+      -- this is the primary reason for this class; it is awkward to write 3
+      -- if statements in sessionHeader
+      if routeView == session.currentView then
+        [ "session-link", "active"]
+      else
+        [ "session-link" ]
   in
     div
-      [ class "session-overview" ]
-      [ h1 [ class "topic-title" ] [ text session.topic.text ]
-      , link
+      [ class <| String.join " " classes
+      , clickToDiv <| buildRoute session.topic.id ]
+      [ makeHtml <| getter session
       ]
+
+
+composeLinker : Session -> Html
+composeLinker = buildLink
+  { routeView = Compose
+  , buildRoute = Routes.Compose
+  , makeHtml = Composer.navButton
+  , getter = .composer
+  }
+
+
+connectLinker : Session -> Html
+connectLinker = buildLink
+  { routeView = Connect
+  , buildRoute = Routes.Connect
+  , makeHtml = Connector.navButton
+  , getter = .connector
+  }
+
+
+browseLinker : Session -> Html
+browseLinker = buildLink
+  { routeView = Browse
+  , buildRoute = Routes.Browse
+  , makeHtml = Browser.navButton
+  , getter = .browser
+  }
+
+
+sessionHeader : Session -> Html
+sessionHeader session =
+  div
+    [ class "session-overview" ]
+    [ h1 [ class "topic-title" ] [ text session.topic.text ]
+    , div
+      [ class "session-links" ]
+      [ browseLinker session
+      , connectLinker session
+      , composeLinker session
+      ]
+    ]
+
 
 sessionContent : Signal.Address Action -> Session -> Html
 sessionContent address session =
@@ -196,18 +280,19 @@ sessionContent address session =
         (Connector.view (Signal.forwardTo address ConnectorMsg) session.connector)
     Compose ->
       Composer.view (Signal.forwardTo address ComposerMsg) session.composer
+    Browse ->
+      div
+        [ class "content" ]
+        [ Browser.view session.browser ]
 
 
-clickTo : Routes.Route -> List Attribute
-clickTo route =
+clickToDiv : Routes.Route -> Attribute
+clickToDiv route =
   let
     path =
       Routes.encode route
   in
-    [ href path
-    , onWithOptions
+    on
       "click"
-      { stopPropagation = True, preventDefault = True }
       Json.value
       (\_ -> Signal.message TransitRouter.pushPathAddress path)
-    ]

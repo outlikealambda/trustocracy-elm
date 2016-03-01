@@ -6,10 +6,12 @@
 @import "t-button";
 @import "t-help";
 
-$header-font: "EB Garamond";
+$text-font: "EB Garamond";
+
+$header-font: "Roboto";
 
 html {
-  font-family: "EB Garamond", serif;
+  font-family: $header-font, serif;
   line-height: 1.5;
 }
 
@@ -43,15 +45,15 @@ h1, h2, h3, h4 {
 }
 
 .t-card {
-  margin-bottom: 20px;
   background-color: $card-bg-color;
 
-  @extend .z-depth-1;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(0,0,0,0.04);
 }
 
 
-.t-card-title {
-  font-size: 2.4rem;
+.t-card-title, .connections {
+  font-size: 1.6rem;
   line-height: 2.4rem;
   padding: 2.0rem 3.2rem;
 
@@ -76,7 +78,6 @@ h1, h2, h3, h4 {
 }
 
 .t-card-body {
-  padding: 3.2rem;
   padding-bottom: 0;
   border-top: 1px solid rgba(160, 160, 160, 0.2);
 }
@@ -106,27 +107,25 @@ h1, h2, h3, h4 {
 }
 
 .op .friend {
-  min-width: 240px;
+  min-width: 260px;
 }
 
 .numbered-badge {
   font-family: 'Roboto';
   overflow: hidden;
-  font-size: 1.4rem;
-  line-height: 2.4rem;
-  border-radius: 1.2rem;
-  padding-left: 1.2rem;
-  padding-right: 1.2rem;
+  line-height: 1.5em;
+  border-radius: 0.75em;
+  padding: 0 0.75em;
 
   .numbered-label {
-    margin-right: -30rem;
-    margin-left: 1.2rem;
+    margin-right: -30em;
+    margin-left: 0.75em;
     transition: margin-right 0.3s, margin-left 0.3s;
   }
 
   &:hover .numbered-label {
-    margin-right: 0rem;
-    margin-left: 0.6rem;
+    margin-right: 0em;
+    margin-left: 0.4em;
   }
 
   > span {
@@ -137,11 +136,7 @@ h1, h2, h3, h4 {
 .op .path-count {
   float: right;
   background: lightskyblue;
-}
-
-.opinion-header .influence {
-  float: right;
-  background-color: plum;
+  font-size: 1.5rem;
 }
 
 .expanded .op {
@@ -267,40 +262,78 @@ textarea.write {
 }
 
 .opg {
-  .opinion {
+  .t-card-body {
     overflow: hidden;
+  }
 
-    .text {
-      transition: margin-top 1s 0.1s;
-      margin-top: -200px;
-      margin-left: auto;
-      margin-right: auto;
-      font-size: 2.1rem;
-      line-height: 2.8rem;
-      font-weight: 400;
-      color: $text-color;
+  .opinion {
+    transition: margin-top 1s 0.1s;
+    margin-top: -200px;
 
-      p {
-        margin-top: 0;
-        margin-bottom:3.2rem;
-      }
-    }
-
-    &.fetched .text {
+    &.fetched {
       margin-top: 0px;
     }
   }
 
-  .opinion-header {
-    margin-bottom: 3.2rem;
+}
 
-    .opiner {
-      float: left;
-      font-size: 2.4rem;
-      line-height: 2.4rem;
+$opinion-link-color : #aaa;
+
+.opinion {
+  padding: 2.4rem 3.2rem;
+
+  .text {
+    font-family: $text-font;
+    font-size: 2.0rem;
+    color: $text-color;
+
+    margin-top: 1.6rem;
+    line-height: 3.2rem;
+
+    p {
+      margin-top: 0;
+      margin-bottom: 3.2rem;
     }
-
   }
+
+  .read-more {
+    font-size: 1.6rem;
+    color: $opinion-link-color;
+    margin-top: 1.6rem;
+  }
+
+  .snippet p {
+    margin: 0px;
+  }
+}
+
+.opiner {
+
+  .opiner-name {
+    float: left;
+    font-size: 1.6rem;
+    line-height: 2.4rem;
+    color: $opinion-link-color;
+    margin-right: 0.8rem;
+  }
+
+  .influence {
+    float: left;
+    background-color: plum;
+    color: #444;
+    font-size: 1.2rem;
+    margin-top: 0.3rem;
+  }
+}
+
+.opg .t-card-title {
+  overflow:hidden;
+  max-height: 24px;
+  transition: max-height 0.2s ease-in;
+}
+
+.opg.expanded .t-card-title {
+  max-height: 1000px;
 }
 
 .group-section {
@@ -309,15 +342,18 @@ textarea.write {
 
 .group-section-header {
   color: $primary-color-dark;
-  margin-top: 3.2rem;
-  text-align: center;
-  font-family: 'EB Garamond 12 SC';
+  margin-left: 1.6rem;
+  margin-bottom: 1.6rem;
+  font-family: $header-font;
   font-size: 3.0rem;
+  font-weight: lighter;
+  letter-spacing: 2px;
 }
 
 .topic-title {
   text-transform: capitalize;
-  font-size: 5.2rem;
+  font-weight: normal;
+  font-size: 6.0rem;
 }
 
 .content {
@@ -328,4 +364,30 @@ textarea.write {
 .session-overview {
   text-align: center;
   border-bottom: 1px solid #ccc;
+}
+
+.opinion-browser {
+  .opinion {
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+    border: 1px solid rgba(0,0,0,0.04);
+  }
+}
+
+.session-link {
+  width: 5em;
+  height: 5em;
+  background: orange;
+  display: inline-block;
+  vertical-align: top;
+  padding: 1em;
+  margin: 1em;
+  cursor: pointer;
+}
+
+.session-link.active {
+  background: purple;
+}
+
+.session-links {
+  margin: 0 auto;
 }

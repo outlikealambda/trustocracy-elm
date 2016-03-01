@@ -3,6 +3,7 @@ module Opinion.Opinion
   , empty
   , fetchById
   , fetchByUserTopic
+  , fetchAllByTopic
   ) where
 
 
