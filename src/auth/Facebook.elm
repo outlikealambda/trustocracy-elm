@@ -1,18 +1,34 @@
 module Auth.Facebook
   ( LoginStatusResponse
-  , AuthResponse
+  , UserResponse
+  , Action(..)
   , Status
   , toString
+  , signal
+  , address
   ) where
 
 
 import Signal exposing (Signal, Mailbox)
 
 
+type Action
+  = NoOp
+  | Login
+  | Logout
+
+
 type Status
   = Connected
   | NotConnected
   | NotAuthorized
+
+
+type alias UserResponse =
+  { email: String
+  , name: String
+  , id: String
+  }
 
 
 type alias LoginStatusResponse =
@@ -29,11 +45,24 @@ type alias AuthResponse =
   }
 
 
-mailbox : Mailbox LoginStatusResponse
+mailbox : Mailbox Action
 mailbox =
-  Signal.mailbox { status = "", authResponse = Nothing }
+  Signal.mailbox NoOp
 
 
-toString : LoginStatusResponse -> String
-toString response =
-  response.status
+signal : Signal Action
+signal =
+  mailbox.signal
+
+
+address : Signal.Address Action
+address =
+  mailbox.address
+
+
+toString : Action -> String
+toString action =
+  case action of
+    Login -> "login"
+    Logout -> "logout"
+    _ -> "noop"

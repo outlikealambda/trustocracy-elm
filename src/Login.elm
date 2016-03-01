@@ -13,14 +13,15 @@ module Login
 import String
 import Task
 import Http
-import Html exposing (Html, h2, div, text, input)
+import Html exposing (Html, h2, div, text, input, button)
 import Html.Attributes exposing (placeholder, value, class)
-import Html.Events exposing (on, targetValue, keyCode)
+import Html.Events exposing (on, targetValue, keyCode, onClick)
 import Effects exposing (Effects)
 import Json.Decode as Json
 
 
 import User exposing (User)
+import Auth.Facebook as Facebook
 
 
 type alias Model =
@@ -155,6 +156,8 @@ view address model =
             , onEnter address LoadUser
             ] []
           ]
+        , button [ onClick Facebook.address Facebook.Login ] [ text "FB Login" ]
+        , button [ onClick Facebook.address Facebook.Logout ] [ text "FB Logout" ]
         ]
       ]
 

@@ -194,9 +194,9 @@ update message world =
             ]
           )
 
-    TempFBAction status ->
+    TempFBAction response ->
       let
-        statusStr = Debug.log "status: " (Facebook.toString status)
+        statusStr = Debug.log "status: " response.status
       in
         ( world, Effects.none )
 

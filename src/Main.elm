@@ -38,4 +38,10 @@ port saveActiveUser =
   Signal.map ActiveUser.toMaybe ActiveUser.signal
 
 
+-- Facebook integration
 port fbAuth : Signal Facebook.LoginStatusResponse
+port fbUser : Signal (Maybe Facebook.UserResponse)
+
+port fbAuthRequest : Signal String
+port fbAuthRequest =
+  Signal.map Facebook.toString Facebook.signal
