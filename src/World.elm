@@ -11,7 +11,6 @@ import Html exposing (Html, input, div, node, h1, text)
 import Effects exposing (Effects)
 import Html.Attributes exposing (class, rel, href, placeholder, value, style)
 import Task
-import String
 
 
 import Session exposing (Session)
@@ -21,11 +20,11 @@ import ActiveUser exposing (ActiveUser(LoggedIn, LoggedOut))
 import Login
 import Header
 import User exposing (User)
+import Auth.Facebook as Facebook
 
 
 import Routes exposing (Route)
 import TransitRouter
-import TransitStyle
 
 
 type alias Model = TransitRouter.WithRoute Routes.Route
@@ -44,14 +43,17 @@ type Action
   | TopicsLoad (List Topic)
   | RouterAction (TransitRouter.Action Routes.Route)
   | SNoOp String
+  | TempFBAction Facebook.LoginStatusResponse
 
 
-actions : Signal Action
-actions =
+actions : Signal Facebook.LoginStatusResponse -> Signal Action
+actions fbAuth =
   -- use mergeMany if you have other mailboxes or signals to feed into StartApp
-  Signal.merge
-    (Signal.map RouterAction TransitRouter.actions)
-    (Signal.map SetUser ActiveUser.signal)
+  Signal.mergeMany
+    [ Signal.map RouterAction TransitRouter.actions
+    , Signal.map SetUser ActiveUser.signal
+    , Signal.map TempFBAction fbAuth
+    ]
 
 
 mountRoute : Route -> Route -> Model -> (Model, Effects Action)
@@ -192,6 +194,11 @@ update message world =
             ]
           )
 
+    TempFBAction status ->
+      let
+        statusStr = Debug.log "status: " (Facebook.toString status)
+      in
+        ( world, Effects.none )
 
 addUser : User -> Effects Action
 addUser user =

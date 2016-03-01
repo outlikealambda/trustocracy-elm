@@ -6,6 +6,7 @@ import Task
 
 import ActiveUser
 import User exposing (User)
+import Auth.Facebook as Facebook
 
 
 port initialPath : String
@@ -18,7 +19,7 @@ app =
     { init = World.init initialPath (ActiveUser.fromMaybe activeUser)
     , update = World.update
     , view = World.view
-    , inputs = [ World.actions ]
+    , inputs = [ World.actions fbAuth ]
     }
 
 
@@ -35,3 +36,6 @@ port tasks =
 port saveActiveUser : Signal (Maybe User)
 port saveActiveUser =
   Signal.map ActiveUser.toMaybe ActiveUser.signal
+
+
+port fbAuth : Signal Facebook.LoginStatusResponse
