@@ -343,8 +343,8 @@ $opinion-link-color : #aaa;
 
 .group-section-header {
   color: $primary-color-dark;
-  margin-left: 1.6rem;
-  margin-bottom: 1.6rem;
+  margin: 1.6rem;
+  margin-top: 0;
   font-family: $header-font;
   font-size: 3.0rem;
   font-weight: lighter;
@@ -355,6 +355,7 @@ $opinion-link-color : #aaa;
   text-transform: capitalize;
   font-weight: normal;
   font-size: 6.0rem;
+  margin:0;
 }
 
 .content {
@@ -364,7 +365,7 @@ $opinion-link-color : #aaa;
 
 .session-overview {
   text-align: center;
-  border-bottom: 1px solid #ccc;
+  margin-bottom: 3.2rem;
 }
 
 .opinion-browser {
@@ -375,27 +376,35 @@ $opinion-link-color : #aaa;
 }
 
 .session-link {
-  width: 5em;
-  height: 5em;
-  background: orange;
+  width: 8rem;
+  height: 8rem;
+  border: 0.2rem solid orange;
+  margin: 1.1rem;
+  border-radius: 0.8rem;
   display: inline-block;
   vertical-align: top;
-  padding: 1em;
-  margin: 1em;
+  padding: 1rem;
   cursor: pointer;
 
   div {
     opacity: 0;
+  }
+
+  &:hover {
+    background: #fafafa;
+    border-width: 0.3rem;
+    margin: 1rem;
+  }
+
+  &.active {
+    border: 0.3rem solid purple;
+    margin: 1rem;
   }
 }
 
 .session-link .fetched {
   opacity: 1;
   transition: opacity 1s;
-}
-
-.session-link.active {
-  background: purple;
 }
 
 .session-links {
