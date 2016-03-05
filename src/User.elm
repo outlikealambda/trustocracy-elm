@@ -2,6 +2,7 @@ module User
   ( User
   , decoder
   , empty
+  , isEmpty
   ) where
 
 import Json.Decode as Json exposing ((:=))
@@ -23,3 +24,7 @@ decoder =
   Json.object2 User
     ("name" := Json.string)
     ("id" := Json.int)
+
+isEmpty : User -> Bool
+isEmpty user =
+  user.id == -1

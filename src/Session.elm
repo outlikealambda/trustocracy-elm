@@ -191,11 +191,22 @@ update action session =
 
 view : Signal.Address Action -> Session -> Html
 view address session =
-  div
-    [ class "session" ]
-    [ sessionHeader session
-    , sessionContent address session
-    ]
+  let
+    (sessionHeader, sessionContent) =
+      if isActiveSession session then
+        ( activeSessionHeader session
+        , activeSessionContent address session
+        )
+      else
+        ( inactiveSessionHeader session
+        , inactiveSessionContent address session
+        )
+  in
+    div
+      [ class "session" ]
+      [ sessionHeader
+      , sessionContent
+      ]
 
 
 -- used to help create the nav links
@@ -255,8 +266,8 @@ browseLinker = buildLink
   }
 
 
-sessionHeader : Session -> Html
-sessionHeader session =
+activeSessionHeader : Session -> Html
+activeSessionHeader session =
   div
     [ class "session-overview" ]
     [ h1 [ class "topic-title" ] [ text session.topic.text ]
@@ -269,11 +280,25 @@ sessionHeader session =
     ]
 
 
-sessionContent : Signal.Address Action -> Session -> Html
-sessionContent address session =
+inactiveSessionHeader : Session -> Html
+inactiveSessionHeader session =
+  div
+    [ class "session-overview" ]
+    [ h1 [ class "topic-title" ] [ text session.topic.text ]
+    , div
+      [ class "session-links" ]
+      [ browseLinker session ]
+    ]
+
+
+isActiveSession : Session -> Bool
+isActiveSession =
+  not << User.isEmpty << .user
+
+
+activeSessionContent : Signal.Address Action -> Session -> Html
+activeSessionContent address session =
   case session.currentView of
-    Empty ->
-      div [] [ text "whoops, why we here?" ]
     Connect ->
       div
         [ class "content" ]
@@ -284,6 +309,20 @@ sessionContent address session =
       div
         [ class "content" ]
         [ Browser.view session.browser ]
+    Empty ->
+      div [] [ text "whoops, why we here?" ]
+
+
+-- an inactiveSession should only route to browse
+inactiveSessionContent : Signal.Address Action -> Session -> Html
+inactiveSessionContent address session =
+  case session.currentView of
+    Browse ->
+      div
+        [ class "content" ]
+        [ Browser.view session.browser ]
+    _ ->
+      div [] [ text "whoops, why we here?" ]
 
 
 clickToDiv : Routes.Route -> Attribute
