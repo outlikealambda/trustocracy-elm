@@ -96,31 +96,13 @@ update action session =
     -- Another approach might be to write an updateFromPath method for each
     -- component, and to pass through a path object whenever the url changes
     GoCompose topicId ->
-      let
-        (topicUpdate, topicUpdateFx) =
-          Topic.init topicId
-      in
-        ( { session | currentView = Compose }
-        , Effects.map TopicMsg topicUpdateFx
-        )
+      setSessionView session Compose topicId
 
     GoConnect topicId ->
-      let
-        (topicUpdate, topicUpdateFx) =
-          Topic.init topicId
-      in
-        ( { session | currentView = Connect }
-        , Effects.map TopicMsg topicUpdateFx
-        )
+      setSessionView session Connect topicId
 
     GoBrowse topicId ->
-      let
-        (topicUpdate, topicUpdateFx) =
-          Topic.init topicId
-      in
-        ( { session | currentView = Browse }
-        , Effects.map TopicMsg topicUpdateFx
-        )
+      setSessionView session Browse topicId
 
     -- PRIVATE
     TopicMsg topicAction ->
@@ -187,6 +169,28 @@ update action session =
 
     NoOp ->
       ( session, Effects.none )
+
+
+setSessionView : Session -> SessionView -> Int -> (Session, Effects Action)
+setSessionView session newSessionView topicId =
+  if session.topic.id == topicId then
+    -- same topic, change the view, but no need to reload
+    -- the models
+    ( { session | currentView = newSessionView }
+    , Effects.none )
+  else
+
+    let
+      (topicInit, topicInitFx) =
+        Topic.init topicId
+
+    in
+      ( { session
+        | currentView = newSessionView
+        , topic = topicInit
+        }
+      , Effects.map TopicMsg topicInitFx
+      )
 
 
 view : Signal.Address Action -> Session -> Html
