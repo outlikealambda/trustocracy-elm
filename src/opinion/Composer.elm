@@ -34,8 +34,8 @@ empty = Opinion.empty
 
 init : User -> Topic -> (Composer, Effects Action)
 init user topic =
-  ( empty
-  , Opinion.fetchByUserTopic user.id topic.id
+  ( { empty | user = user }
+  , Opinion.fetchByUserTopic user topic.id
     |> Effects.map FetchComplete
   )
 
@@ -75,14 +75,17 @@ view address composer =
     ]
 
 navButton : Composer -> Html
-navButton composer =
+navButton {id, fetched} =
   let
     actionText =
-      if composer.id == -1 then
+      if id == -1 then
         "Compose"
       else
         "Edit"
   in
-    div
-      [ class "compose" ]
-      [ text actionText ]
+    if fetched then
+      div
+        [ class "compose fetched" ]
+        [ text actionText ]
+    else
+      div [] []

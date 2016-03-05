@@ -65,13 +65,14 @@ fetchAllByTopic topicId =
 
 -- used by Writer; we don't have the opinionId to load the opinion,
 -- we only have the user and topic
-fetchByUserTopic : Int -> Int -> Effects Opinion
-fetchByUserTopic userId topicId =
-  buildFetchByUserTopicUrl userId topicId
+fetchByUserTopic : User -> Int -> Effects Opinion
+fetchByUserTopic user topicId =
+  Debug.log "user-topic url" (buildFetchByUserTopicUrl user.id topicId)
     |> Http.get decoder
     |> Task.toMaybe
-    |> Task.map (Maybe.withDefault empty)
+    |> Task.map (Maybe.withDefault { empty | user = user, fetched = True })
     |> Effects.task
+    |> Effects.map (Debug.log "by user topic")
 
 
 buildFetchByUserTopicUrl : Int -> Int -> String

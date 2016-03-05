@@ -31,6 +31,7 @@ type alias Connector =
   { rawPaths : Paths
   , buckets : Dict.Dict Key Group-- opinion paths bucketed by key
   , longestGroupPath : Int
+  , pathsFetched : Bool
   }
 
 
@@ -44,6 +45,7 @@ empty =
   { rawPaths = []
   , buckets = Dict.empty
   , longestGroupPath = 0
+  , pathsFetched = False
   }
 
 
@@ -59,9 +61,6 @@ update message model =
   case message of
     SetRaw opaths ->
       case opaths of
-
-        [] -> (model, Effects.none)
-
         opaths ->
           let
             (groups, fxs) =
@@ -73,6 +72,7 @@ update message model =
           in
             ( { model
               | rawPaths = opaths
+              , pathsFetched = True
               , buckets = buckets
               , longestGroupPath =
                 Dict.values buckets
@@ -188,10 +188,15 @@ degreeLabel n =
 
 
 navButton : Connector -> Html
-navButton {buckets} =
+navButton {buckets, pathsFetched} =
   let
     count = Dict.size buckets
   in
-    div
-      [ class "connect" ]
-      [ text <| (toString count) ++ " connected opinions" ]
+    if pathsFetched then
+      div
+        [ class "connect fetched" ]
+        [ text <| (toString count) ++ " connected opinions" ]
+    else
+      div
+        []
+        []

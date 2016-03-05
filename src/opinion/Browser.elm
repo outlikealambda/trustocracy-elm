@@ -21,6 +21,7 @@ import Html.Attributes exposing (class)
 
 type alias Browser =
   { opinions : List Opinion
+  , opinionsFetched : Bool
   }
 
 type Action
@@ -30,6 +31,7 @@ type Action
 empty : Browser
 empty =
   { opinions = []
+  , opinionsFetched = False
   }
 
 
@@ -45,7 +47,8 @@ update action browser =
   case action of
     FetchComplete opinions ->
       ( { browser
-        | opinions =
+        | opinionsFetched = True
+        , opinions =
             opinions
               |> List.map Presenter.prepare
               |> List.sortBy .influence
@@ -63,10 +66,13 @@ view {opinions} =
 
 
 navButton : Browser -> Html
-navButton {opinions} =
+navButton {opinions, opinionsFetched} =
   let
-    count = List.length opinions
+    opinionCount = toString <| List.length opinions
   in
-    div
-      [ class "browse" ]
-      [ text <| (toString count) ++ " opinions" ]
+    if opinionsFetched then
+      div
+        [ class "browse fetched" ]
+        [ text <| opinionCount ++ " opinions" ]
+    else
+      div [] []

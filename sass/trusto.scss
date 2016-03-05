@@ -108,6 +108,7 @@ h1, h2, h3, h4 {
 
 .op .friend {
   min-width: 260px;
+  margin-left: 0.8rem;
 }
 
 .numbered-badge {
@@ -382,6 +383,15 @@ $opinion-link-color : #aaa;
   padding: 1em;
   margin: 1em;
   cursor: pointer;
+
+  div {
+    opacity: 0;
+  }
+}
+
+.session-link .fetched {
+  opacity: 1;
+  transition: opacity 1s;
 }
 
 .session-link.active {
