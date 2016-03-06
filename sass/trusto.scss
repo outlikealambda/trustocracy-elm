@@ -420,17 +420,39 @@ $opinion-link-color : #aaa;
 }
 
 .composer-nav {
-  margin-bottom: 1.6rem;
+  margin-bottom: 0.8rem;
 
-  div {
+  > div {
     float: left;
     padding: 0.8rem 1.6rem;
-    margin-right: 1.6rem;
+    margin: 0.8rem;
     border: 2px solid orange;
     border-radius: 0.4rem;
+    cursor: pointer;
+  }
+
+  div:first-of-type {
+    margin-left: 0px;
+
+    &:hover, &.active {
+      margin-left: -0.1rem;
+    }
+
+    &:hover {
+      background: #fafafa;
+    }
+  }
+
+
+  > div:hover {
+    border-width: 3px;
+    margin: 0.7rem;
+    background: #fafafa;
   }
 
   .active {
     border-color: purple;
+    border-width: 3px;
+    margin: 0.7rem;
   }
 }
