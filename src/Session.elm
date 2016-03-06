@@ -308,7 +308,9 @@ activeSessionContent address session =
         [ class "content" ]
         (Connector.view (Signal.forwardTo address ConnectorMsg) session.connector)
     Compose ->
-      Composer.view (Signal.forwardTo address ComposerMsg) session.composer
+      div
+        [ class "content" ]
+        [ Composer.view (Signal.forwardTo address ComposerMsg) session.composer ]
     Browse ->
       div
         [ class "content" ]
