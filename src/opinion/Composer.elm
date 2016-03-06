@@ -16,7 +16,7 @@ import User exposing (User)
 import Topic.Model exposing (Topic)
 
 import Effects exposing (Effects)
-import Html exposing (Html, div, text)
+import Html exposing (Html, div, text, br)
 import Html.Attributes exposing (class, placeholder, value)
 import Html.Events exposing (onClick)
 
@@ -124,13 +124,23 @@ navButton {opinion} =
   let
     actionText =
       if opinion.id == -1 then
-        "Compose"
+        [ text "Compose"
+        , br [] []
+        , text "an"
+        , br [] []
+        , text "Opinion"
+        ]
       else
-        "Edit"
+        [ text "Edit"
+        , br [] []
+        , text "your"
+        , br [] []
+        , text "Opinion"
+        ]
   in
     if opinion.fetched then
       div
         [ class "compose fetched" ]
-        [ text actionText ]
+        actionText
     else
       div [] []

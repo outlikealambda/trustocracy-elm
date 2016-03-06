@@ -15,7 +15,7 @@ import Topic.Model exposing (Topic)
 
 
 import Effects exposing (Effects)
-import Html exposing (Html, div, text)
+import Html exposing (Html, div, text, br)
 import Html.Attributes exposing (class)
 
 
@@ -73,6 +73,8 @@ navButton {opinions, opinionsFetched} =
     if opinionsFetched then
       div
         [ class "browse fetched" ]
-        [ text <| opinionCount ++ " opinions" ]
+        [ text opinionCount
+        , br [] []
+        , text "Total Opinions" ]
     else
       div [] []

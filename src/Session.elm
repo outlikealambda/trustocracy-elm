@@ -277,8 +277,8 @@ activeSessionHeader session =
     [ h1 [ class "topic-title" ] [ text session.topic.text ]
     , div
       [ class "session-links" ]
-      [ browseLinker session
-      , connectLinker session
+      [ connectLinker session
+      , browseLinker session
       , composeLinker session
       ]
     ]

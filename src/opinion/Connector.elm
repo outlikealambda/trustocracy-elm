@@ -195,7 +195,7 @@ navButton {buckets, pathsFetched} =
     if pathsFetched then
       div
         [ class "connect fetched" ]
-        [ text <| (toString count) ++ " connected opinions" ]
+        [ text <| (toString count) ++ " Connected Opinions" ]
     else
       div
         []
