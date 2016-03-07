@@ -5,7 +5,7 @@ module Session
     ( SetUser
     , ClearUser
     , GoCompose
-    , GoConnect
+    , GoSurvey
     , GoBrowse
     )
   , update
@@ -15,7 +15,7 @@ module Session
 
 import User exposing (User)
 import Topic.Model as Topic exposing (Topic)
-import Opinion.Connector as Connector
+import Opinion.Surveyor as Surveyor
 import Opinion.Composer as Composer
 import Opinion.Browser as Browser
 import Routes
@@ -32,12 +32,12 @@ import TransitRouter
 
 
 type alias Session =
-  { user: User
-  , topic: Topic
-  , currentView: SessionView
-  , composer: Composer.Composer
-  , connector: Connector.Connector
-  , browser: Browser.Browser
+  { user : User
+  , topic : Topic
+  , currentView : SessionView
+  , composer : Composer.Composer
+  , surveyor : Surveyor.Surveyor
+  , browser : Browser.Browser
   }
 
 
@@ -46,14 +46,14 @@ type Action
   = SetUser User
   | ClearUser
   | GoCompose Int
-  | GoConnect Int
+  | GoSurvey Int
   | GoBrowse Int
 
   -- private
   | TopicMsg Topic.Action
   | PropagateTopic
   | ComposerMsg Composer.Action
-  | ConnectorMsg Connector.Action
+  | SurveyorMsg Surveyor.Action
   | BrowserMsg Browser.Action
   | NoOp
 
@@ -62,7 +62,7 @@ type Action
 -- we could reuse Routes.Route here, but it feels a little awkward
 type SessionView
   = Compose
-  | Connect
+  | Survey
   | Browse
   | Empty
 
@@ -73,7 +73,7 @@ init =
   , topic = Topic.empty
   , currentView = Empty
   , composer = Composer.empty
-  , connector = Connector.empty
+  , surveyor = Surveyor.empty
   , browser = Browser.empty
   }
 
@@ -91,18 +91,18 @@ update action session =
       , Effects.none
       )
 
-    -- GoCompose and GoConnect are exposed so that World can still control
+    -- GoCompose and GoSurvey are exposed so that World can still control
     -- routing.
     -- Another approach might be to write an updateFromPath method for each
     -- component, and to pass through a path object whenever the url changes
     GoCompose topicId ->
-      setSessionView session Compose topicId
+      setSessionTopic session Compose topicId
 
-    GoConnect topicId ->
-      setSessionView session Connect topicId
+    GoSurvey topicId ->
+      setSessionTopic session Survey topicId
 
     GoBrowse topicId ->
-      setSessionView session Browse topicId
+      setSessionTopic session Browse topicId
 
     -- PRIVATE
     TopicMsg topicAction ->
@@ -122,19 +122,19 @@ update action session =
       let
         (composerUpdate, composerUpdateFx) =
           Composer.init session.user session.topic
-        (connectorUpdate, connectorUpdateFx) =
-          Connector.init session.user session.topic
+        (surveyorUpdate, surveyorUpdateFx) =
+          Surveyor.init session.user session.topic
         (browserUpdate, browserUpdateFx) =
           Browser.init session.topic
       in
         ( { session
           | composer = composerUpdate
-          , connector = connectorUpdate
+          , surveyor = surveyorUpdate
           , browser = browserUpdate
           }
         , Effects.batch
           [ Effects.map ComposerMsg composerUpdateFx
-          , Effects.map ConnectorMsg connectorUpdateFx
+          , Effects.map SurveyorMsg surveyorUpdateFx
           , Effects.map BrowserMsg browserUpdateFx
           ]
         )
@@ -148,13 +148,13 @@ update action session =
           , Effects.map ComposerMsg updateFx
         )
 
-    ConnectorMsg connectAction ->
+    SurveyorMsg connectAction ->
       let
         (update, updateFx) =
-          Connector.update connectAction session.connector
+          Surveyor.update connectAction session.surveyor
       in
-        ( { session | connector = update }
-        , Effects.map ConnectorMsg updateFx
+        ( { session | surveyor = update }
+        , Effects.map SurveyorMsg updateFx
         )
 
     BrowserMsg browserAction ->
@@ -171,8 +171,8 @@ update action session =
       ( session, Effects.none )
 
 
-setSessionView : Session -> SessionView -> Int -> (Session, Effects Action)
-setSessionView session newSessionView topicId =
+setSessionTopic : Session -> SessionView -> Int -> (Session, Effects Action)
+setSessionTopic session newSessionView topicId =
   if session.topic.id == topicId then
     -- same topic, change the view, but no need to reload
     -- the models
@@ -254,10 +254,10 @@ composeLinker = buildLink
 
 connectLinker : Session -> Html
 connectLinker = buildLink
-  { routeView = Connect
-  , buildRoute = Routes.Connect
-  , makeHtml = Connector.navButton
-  , getter = .connector
+  { routeView = Survey
+  , buildRoute = Routes.Survey
+  , makeHtml = Surveyor.navButton
+  , getter = .surveyor
   }
 
 
@@ -303,10 +303,10 @@ isActiveSession =
 activeSessionContent : Signal.Address Action -> Session -> Html
 activeSessionContent address session =
   case session.currentView of
-    Connect ->
+    Survey ->
       div
         [ class "content" ]
-        (Connector.view (Signal.forwardTo address ConnectorMsg) session.connector)
+        (Surveyor.view (Signal.forwardTo address SurveyorMsg) session.surveyor)
     Compose ->
       div
         [ class "content" ]
@@ -315,6 +315,7 @@ activeSessionContent address session =
       div
         [ class "content" ]
         [ Browser.view session.browser ]
+
     Empty ->
       div [] [ text "whoops, why we here?" ]
 

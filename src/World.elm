@@ -73,9 +73,9 @@ mountRoute prevRoute route world =
       , updateSession <| Session.GoCompose topicId
       )
 
-    Routes.Connect topicId ->
+    Routes.Survey topicId ->
       ( world
-      , updateSession <| Session.GoConnect topicId
+      , updateSession <| Session.GoSurvey topicId
       )
 
     Routes.Browse topicId ->
@@ -242,7 +242,7 @@ view address world =
           Routes.Home ->
             [ Topic.View.viewAll world.topics ]
 
-          Routes.Connect _ ->
+          Routes.Survey _ ->
             [ Session.view (Signal.forwardTo address SessionMsg) world.session ]
 
           Routes.Compose _ ->

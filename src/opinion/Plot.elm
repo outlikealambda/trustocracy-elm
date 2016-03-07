@@ -1,7 +1,8 @@
-module Opinion.Group
-  ( Group
+-- a plotted opinion; an opinion, and where it is (via paths)
+module Opinion.Plot
+  ( Plot
   , Action
-  , initGroups
+  , initPlots
   , view
   , update
   , toDict
@@ -11,6 +12,7 @@ module Opinion.Group
 import Opinion.Opinion as Opinion exposing (Opinion)
 import Opinion.Presenter as Presenter
 import Opinion.Path as Path
+import Utils.List as ListUtils
 
 
 import Effects exposing (Effects)
@@ -20,12 +22,11 @@ import Html.Events exposing (onClick)
 import Dict
 
 
-type alias Group =
-    { groupId : Int
+type alias Plot =
+    { opinion : Opinion
     , paths : List Path.Model
     , shortestPath : Int
     , expanded : Bool
-    , opinion : Opinion
     }
 
 
@@ -35,65 +36,64 @@ type Action
   | FetchComplete Opinion
 
 
--- create OPG using a List of OpinionPaths
--- grab the opiner from the paths
-init : Int -> List Path.Model -> (Group, Effects Action)
-init key opaths =
+-- Create with a List of OpinionPaths and the Opinion.id
+-- We're no longer guaranteed to have a path, as this could be used for
+-- un-linked opinions?
+init : Int -> List Path.Model -> (Plot, Effects Action)
+init opinionId opaths =
   let
     sorted =
       List.sortBy Path.getLength opaths
-
-    opinionId =
-      Path.getOpinionId opaths
 
     shortest =
       List.map Path.getLength sorted
       |> List.minimum
       |> Maybe.withDefault 0
 
+    (opinion, opinionFx) =
+      Opinion.fetchById opinionId
+
   in
-    ( { groupId = key
+    ( { opinion = opinion
       , paths = sorted
       , shortestPath = shortest
       , expanded = False
-      , opinion = Opinion.empty
       }
-    , Opinion.fetchById opinionId
-      |> Effects.map FetchComplete
+    , Effects.map FetchComplete opinionFx
     )
 
 
-update : Action -> Group -> (Group, Effects Action)
-update message group =
+update : Action -> Plot -> (Plot, Effects Action)
+update message plot = -- because group turns cyan in atom
   case message of
 
     FetchComplete opinion ->
-      ( { group
+      ( { plot
         | opinion = Presenter.prepare opinion
         }
       , Effects.none
       )
 
     Expand ->
-      ( { group
+      ( { plot
         | expanded = True
         -- , opinion = Presenter.expand group.opinion
         }
       , Effects.none )
 
     Collapse ->
-      ( { group
+      ( { plot
         | expanded = False
         -- , opinion = Presenter.collapse group.opinion
         }
       , Effects.none )
 
 
-view : Signal.Address Action -> Group -> Html
+view : Signal.Address Action -> Plot -> Html
 view = viewByOpinion
 
 
-viewByOpinion : Signal.Address Action -> Group -> Html
+viewByOpinion : Signal.Address Action -> Plot -> Html
 viewByOpinion address {opinion, paths, expanded} =
   let
 
@@ -105,8 +105,10 @@ viewByOpinion address {opinion, paths, expanded} =
   in
     case List.head paths of
 
-      -- somehow, no paths, so render nothing
-      Nothing -> div [] []
+      -- no paths, maybe because of Reader?
+      Nothing ->
+        div
+          [ class "connector" ] [ text "no connex" ]
 
       -- hooray, at least one path
       Just h ->
@@ -138,35 +140,15 @@ viewByOpinion address {opinion, paths, expanded} =
             ]
 
 
-initGroups : List Path.Model -> List (Group, Effects Action)
-initGroups allPaths =
-  bucketList .opinionId allPaths Dict.empty
-    |> Dict.map init
-    |> Dict.values
-
-
-
-bucketList : (a -> comparable) -> List a -> Dict.Dict comparable (List a) -> Dict.Dict comparable (List a)
-bucketList keyGen opinions dict =
-  case opinions of
-    o::os ->
-      bucketListItem (keyGen o) o dict
-      |> bucketList keyGen os
-    [] -> dict
-
-
-bucketListItem : comparable -> a -> Dict.Dict comparable (List a) -> Dict.Dict comparable (List a)
-bucketListItem key v dict =
-  Dict.insert key (v :: safeGetList key dict) dict
-
-
-safeGetList : comparable -> Dict.Dict comparable (List a) -> List a
-safeGetList key dict = Maybe.withDefault [] (Dict.get key dict)
+initPlots : List Path.Model -> List (Plot, Effects Action)
+initPlots allPaths =
+  ListUtils.groupBy .opinionId allPaths
+    |> List.map (\(id, paths) -> init id paths)
 
 
 -- doesn't handle repeat group ids
-toDict : List Group -> Dict.Dict Int Group
-toDict groups =
-  groups
-   |> List.map (\group -> (group.groupId, group))
+toDict : (Plot -> comparable) -> List Plot -> Dict.Dict comparable Plot
+toDict keyGen plots =
+  plots
+   |> List.map (\plot -> (keyGen plot, plot))
    |> Dict.fromList

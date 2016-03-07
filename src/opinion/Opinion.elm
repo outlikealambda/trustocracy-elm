@@ -44,13 +44,15 @@ empty =
   }
 
 
-fetchById : Int -> Effects Opinion
+fetchById : Int -> (Opinion, Effects Opinion)
 fetchById opinionId =
-  "http://localhost:3714/api/opinion/" ++ (toString opinionId)
+  ( { empty | id = opinionId }
+  , "http://localhost:3714/api/opinion/" ++ (toString opinionId)
     |> Http.get decoder
     |> Task.toMaybe
     |> Task.map (Maybe.withDefault empty)
     |> Effects.task
+  )
 
 
 -- used by the topics page to get browsable opinions
@@ -67,12 +69,11 @@ fetchAllByTopic topicId =
 -- we only have the user and topic
 fetchByUserTopic : User -> Int -> Effects Opinion
 fetchByUserTopic user topicId =
-  Debug.log "user-topic url" (buildFetchByUserTopicUrl user.id topicId)
+  buildFetchByUserTopicUrl user.id topicId
     |> Http.get decoder
     |> Task.toMaybe
     |> Task.map (Maybe.withDefault { empty | user = user, fetched = True })
     |> Effects.task
-    |> Effects.map (Debug.log "by user topic")
 
 
 buildFetchByUserTopicUrl : Int -> Int -> String

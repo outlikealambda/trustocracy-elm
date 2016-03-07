@@ -20,7 +20,7 @@ import TransitRouter
 view : Topic -> Html
 view topic =
   div
-    [ class "topic", clickTo <| Routes.encode (Routes.Connect topic.id) ]
+    [ class "topic", clickTo <| Routes.encode (Routes.Survey topic.id) ]
     [ text topic.text ]
 
 
