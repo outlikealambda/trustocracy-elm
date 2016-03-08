@@ -4,9 +4,8 @@ module Header
   ) where
 
 
-import User exposing (User)
+import ActiveUser exposing (ActiveUser (LoggedIn, LoggedOut))
 
-import String
 import Html exposing (Html, Attribute, div, text, a)
 import Html.Attributes exposing (class, href)
 import Html.Events exposing (onClick, onWithOptions)
@@ -22,8 +21,8 @@ type alias Context =
   }
 
 
-view : Context -> User -> Html
-view context user =
+view : Context -> ActiveUser -> Html
+view context activeUser =
   let
     home =
       [ div
@@ -34,27 +33,28 @@ view context user =
         ]
       ]
 
-    userName =
-      if String.isEmpty user.name then
-        []
-      else
-        [ div [ class "user" ][ text user.name ] ]
-
-    login =
-      if String.isEmpty user.name then
-        [ div [ class "login" ]
-          [ a
-            [ onClick context.login () ]
-            [ text "login"]
-          ]
-        ]
-      else
-        [ div [ class "logout" ]
-          [ a
-            [ onClick context.logout () ]
-            [ text "logout"]
-          ]
-        ]
+    (userName, login) =
+      case activeUser of
+        LoggedOut ->
+          ( []
+          , [ div [ class "login" ]
+              [ a
+                [ onClick context.login () ]
+                [ text "login"]
+              ]
+            ]
+          )
+        LoggedIn user ->
+          ( [ div
+              [ class "user" ][ text user.name ] ]
+          , [ div
+              [ class "logout" ]
+              [ a
+                [ onClick context.logout () ]
+                [ text "logout"]
+              ]
+            ]
+          )
 
   in
     div [ class "header" ]

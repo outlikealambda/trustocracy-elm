@@ -118,7 +118,9 @@ init path activeUser =
     ( world
     , Effects.batch
       [ fx
-      , updateSession <| Session.SetUser (ActiveUser.toUser activeUser)])
+      , updateSession <| Session.SetActiveUser activeUser
+      ]
+    )
 
 
 initialModel : Model
@@ -180,22 +182,12 @@ update message world =
         )
 
     SetUser activeUser ->
-      case activeUser of
-        LoggedIn user ->
-          ( world
-          , Effects.batch
-            [ updateSession <| Session.SetUser user
-            , goHome
-            ]
-          )
-
-        LoggedOut ->
-          ( world
-          , Effects.batch
-            [ updateSession <| Session.ClearUser
-            , goHome
-            ]
-          )
+      ( world
+      , Effects.batch
+        [ updateSession <| Session.SetActiveUser activeUser
+        , goHome
+        ]
+      )
 
 
 addUser : User -> Effects Action
@@ -231,7 +223,7 @@ view address world =
   in
     div []
       [ Login.view (Signal.forwardTo address LoginMsg) world.login
-      , Header.view headerContext world.session.user
+      , Header.view headerContext world.session.activeUser
       , div
         [ class "world" ]
         ( case TransitRouter.getRoute world of

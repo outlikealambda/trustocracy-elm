@@ -2,8 +2,7 @@ module Session
   ( Session
   , init
   , Action
-    ( SetUser
-    , ClearUser
+    ( SetActiveUser
     , GoCompose
     , GoSurvey
     , GoBrowse
@@ -13,7 +12,12 @@ module Session
   ) where
 
 
-import User exposing (User)
+import ActiveUser exposing
+  ( ActiveUser
+    ( LoggedIn
+    , LoggedOut
+    )
+  )
 import Topic.Model as Topic exposing (Topic)
 import Opinion.Surveyor as Surveyor
 import Opinion.Composer as Composer
@@ -23,7 +27,13 @@ import Routes
 
 import Effects exposing (Effects)
 import String
-import Html exposing (Html, div, h1, text, Attribute)
+import Html exposing
+  ( Html
+  , div
+  , h1
+  , text
+  , Attribute
+  )
 import Html.Attributes exposing (class)
 import Html.Events exposing (on)
 import Json.Decode as Json
@@ -32,7 +42,7 @@ import TransitRouter
 
 
 type alias Session =
-  { user : User
+  { activeUser : ActiveUser
   , topic : Topic
   , currentView : SessionView
   , composer : Composer.Composer
@@ -43,8 +53,7 @@ type alias Session =
 
 type Action
   -- exposed
-  = SetUser User
-  | ClearUser
+  = SetActiveUser ActiveUser
   | GoCompose Int
   | GoSurvey Int
   | GoBrowse Int
@@ -69,7 +78,7 @@ type SessionView
 
 init : Session
 init =
-  { user = User.empty
+  { activeUser = LoggedOut
   , topic = Topic.empty
   , currentView = Empty
   , composer = Composer.empty
@@ -81,13 +90,8 @@ init =
 update : Action -> Session -> (Session, Effects Action)
 update action session =
   case action of
-    SetUser user ->
-      ( { session | user = user }
-      , Effects.none
-      )
-
-    ClearUser ->
-      ( { session | user = User.empty }
+    SetActiveUser activeUser ->
+      ( { session | activeUser = activeUser }
       , Effects.none
       )
 
@@ -118,26 +122,11 @@ update action session =
         , topicFx
         )
 
+    -- we only propagate topic, and not user, because
+    -- the app shouldn't normally be switching users, and only
+    -- does so in the current dev environment
     PropagateTopic ->
-      let
-        (composerUpdate, composerUpdateFx) =
-          Composer.init session.user session.topic
-        (surveyorUpdate, surveyorUpdateFx) =
-          Surveyor.init session.user session.topic
-        (browserUpdate, browserUpdateFx) =
-          Browser.init session.topic
-      in
-        ( { session
-          | composer = composerUpdate
-          , surveyor = surveyorUpdate
-          , browser = browserUpdate
-          }
-        , Effects.batch
-          [ Effects.map ComposerMsg composerUpdateFx
-          , Effects.map SurveyorMsg surveyorUpdateFx
-          , Effects.map BrowserMsg browserUpdateFx
-          ]
-        )
+      updateViews session
 
     ComposerMsg composerAction ->
       let
@@ -193,18 +182,54 @@ setSessionTopic session newSessionView topicId =
       )
 
 
+-- if the user is LoggedOut, we don't need to update
+-- compose and survey
+updateViews : Session -> (Session, Effects Action)
+updateViews session =
+  case session.activeUser of
+    LoggedOut ->
+      let
+        (browserUpdate, browserUpdateFx) =
+          Browser.init session.topic
+      in
+        ( { session | browser = browserUpdate }
+        , Effects.map BrowserMsg browserUpdateFx )
+    LoggedIn user ->
+      let
+        (composerUpdate, composerUpdateFx) =
+          Composer.init user session.topic
+        (surveyorUpdate, surveyorUpdateFx) =
+          Surveyor.init user session.topic
+        -- this is user independent, does it belong in Session?
+        (browserUpdate, browserUpdateFx) =
+          Browser.init session.topic
+      in
+        ( { session
+          | composer = composerUpdate
+          , surveyor = surveyorUpdate
+          , browser = browserUpdate
+          }
+        , Effects.batch
+          [ Effects.map ComposerMsg composerUpdateFx
+          , Effects.map SurveyorMsg surveyorUpdateFx
+          , Effects.map BrowserMsg browserUpdateFx
+          ]
+        )
+
+
 view : Signal.Address Action -> Session -> Html
 view address session =
   let
     (sessionHeader, sessionContent) =
-      if isActiveSession session then
-        ( activeSessionHeader session
-        , activeSessionContent address session
-        )
-      else
-        ( inactiveSessionHeader session
-        , inactiveSessionContent address session
-        )
+      case session.activeUser of
+        LoggedIn user ->
+          ( activeSessionHeader session
+          , activeSessionContent address session
+          )
+        LoggedOut ->
+          ( inactiveSessionHeader session
+          , inactiveSessionContent address session
+          )
   in
     div
       [ class "session" ]
@@ -295,11 +320,6 @@ inactiveSessionHeader session =
     ]
 
 
-isActiveSession : Session -> Bool
-isActiveSession =
-  not << User.isEmpty << .user
-
-
 activeSessionContent : Signal.Address Action -> Session -> Html
 activeSessionContent address session =
   case session.currentView of
@@ -329,7 +349,7 @@ inactiveSessionContent address session =
         [ class "content" ]
         [ Browser.view session.browser ]
     _ ->
-      div [] [ text "whoops, why we here?" ]
+      div [] [ text "Sorry, you must be logged in to see this content" ]
 
 
 clickToDiv : Routes.Route -> Attribute

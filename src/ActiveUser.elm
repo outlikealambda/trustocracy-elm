@@ -8,7 +8,6 @@ module ActiveUser
     , signal
     , toMaybe
     , fromMaybe
-    , toUser
     ) where
 
 
@@ -61,13 +60,3 @@ fromMaybe maybeUser =
 
     Just user ->
       LoggedIn user
-
-
-toUser : ActiveUser -> User
-toUser activeUser =
-  case activeUser of
-    LoggedIn user ->
-      user
-
-    LoggedOut ->
-      User.empty
