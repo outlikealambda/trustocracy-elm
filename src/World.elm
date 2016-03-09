@@ -210,8 +210,12 @@ addUser user =
 
 clearUser : Effects Action
 clearUser =
-  Signal.send ActiveUser.clear ()
-    |> Effects.task
+  Effects.batch
+    [ Signal.send ActiveUser.clear ()
+        |> Effects.task
+    , Signal.send Facebook.address Facebook.Logout
+        |> Effects.task
+    ]
     |> Effects.map (\_ -> SNoOp "cleared user")
 
 
