@@ -44,16 +44,15 @@ type Action
   | TopicsLoad (List Topic)
   | RouterAction (TransitRouter.Action Routes.Route)
   | SNoOp String
-  | TempFBAction Facebook.LoginStatusResponse
 
 
-actions : Signal Facebook.LoginStatusResponse -> Signal Action
-actions fbAuth =
+actions : Signal (Maybe Facebook.AuthResponse) -> Signal Action
+actions fbAuthResponses =
   -- use mergeMany if you have other mailboxes or signals to feed into StartApp
   Signal.mergeMany
     [ Signal.map RouterAction TransitRouter.actions
     , Signal.map SetUser ActiveUser.signal
-    , Signal.map TempFBAction fbAuth
+    , Signal.map (LoginMsg << Login.FacebookAuth) fbAuthResponses
     ]
 
 
@@ -184,7 +183,7 @@ update message world =
         )
 
     SetUser activeUser ->
-      case activeUser of
+      case (Debug.log "setting active user" activeUser) of
         LoggedIn user ->
           ( world
           , Effects.batch
@@ -201,11 +200,6 @@ update message world =
             ]
           )
 
-    TempFBAction response ->
-      let
-        statusStr = Debug.log "status: " response.status
-      in
-        ( world, Effects.none )
 
 addUser : User -> Effects Action
 addUser user =

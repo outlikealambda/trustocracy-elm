@@ -19,7 +19,7 @@ app =
     { init = World.init initialPath (ActiveUser.fromMaybe activeUser)
     , update = World.update
     , view = World.view
-    , inputs = [ World.actions fbAuth ]
+    , inputs = [ World.actions fbAuthResponses ]
     }
 
 
@@ -39,9 +39,17 @@ port saveActiveUser =
 
 
 -- Facebook integration
-port fbAuth : Signal Facebook.LoginStatusResponse
-port fbUser : Signal (Maybe Facebook.UserResponse)
+port fbAuthResponses : Signal (Maybe Facebook.AuthResponse)
 
-port fbAuthRequest : Signal String
-port fbAuthRequest =
-  Signal.map Facebook.toString Facebook.signal
+port fbLogin : Signal (List String)
+port fbLogin =
+  Facebook.loginRequests
+  -- TODO: map the Facebook.login List Facebook.Scope to strings
+
+port fbLogout : Signal ()
+port fbLogout =
+  Facebook.logoutRequests
+
+--port fbAuthRequest : Signal String
+--port fbAuthRequest =
+--  Signal.map Facebook.toString Facebook.signal

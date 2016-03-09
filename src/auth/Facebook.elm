@@ -1,10 +1,12 @@
 module Auth.Facebook
   ( LoginStatusResponse
+  , AuthResponse
   , UserResponse
   , Action(..)
   , Status
   , toString
-  , signal
+  , loginRequests
+  , logoutRequests
   , address
   ) where
 
@@ -20,8 +22,8 @@ type Action
 
 type Status
   = Connected
-  | NotConnected
   | NotAuthorized
+  | Unknown
 
 
 type alias UserResponse =
@@ -53,6 +55,28 @@ mailbox =
 signal : Signal Action
 signal =
   mailbox.signal
+
+
+loginRequests : Signal (List String)
+loginRequests =
+  let
+    filterLoginAction a =
+      case a of
+        Login -> Just []
+        _ -> Nothing
+  in
+    Signal.filterMap filterLoginAction [] mailbox.signal
+
+
+logoutRequests : Signal ()
+logoutRequests =
+  let
+    filterLogoutAction a =
+      case a of
+        Logout -> Just ()
+        _ -> Nothing
+  in
+    Signal.filterMap filterLogoutAction () mailbox.signal
 
 
 address : Signal.Address Action
