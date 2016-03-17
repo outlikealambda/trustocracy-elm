@@ -69,7 +69,7 @@ update message plot = -- because group turns cyan in atom
 
     FetchComplete opinion ->
       ( { plot
-        | opinion = Presenter.prepare opinion
+        | opinion = Presenter.prepare <| Debug.log "opinion: " opinion
         }
       , Effects.none
       )

@@ -14,6 +14,7 @@ import String
 
 
 import User exposing (User)
+import Qualifications exposing (Qualifications)
 
 
 type alias Presenter a =
@@ -22,6 +23,7 @@ type alias Presenter a =
   , influence : Int
   , user : User
   , snippet : String
+  , qualifications : Qualifications
   , expanded : Bool
   , fetched : Bool
   }
@@ -42,11 +44,12 @@ collapse presenter =
 
 
 view : Presenter a -> Html
-view {text, expanded, snippet, fetched, user, influence} =
+view {text, qualifications, expanded, snippet, fetched, user, influence} =
   let
     opinionBody =
       if expanded then
         [ viewOpiner user influence
+        , viewQualifications qualifications
         , viewOpinion text
         ]
       else
@@ -68,6 +71,10 @@ view {text, expanded, snippet, fetched, user, influence} =
 viewOpinion : String -> Html
 viewOpinion text =
   div [ class "text markdown"] [ Markdown.toHtml text ]
+
+
+viewQualifications : Qualifications -> Html
+viewQualifications = Qualifications.view
 
 
 viewSnippet : String -> Html

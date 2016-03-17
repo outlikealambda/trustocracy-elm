@@ -370,6 +370,8 @@ $opinion-link-color : #aaa;
 }
 
 .opinion-browser, .composer {
+  margin-bottom: 3.2rem;
+
   .opinion {
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
     border: 1px solid rgba(0,0,0,0.04);
@@ -417,13 +419,64 @@ $opinion-link-color : #aaa;
     padding: 3.2rem;
     font-size: 1.6rem;
   }
+
+}
+
+.write-qualifications {
+  margin-top: 1.6rem;
+}
+
+.qualifications-input {
+  .qualification {
+    margin-top: 1.6rem;
+  }
+
+  label {
+    text-transform: capitalize;
+    color: $text-color-lighter;
+    font-size: 1.6rem;
+    font-weight: normal;
+  }
+
+  textarea {
+    padding: 3.2rem;
+    font-size: 1.6rem;
+    height: 12.8rem;
+  }
+}
+
+.section-header {
+  color: $text-color;
+  font-size: 2.0rem;
+  margin: 1.6rem 0;
+}
+
+.section-sub-header {
+  margin-top: -1.6rem;
+  font-size: 1.2rem;
+  color: $text-color-lighter;
 }
 
 .composer-nav {
   margin-bottom: 0.8rem;
 
-  > div {
+  .write-nav, .preview-nav {
     float: left;
+  }
+
+  .save-opinion, .publish-opinion {
+    float: right;
+  }
+
+  .publish-opinion {
+    border-color: green;
+  }
+
+  .save-opinion {
+    border-color: lightgreen;
+  }
+
+  > div {
     padding: 0.8rem 1.6rem;
     margin: 0.8rem;
     border: 2px solid orange;
@@ -431,7 +484,7 @@ $opinion-link-color : #aaa;
     cursor: pointer;
   }
 
-  div:first-of-type {
+  .write-nav {
     margin-left: 0px;
 
     &:hover, &.active {
@@ -442,6 +495,15 @@ $opinion-link-color : #aaa;
       background: #fafafa;
     }
   }
+
+  .publish-opinion {
+    margin-right:0px;
+
+    &:hover, &.active {
+      margin-right: -0.1rem;
+    }
+  }
+
 
 
   > div:hover {

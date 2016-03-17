@@ -13,22 +13,27 @@ import Opinion.Opinion as Opinion exposing (Opinion)
 import Opinion.Writer as Writer
 import Opinion.Presenter as Presenter
 import User exposing (User)
-import Topic.Model exposing (Topic)
+import Topic.Model as Topic exposing (Topic)
 
 import Effects exposing (Effects)
 import Html exposing (Html, div, text, br)
 import Html.Attributes exposing (class, placeholder, value)
-import Html.Events exposing (onClick)
+import Html.Events exposing (on, onClick)
+import Json.Decode as Decoder
 
 
 type alias Composer =
   { opinion : Opinion
+  , topic : Topic
   , composerView : ComposerView
   }
 
 
 type Action
   = FetchComplete Opinion
+  | WriteComplete (Maybe Opinion)
+  | Save
+  | Publish
   | WriterMsg Writer.Action
   | SetView ComposerView
 
@@ -41,14 +46,15 @@ type ComposerView
 empty : Composer
 empty =
   { opinion = Opinion.empty
+  , topic = Topic.empty
   , composerView = Write
   }
 
 
 init : User -> Topic -> (Composer, Effects Action)
 init user topic =
-  ( empty
-  , Opinion.fetchByUserTopic user topic.id
+  ( { empty | topic = topic }
+  , Opinion.fetchDraftByUserTopic user topic.id
     |> Effects.map FetchComplete
   )
 
@@ -63,6 +69,13 @@ update action composer =
         }
       , Effects.none )
 
+    WriteComplete maybeOpinion ->
+      case Debug.log "written!" maybeOpinion of
+        Nothing ->
+          ( composer, Effects.none )
+        Just opinion ->
+          ( composer, Effects.none )
+
     SetView composerView ->
       ( { composer | composerView = composerView }
       , Effects.none
@@ -74,15 +87,23 @@ update action composer =
         }
       , Effects.none )
 
+    Save ->
+      ( composer
+      , Effects.map WriteComplete (Opinion.save composer.opinion composer.topic.id)
+      )
+
+    Publish ->
+      ( composer
+      , Effects.map WriteComplete (Opinion.publish composer.opinion composer.topic.id)
+      )
+
 
 view : Signal.Address Action -> Composer -> Html
 view address {opinion, composerView} =
   let content =
     case composerView of
       Write ->
-        div
-          [ class "writer" ]
-          [ Writer.view (Signal.forwardTo address WriterMsg) opinion ]
+        Writer.view (Signal.forwardTo address WriterMsg) opinion
       Preview ->
         div
           [ class "preview" ]
@@ -117,6 +138,16 @@ composerNav address composerView =
         , onClick (Signal.forwardTo address SetView) Preview
         ]
         [ text "Preview" ]
+      , div
+        [ class "publish-opinion"
+        , on "click" Decoder.value (\_ -> Signal.message address Publish)
+        ]
+        [ text "Publish" ]
+      , div
+        [ class "save-opinion"
+        , on "click" Decoder.value (\_ -> Signal.message address <| Debug.log "clicked" Save)
+        ]
+        [ text "Save" ]
       ]
 
 navButton : Composer -> Html
