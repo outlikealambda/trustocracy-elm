@@ -1,7 +1,11 @@
 module Routes where
 
 import Effects exposing (Effects)
+import Html exposing (Attribute)
+import Html.Events exposing (on)
+import Json.Decode as Decode
 import RouteParser
+import String
 import TransitRouter
 
 
@@ -11,6 +15,7 @@ type Route
   | Survey Int
   | Compose Int
   | Browse Int
+  | Read Int Int
   | EmptyRoute
 
 
@@ -21,6 +26,7 @@ routeParsers =
   , RouteParser.dyn1 Survey "/topic/" RouteParser.int "/survey"
   , RouteParser.dyn1 Compose "/topic/" RouteParser.int "/compose"
   , RouteParser.dyn1 Browse "/topic/" RouteParser.int "/browse"
+  , RouteParser.dyn2 Read "/topic/" RouteParser.int "/read/" RouteParser.int ""
   ]
 
 
@@ -38,6 +44,13 @@ encode route =
     Survey topicId -> "/topic/" ++ toString topicId ++ "/survey"
     Compose topicId -> "/topic/" ++ toString topicId ++ "/compose"
     Browse topicId -> "/topic/" ++ toString topicId ++ "/browse"
+    Read topicId opinionId ->
+      String.concat
+        [ "/topic/"
+        , toString topicId
+        , "/read/"
+        , toString opinionId
+        ]
     EmptyRoute -> "/"
 
 
@@ -46,3 +59,11 @@ redirect route =
   encode route
     |> Signal.send TransitRouter.pushPathAddress
     |> Effects.task
+
+
+goToRoute : Route -> Attribute
+goToRoute route =
+  on
+    "click"
+    Decode.value
+    (\_ -> Signal.message TransitRouter.pushPathAddress <| encode route)

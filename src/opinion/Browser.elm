@@ -11,6 +11,7 @@ module Opinion.Browser
 
 import Opinion.Opinion as Opinion exposing (Opinion)
 import Opinion.Presenter as Presenter
+import Routes
 import Topic.Model exposing (Topic)
 
 
@@ -58,11 +59,11 @@ update action browser =
       )
 
 
-view : Browser -> Html
-view {opinions} =
+view : (Int -> Routes.Route) -> Browser -> Html
+view routeBuilder {opinions} =
   div
     [ class "opinion-browser" ]
-    (List.map Presenter.view opinions)
+    (List.map (Presenter.viewCollapsed routeBuilder) opinions)
 
 
 navButton : Browser -> Html

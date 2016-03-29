@@ -12,6 +12,7 @@ module Opinion.Plot
 import Opinion.Opinion as Opinion exposing (Opinion)
 import Opinion.Presenter as Presenter
 import Opinion.Path as Path
+import Routes
 import Utils.List as ListUtils
 
 
@@ -64,7 +65,7 @@ init opinionId opaths =
 
 
 update : Action -> Plot -> (Plot, Effects Action)
-update message plot = -- because group turns cyan in atom
+update message plot =
   case message of
 
     FetchComplete opinion ->
@@ -88,13 +89,13 @@ update message plot = -- because group turns cyan in atom
         }
       , Effects.none )
 
+type alias ViewContext =
+  { address : Signal.Address Action
+  , routeBuilder : Int -> Routes.Route
+  }
 
-view : Signal.Address Action -> Plot -> Html
-view = viewByOpinion
-
-
-viewByOpinion : Signal.Address Action -> Plot -> Html
-viewByOpinion address {opinion, paths, expanded} =
+view : ViewContext -> Plot -> Html
+view {address, routeBuilder} {opinion, paths, expanded} =
   let
 
     remainder =
@@ -135,7 +136,7 @@ viewByOpinion address {opinion, paths, expanded} =
               , onClick address clickAction ]
               ( groupHeader :: others )
             , div [class "t-card-body"]
-              [ Presenter.view opinion
+              [ Presenter.viewCollapsed routeBuilder opinion
               ]
             ]
 

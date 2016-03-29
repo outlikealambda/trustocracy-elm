@@ -107,7 +107,7 @@ view address {opinion, composerView} =
       Preview ->
         div
           [ class "preview" ]
-          [ Presenter.view opinion ]
+          [ Presenter.viewExpanded opinion ]
   in
     div
       [ class "composer" ]

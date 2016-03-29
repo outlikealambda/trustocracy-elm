@@ -20,6 +20,7 @@ import Http
 
 import Opinion.Plot as Plot exposing (Plot)
 import Opinion.Path as Path
+import Routes
 import User exposing (User)
 import Topic.Model exposing (Topic)
 
@@ -138,11 +139,17 @@ buildPlottedUrl tid uid =
     ]
 
 
-view : Signal.Address Action -> Surveyor -> List Html
-view address {buckets, longestPlotPath} =
+type alias ViewContext =
+  { address : Signal.Address Action
+  , routeBuilder : Int -> Routes.Route
+  }
+
+
+view : ViewContext -> Surveyor -> List Html
+view context {buckets, longestPlotPath} =
   let
     sectionCreators =
-      List.map (viewPlotSection address) [0..longestPlotPath]
+      List.map (viewPlotSection context) [0..longestPlotPath]
     maybeSections =
       -- mapping a value (here, a list) over a list of functions is a little
       -- bit tricky
@@ -153,7 +160,7 @@ view address {buckets, longestPlotPath} =
     sections
 
 
-viewPlotSection : Signal.Address Action -> Int -> List (Key, Plot) -> Maybe Html
+viewPlotSection : ViewContext -> Int -> List (Key, Plot) -> Maybe Html
 viewPlotSection address pathLength keyPlots =
   let
     groupDivs =
@@ -175,9 +182,13 @@ viewPlotSection address pathLength keyPlots =
         Just section
 
 
-viewPlot : Signal.Address Action -> (Key, Plot) -> Html
-viewPlot address (key, opg) =
-  Plot.view (Signal.forwardTo address (PlotMsg key)) opg
+viewPlot : ViewContext -> (Key, Plot) -> Html
+viewPlot {address, routeBuilder} (key, opg) =
+  Plot.view
+    { address = Signal.forwardTo address (PlotMsg key)
+    , routeBuilder = routeBuilder
+    }
+    opg
 
 
 groupsOfLength : Int -> List (Key, Plot) -> List (Key, Plot)

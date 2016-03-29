@@ -1,25 +1,28 @@
 module Opinion.Presenter
   ( Presenter
   , prepare
-  , view
+  , viewExpanded
+  , viewCollapsed
   , expand
   , collapse
   ) where
 
 
-import Html exposing (Html, div, text, p, span, a)
-import Html.Attributes exposing (class, href)
+import Html exposing (Html, div, text, p, span)
+import Html.Attributes exposing (class)
 import Markdown
 import String
 
 
 import User exposing (User)
 import Qualifications exposing (Qualifications)
+import Routes
 
 
 type alias Presenter a =
   { a
-  | text : String
+  | id : Int
+  , text : String
   , influence : Int
   , user : User
   , snippet : String
@@ -43,38 +46,38 @@ collapse presenter =
   { presenter | expanded = False }
 
 
-view : Presenter a -> Html
-view {text, qualifications, expanded, snippet, fetched, user, influence} =
-  let
-    opinionBody =
-      if expanded then
-        [ viewOpiner user influence
-        , viewQualifications qualifications
-        , viewOpinion text
-        ]
-      else
-        [ viewOpiner user influence
-        , viewSnippet snippet
-        , span [ class "read-more" ] [ Html.text "Read more..."]
-        ]
-
-    presenterClasses =
-      "opinion " ++
-        if fetched then "fetched" else ""
-
-  in
-    div
-      [ class presenterClasses ]
-      opinionBody
+viewExpanded : Presenter a -> Html
+viewExpanded {text, qualifications, user, influence, fetched} =
+  div
+    [ class <| buildClasses fetched ]
+    [ viewOpiner user influence
+    , Qualifications.view qualifications
+    , div
+      [ class "text markdown"]
+      [ Markdown.toHtml text ]
+    ]
 
 
-viewOpinion : String -> Html
-viewOpinion text =
-  div [ class "text markdown"] [ Markdown.toHtml text ]
+viewCollapsed : (Int -> Routes.Route) -> Presenter a -> Html
+viewCollapsed routeBuilder {id, snippet, user, influence, fetched} =
+  div
+    [ class <| buildClasses fetched ]
+    [ viewOpiner user influence
+    , div
+      [ class "text snippet" ]
+      [ p [] [ text snippet ] ]
+    , span
+      [ class "read-more"
+      , Routes.goToRoute <| routeBuilder id
+      ]
+      [ Html.text "Read more..." ]
+    ]
 
 
-viewQualifications : Qualifications -> Html
-viewQualifications = Qualifications.view
+buildClasses : Bool -> String
+buildClasses fetched =
+  "opinion " ++
+    if fetched then "fetched" else ""
 
 
 viewSnippet : String -> Html

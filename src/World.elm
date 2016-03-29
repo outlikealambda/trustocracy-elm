@@ -84,6 +84,12 @@ mountRoute prevRoute route world =
       )
 
 
+    Routes.Read topicId opinionId ->
+      ( world
+      , updateSession <| Session.GoRead topicId opinionId
+      )
+
+
     -- map to [] if fail, since this will probably be the
     -- home page and we don't want to continually redirect
     Routes.Topics ->
@@ -204,7 +210,6 @@ clearUser =
     |> Effects.map (\_ -> SNoOp "cleared user")
 
 
-
 updateSession : Session.Action -> Effects Action
 updateSession sessionAction =
   Task.succeed sessionAction
@@ -241,6 +246,9 @@ view address world =
             [ Session.view (Signal.forwardTo address SessionMsg) world.session ]
 
           Routes.Browse _ ->
+            [ Session.view (Signal.forwardTo address SessionMsg) world.session ]
+
+          Routes.Read _ _ ->
             [ Session.view (Signal.forwardTo address SessionMsg) world.session ]
 
           Routes.EmptyRoute ->
