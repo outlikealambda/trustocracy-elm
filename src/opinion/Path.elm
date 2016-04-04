@@ -1,7 +1,6 @@
 module Opinion.Path
   ( Path
-  , viewAbbreviated
-  , viewHeader
+  , viewPaths
   , decoder
   , getOpinerName
   , getOpinionId
@@ -39,6 +38,21 @@ decoder =
     ("score" := Json.int)
 
 
+viewPaths : List Path -> Html
+viewPaths paths =
+  case paths of
+    first::rest ->
+      div
+        [ class "paths" ]
+        <| viewHeader first (List.length paths)
+        :: List.map viewAbbreviated rest
+    [] ->
+      div
+        [ class "paths" ]
+        [ text "too far to calculate path" ]
+
+
+
 viewHeader : Path -> Int -> Html
 viewHeader {friendRelationship, friend, path} count =
    div
@@ -48,15 +62,6 @@ viewHeader {friendRelationship, friend, path} count =
       [ Relationship.view friendRelationship ]
     , div [class "op-text friend"] [ text friend.name ]
     , div [class "single-line path"] (List.map Relationship.view path)
-    , div
-      [ class "path-count numbered-badge" ]
-      [ span
-        [ class "numbered-count" ]
-        [ text <| toString count ]
-      , span
-        [ class "numbered-label" ]
-        [ text "other connections" ]
-      ]
     ]
 
 

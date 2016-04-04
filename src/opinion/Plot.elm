@@ -17,9 +17,8 @@ import Utils.List as ListUtils
 
 
 import Effects exposing (Effects)
-import Html exposing (Html, Attribute, div, span, text, button)
+import Html exposing (Html, div, span, text)
 import Html.Attributes exposing (class)
-import Html.Events exposing (onClick)
 import Dict
 
 
@@ -88,55 +87,65 @@ update message plot =
         }
       , Effects.none )
 
+
 type alias ViewContext =
   { address : Signal.Address Action
   , routeBuilder : Int -> Routes.Route
   }
 
+
 view : ViewContext -> Plot -> Html
 view {address, routeBuilder} {opinion, paths, expanded} =
+  div
+    [ class "opg t-card"]
+    [ viewHeader paths expanded
+    , div
+      [ class "t-card-body" ]
+      [ Presenter.viewCollapsed routeBuilder opinion ]
+    ]
+
+
+viewHeader : List Path -> Bool -> Html
+viewHeader paths expanded =
   let
-    remainder =
-      if expanded then
-        List.tail paths |> Maybe.withDefault []
-      else []
+    pathHeader =
+      case paths of
+        h::_ ->
+          [ h ]
+        [] ->
+          []
+    badge =
+      case List.length paths - 1 of
+        0 -> div [] []
+        n -> countBadge n
 
   in
-    case List.head paths of
+    div
+      [ class <| "t-card-title connections" ]
+      [ badge
+      , Path.viewPaths pathHeader
+      ]
 
-      -- no paths, maybe because of Reader?
-      Nothing ->
-        div
-          [ class "connector" ] [ text "no connex" ]
 
-      -- hooray, at least one path
-      Just h ->
-        let
-          groupHeader =
-            Path.viewHeader h (List.length paths)
-
-          others =
-            List.map Path.viewAbbreviated remainder
-
-          clickAction =
-            if expanded then Collapse else Expand
-
-          toggleClass =
-            if expanded then
-              "expanded"
-            else "collapsed"
-
-        in
-          div
-            [ class ("opg t-card " ++ toggleClass) ]
-            [ div
-              [ class "t-card-title connections toggles"
-              , onClick address clickAction ]
-              ( groupHeader :: others )
-            , div [class "t-card-body"]
-              [ Presenter.viewCollapsed routeBuilder opinion
-              ]
-            ]
+countBadge : Int -> Html
+countBadge c =
+  let
+    (n, label) =
+      case c of
+        1 ->
+          (1, "other connection")
+        n ->
+          (n, "other connections")
+  in
+    div
+      [ class "path-count numbered-badge" ]
+      [ span
+        [ class "numbered-count" ]
+        [ text <| toString n ]
+      , span
+        [ class "numbered-label" ]
+        [ text label ]
+      ]
 
 
 initPlots : List Path -> List (Plot, Effects Action)
