@@ -26,8 +26,7 @@ import Topic.Model exposing (Topic)
 
 
 type alias Key = Int
-type alias Paths = List Path.Model
-
+type alias Paths = List Path.Path
 
 type alias Surveyor =
   { rawPaths : Paths

@@ -11,7 +11,7 @@ module Opinion.Plot
 
 import Opinion.Opinion as Opinion exposing (Opinion)
 import Opinion.Presenter as Presenter
-import Opinion.Path as Path
+import Opinion.Path as Path exposing (Path)
 import Routes
 import Utils.List as ListUtils
 
@@ -25,8 +25,7 @@ import Dict
 
 type alias Plot =
     { opinion : Opinion
-    , paths : List Path.Model
-    , shortestPath : Int
+    , paths : List Path, shortestPath : Int
     , expanded : Bool
     }
 
@@ -40,7 +39,7 @@ type Action
 -- Create with a List of OpinionPaths and the Opinion.id
 -- We're no longer guaranteed to have a path, as this could be used for
 -- un-linked opinions?
-init : Int -> List Path.Model -> (Plot, Effects Action)
+init : Int -> List Path -> (Plot, Effects Action)
 init opinionId opaths =
   let
     sorted =
@@ -97,7 +96,6 @@ type alias ViewContext =
 view : ViewContext -> Plot -> Html
 view {address, routeBuilder} {opinion, paths, expanded} =
   let
-
     remainder =
       if expanded then
         List.tail paths |> Maybe.withDefault []
@@ -141,7 +139,7 @@ view {address, routeBuilder} {opinion, paths, expanded} =
             ]
 
 
-initPlots : List Path.Model -> List (Plot, Effects Action)
+initPlots : List Path -> List (Plot, Effects Action)
 initPlots allPaths =
   ListUtils.groupBy .opinionId allPaths
     |> List.map (\(id, paths) -> init id paths)

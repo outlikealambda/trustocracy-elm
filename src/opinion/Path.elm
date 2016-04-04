@@ -1,5 +1,5 @@
 module Opinion.Path
-  ( Model
+  ( Path
   , viewAbbreviated
   , viewHeader
   , decoder
@@ -18,7 +18,7 @@ import Html exposing (Html, div, span, text)
 import Html.Attributes exposing (class)
 
 
-type alias Model =
+type alias Path =
   { friendRelationship: Relationship.Model
   , friend: User
   , path: List Relationship.Model
@@ -28,9 +28,9 @@ type alias Model =
   }
 
 
-decoder : Json.Decoder Model
+decoder : Json.Decoder Path
 decoder =
-  Json.object6 Model
+  Json.object6 Path
     ("friendRelationship" := Json.string)
     ("friend" := User.decoder)
     ("path" := Json.list Json.string)
@@ -39,7 +39,7 @@ decoder =
     ("score" := Json.int)
 
 
-viewHeader : Model -> Int -> Html
+viewHeader : Path -> Int -> Html
 viewHeader {friendRelationship, friend, path} count =
    div
     [ class "opg-header op single-line cf" ]
@@ -60,7 +60,7 @@ viewHeader {friendRelationship, friend, path} count =
     ]
 
 
-viewAbbreviated : Model -> Html
+viewAbbreviated : Path -> Html
 viewAbbreviated {friendRelationship, friend, path} =
   let relationships =
     List.map Relationship.view path
@@ -74,16 +74,16 @@ viewAbbreviated {friendRelationship, friend, path} =
       ]
 
 
-getOpinerName : Model -> String
+getOpinerName : Path -> String
 getOpinerName = .opiner >> .name
 
 
-getOpinionId : List Model -> Int
+getOpinionId : List Path -> Int
 getOpinionId paths =
   case List.head paths of
     Nothing -> -1
     Just {opinionId} -> opinionId
 
 
-getLength : Model -> Int
+getLength : Path -> Int
 getLength = List.length << .path
