@@ -2,11 +2,13 @@
 module Opinion.Surveyor
   ( Surveyor
   , Action
+    ( SetTopic )
   , empty
-  , init
   , view
   , navButton
   , update
+  , focus
+  , blur
   ) where
 
 import Effects exposing (Effects)
@@ -33,12 +35,19 @@ type alias Surveyor =
   , buckets : Dict.Dict Key Plot-- opinion paths bucketed by key
   , longestPlotPath : Int
   , pathsFetched : Bool
+  , zoom : Zoom
   }
 
 
 type Action
   = SetRaw Paths
+  | SetTopic Topic User
   | PlotMsg Key Plot.Action
+
+
+type Zoom
+  = Focus Int
+  | Blur
 
 
 empty : Surveyor
@@ -47,19 +56,19 @@ empty =
   , buckets = Dict.empty
   , longestPlotPath = 0
   , pathsFetched = False
+  , zoom = Blur
   }
-
-
-init : User -> Topic -> (Surveyor, Effects Action)
-init user topic =
-  ( empty
-  , fetchPlotted topic user
-  )
 
 
 update : Action -> Surveyor -> (Surveyor, Effects Action)
 update message model =
   case message of
+
+    SetTopic topic user ->
+      ( model
+      , fetchPlotted topic user
+      )
+
     SetRaw opaths ->
       case opaths of
         opaths ->
@@ -111,6 +120,15 @@ update message model =
             , Effects.map (PlotMsg key) fx
             )
 
+focus : Int -> Surveyor -> Surveyor
+focus target surveyor =
+  { surveyor | zoom = Focus target }
+
+
+blur : Surveyor -> Surveyor
+blur surveyor =
+  { surveyor | zoom = Blur }
+
 
 fetchPlotted : Topic -> User -> Effects Action
 fetchPlotted topic user =
@@ -145,7 +163,20 @@ type alias ViewContext =
 
 
 view : ViewContext -> Surveyor -> List Html
-view context {buckets, longestPlotPath} =
+view context surveyor =
+  case surveyor.zoom of
+    Blur ->
+      viewAll context surveyor
+    Focus target ->
+      case Dict.get target surveyor.buckets of
+        Just plot ->
+          [ viewPlot context (target, Plot.expand plot) ]
+        Nothing ->
+          [ div [] [ text "how did we get here?" ] ]
+
+
+viewAll : ViewContext -> Surveyor -> List Html
+viewAll context {buckets, longestPlotPath} =
   let
     sectionCreators =
       List.map (viewPlotSection context) [0..longestPlotPath]

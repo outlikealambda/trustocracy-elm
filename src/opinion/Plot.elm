@@ -6,6 +6,8 @@ module Opinion.Plot
   , view
   , update
   , toDict
+  , expand
+  , collapse
   ) where
 
 
@@ -30,9 +32,7 @@ type alias Plot =
 
 
 type Action
-  = Expand
-  | Collapse
-  | FetchComplete Opinion
+  = FetchComplete Opinion
 
 
 -- Create with a List of OpinionPaths and the Opinion.id
@@ -68,24 +68,10 @@ update message plot =
 
     FetchComplete opinion ->
       ( { plot
-        | opinion = Presenter.prepare <| Debug.log "opinion: " opinion
+        | opinion = Presenter.prepare opinion
         }
       , Effects.none
       )
-
-    Expand ->
-      ( { plot
-        | expanded = True
-        -- , opinion = Presenter.expand group.opinion
-        }
-      , Effects.none )
-
-    Collapse ->
-      ( { plot
-        | expanded = False
-        -- , opinion = Presenter.collapse group.opinion
-        }
-      , Effects.none )
 
 
 type alias ViewContext =
@@ -94,19 +80,41 @@ type alias ViewContext =
   }
 
 
+expand : Plot -> Plot
+expand =
+  setExpand True
+
+
+collapse : Plot -> Plot
+collapse =
+  setExpand False
+
+
+setExpand : Bool -> Plot -> Plot
+setExpand exp plot =
+  { plot | expanded = exp }
+
+
 view : ViewContext -> Plot -> Html
 view {address, routeBuilder} {opinion, paths, expanded} =
-  div
-    [ class "opg t-card"]
-    [ viewHeader paths expanded
-    , div
-      [ class "t-card-body" ]
-      [ Presenter.viewCollapsed routeBuilder opinion ]
-    ]
+  let
+    (header, expandClass, body) =
+      if expanded then
+        (expandedHeader paths, "expanded", Presenter.viewExpanded opinion)
+      else
+        (collapsedHeader paths, "", Presenter.viewCollapsed routeBuilder opinion)
+  in
+    div
+      [ class <| "opg t-card " ++ expandClass ]
+      [ header
+      , div
+        [ class "t-card-body" ]
+        [ body ]
+      ]
 
 
-viewHeader : List Path -> Bool -> Html
-viewHeader paths expanded =
+collapsedHeader : List Path -> Html
+collapsedHeader paths =
   let
     pathHeader =
       case paths of
@@ -125,6 +133,13 @@ viewHeader paths expanded =
       [ badge
       , Path.viewPaths pathHeader
       ]
+
+
+expandedHeader : List Path -> Html
+expandedHeader paths =
+  div
+    [ class <| "t-card-title connections" ]
+    [ Path.viewPaths paths ]
 
 
 countBadge : Int -> Html
