@@ -2,7 +2,8 @@
 module Opinion.Surveyor
   ( Surveyor
   , Action
-    ( SetTopic )
+    ( Init
+    )
   , empty
   , view
   , navButton
@@ -27,6 +28,7 @@ import Opinion.Plot as Plot exposing (Plot)
 import Opinion.Path as Path
 import Routes
 import User exposing (User)
+import ActiveUser
 import Topic.Model as Topic exposing (Topic)
 
 
@@ -38,7 +40,7 @@ type alias Surveyor =
   { rawPaths : Paths
   , buckets : Dict.Dict Key Plot-- opinion paths bucketed by key
   , longestPlotPath : Int
-  , pathsFetched : Bool
+  , isSurveyed : Bool
   , zoom : Zoom
   , topic : Topic
   }
@@ -47,7 +49,7 @@ type alias Surveyor =
 type Action
   = SetConnected Paths
   | SetUnconnected (List Int)
-  | SetTopic Topic User
+  | Init Topic ActiveUser.ActiveUser
   | PlotMsg Key Plot.Action
 
 
@@ -61,7 +63,7 @@ empty =
   { rawPaths = []
   , buckets = Dict.empty
   , longestPlotPath = 0
-  , pathsFetched = False
+  , isSurveyed = False
   , zoom = Blur
   , topic = Topic.empty
   }
@@ -71,10 +73,21 @@ update : Action -> Surveyor -> (Surveyor, Effects Action)
 update message model =
   case message of
 
-    SetTopic topic user ->
-      ( { model | topic = topic }
-      , fetchPlotted topic user
-      )
+    Init topic activeUser ->
+      let
+        fx =
+          case activeUser of
+            ActiveUser.LoggedOut ->
+              fetchAllOpinionIds topic
+            ActiveUser.LoggedIn user ->
+              fetchPlotted topic user
+      in
+        ( { model
+          | topic = topic
+          , buckets = Dict.empty
+          }
+        , fx
+        )
 
     SetConnected opaths ->
       case opaths of
@@ -104,7 +117,6 @@ update message model =
           in
             ( { model
               | rawPaths = opaths
-              , pathsFetched = True
               , buckets = Dict.union connectedBuckets model.buckets
               , longestPlotPath = longestPlotPath
               }
@@ -141,6 +153,7 @@ update message model =
       in
         ( { model
           | buckets = Dict.union unconnectedBuckets model.buckets
+          , isSurveyed = True
           }
         , Effects.batch keyedPlotsFxs
         )
@@ -307,13 +320,13 @@ degreeLabelTail n =
     n -> " connections"
 
 navButton : Surveyor -> Html
-navButton {buckets, pathsFetched} =
+navButton {buckets, isSurveyed} =
   let
     count = Dict.size buckets
   in
-    if pathsFetched then
+    if isSurveyed then
       div
         [ class "connect fetched" ]
-        [ text <| (toString count) ++ " Connected Opinions" ]
+        [ text <| (toString count) ++ " Opinions" ]
     else
       div [] []

@@ -208,7 +208,13 @@ updateViews session =
           Browser.init session.topic
       in
         ( { session | browser = browserUpdate }
-        , Effects.map BrowserMsg browserUpdateFx )
+        , Effects.batch
+          [ Task.succeed (Surveyor.Init session.topic session.activeUser)
+            |> Effects.task
+            |> Effects.map SurveyorMsg
+          , Effects.map BrowserMsg browserUpdateFx
+          ]
+        )
     LoggedIn user ->
       let
         (composerUpdate, composerUpdateFx) =
@@ -222,7 +228,7 @@ updateViews session =
           }
         , Effects.batch
           [ Effects.map ComposerMsg composerUpdateFx
-          , Task.succeed (Surveyor.SetTopic session.topic user)
+          , Task.succeed (Surveyor.Init session.topic session.activeUser)
             |> Effects.task
             |> Effects.map SurveyorMsg
           , Effects.map BrowserMsg browserUpdateFx
@@ -329,7 +335,9 @@ inactiveSessionHeader session =
     [ h1 [ class "topic-title" ] [ text session.topic.text ]
     , div
       [ class "session-links" ]
-      [ browseLinker session ]
+      [ connectLinker session
+      , browseLinker session
+      ]
     ]
 
 
@@ -367,6 +375,15 @@ activeSessionContent address session =
 inactiveSessionContent : Signal.Address Action -> Session -> Html
 inactiveSessionContent address session =
   case session.currentView of
+    Survey ->
+      div
+        [ class "content" ]
+        <| Surveyor.view
+          { address = Signal.forwardTo address SurveyorMsg
+          , routeBuilder = Routes.Read session.topic.id
+          }
+          session.surveyor
+
     Browse ->
       div
         [ class "content" ]
