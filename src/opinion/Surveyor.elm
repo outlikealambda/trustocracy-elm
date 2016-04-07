@@ -11,6 +11,7 @@ module Opinion.Surveyor
   , blur
   ) where
 
+
 import Effects exposing (Effects)
 import Task
 import Html exposing (Html, div, text, h4)
@@ -19,6 +20,7 @@ import Json.Decode as Json exposing ((:=))
 import Dict
 import String
 import Http
+
 
 import Opinion.Opinion as Opinion
 import Opinion.Plot as Plot exposing (Plot)
@@ -29,6 +31,7 @@ import Topic.Model as Topic exposing (Topic)
 
 
 type alias Key = Int
+
 type alias Paths = List Path.Path
 
 type alias Surveyor =
@@ -77,31 +80,36 @@ update message model =
       case opaths of
         opaths ->
           let
-            keyGen = .id << .opinion
-            -- super ugly, fix
-            -- this gets tricky, because we need to route the PlotMsg to the
-            -- appropriate Dict.value, so we need to map to the appropriate key
-            (keyedPlots, keyedPlotFxs) =
-              Plot.initPlots opaths
-              |> List.map
-                (\(plot, plotFx) -> ((keyGen plot, plot), (keyGen plot, plotFx)))
-              |> List.unzip
+            keyGen =
+              .id << .opinion
 
-            buckets =
-              Dict.fromList keyedPlots
+            plotPairs =
+              Plot.initPlots opaths
+
+            keyedPlotsFxs =
+              List.map (Plot.keyFx keyGen) plotPairs
+              |> List.map (\(k, fx) -> Effects.map (PlotMsg k) fx)
+
+            connectedBuckets =
+              List.map fst plotPairs
+              |> List.map (Plot.keyPlot keyGen)
+              |> Dict.fromList
+
+            longestPlotPath =
+              Dict.values connectedBuckets
+              |> List.map .shortestPath
+              |> List.maximum
+              |> Maybe.withDefault 0
+
           in
             ( { model
               | rawPaths = opaths
               , pathsFetched = True
-              , buckets = buckets
-              , longestPlotPath =
-                Dict.values buckets
-                |> List.map .shortestPath
-                |> List.maximum
-                |> Maybe.withDefault 0
+              , buckets = Dict.union connectedBuckets model.buckets
+              , longestPlotPath = longestPlotPath
               }
-            , List.map (\(k, fx) -> Effects.map (PlotMsg k) fx) keyedPlotFxs
-              |> (::) (fetchAllOpinionIds model.topic)
+            , fetchAllOpinionIds model.topic
+              :: keyedPlotsFxs
               |> Effects.batch
             )
 
@@ -109,20 +117,32 @@ update message model =
       let
         keyGen =
           .id << .opinion
-        (keyedPlots, keyedPlotFxs) =
-          List.filter (not << flip Dict.member model.buckets) ids
+
+        isOpinionFetched =
+          flip Dict.member model.buckets
+
+        -- List (Plot, Effects Plot.Action)
+        plotPairs =
+          -- avoid re-fetching opinions we already have via SetConnected
+          List.filter (not << isOpinionFetched) ids
           |> List.map (\id -> Plot.init id [])
-          |> List.map
-            (\(plot, plotFx) -> ((keyGen plot, plot), (keyGen plot, plotFx)))
-          |> List.unzip
+
+        -- end up with a List (Effects (PlotMsg key Plot.Action))
+        keyedPlotsFxs =
+          List.map (Plot.keyFx keyGen) plotPairs
+          |> List.map (\(k, fx) -> Effects.map (PlotMsg k) fx)
+
+        -- end up with a Dict (key, Plot)
         unconnectedBuckets =
-          Dict.fromList keyedPlots
+          List.map fst plotPairs
+          |> List.map (Plot.keyPlot keyGen)
+          |> Dict.fromList
+
       in
         ( { model
           | buckets = Dict.union unconnectedBuckets model.buckets
           }
-        , List.map (\(k, fx) -> Effects.map (PlotMsg k) fx) keyedPlotFxs
-          |> Effects.batch
+        , Effects.batch keyedPlotsFxs
         )
 
 
@@ -144,9 +164,6 @@ update message model =
             , Effects.map (PlotMsg key) fx
             )
 
-addKey : Int -> a -> (Int, a)
-addKey key v =
-  (key, v)
 
 focus : Int -> Surveyor -> Surveyor
 focus target surveyor =
@@ -168,6 +185,8 @@ fetchPlotted topic user =
     |> Effects.task
 
 
+-- super inefficient; gets all the opinions, and then extracts the id
+-- TODO: new endpoint on server
 fetchAllOpinionIds : Topic -> Effects Action
 fetchAllOpinionIds topic =
   Opinion.fetchAllByTopic topic.id

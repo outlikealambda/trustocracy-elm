@@ -7,6 +7,8 @@ module Opinion.Plot
   , view
   , update
   , toDict
+  , keyFx
+  , keyPlot
   , expand
   , collapse
   ) where
@@ -27,7 +29,8 @@ import Dict
 
 type alias Plot =
     { opinion : Opinion
-    , paths : List Path, shortestPath : Int
+    , paths : List Path
+    , shortestPath : Int
     , expanded : Bool
     }
 
@@ -49,6 +52,7 @@ init opinionId opaths =
       List.map Path.getLength sorted
       |> List.minimum
       |> Maybe.withDefault -1
+
     (opinion, opinionFx) =
       Opinion.fetchById opinionId
 
@@ -176,3 +180,13 @@ toDict keyGen plots =
   plots
    |> List.map (\plot -> (keyGen plot, plot))
    |> Dict.fromList
+
+
+keyFx : (Plot -> comparable) -> (Plot, Effects Action) -> (comparable, Effects Action)
+keyFx keyGen (plot, plotFx) =
+  (keyGen plot, plotFx)
+
+
+keyPlot : (Plot -> comparable) -> Plot -> (comparable, Plot)
+keyPlot keyGen plot =
+  (keyGen plot, plot)
