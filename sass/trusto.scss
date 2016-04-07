@@ -108,6 +108,7 @@ h1, h2, h3, h4 {
 
 .op .friend {
   min-width: 260px;
+  margin-left: 0.8rem;
 }
 
 .numbered-badge {
@@ -173,6 +174,7 @@ textarea.write {
 }
 
 .character-count {
+  margin-top: 1.6rem;
   color: $text-color-lighter;
   height: 2rem;
 }
@@ -342,8 +344,8 @@ $opinion-link-color : #aaa;
 
 .group-section-header {
   color: $primary-color-dark;
-  margin-left: 1.6rem;
-  margin-bottom: 1.6rem;
+  margin: 1.6rem;
+  margin-top: 0;
   font-family: $header-font;
   font-size: 3.0rem;
   font-weight: lighter;
@@ -354,6 +356,7 @@ $opinion-link-color : #aaa;
   text-transform: capitalize;
   font-weight: normal;
   font-size: 6.0rem;
+  margin:0;
 }
 
 .content {
@@ -363,10 +366,12 @@ $opinion-link-color : #aaa;
 
 .session-overview {
   text-align: center;
-  border-bottom: 1px solid #ccc;
+  margin-bottom: 3.2rem;
 }
 
-.opinion-browser {
+.opinion-browser, .composer {
+  margin-bottom: 3.2rem;
+
   .opinion {
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
     border: 1px solid rgba(0,0,0,0.04);
@@ -374,20 +379,142 @@ $opinion-link-color : #aaa;
 }
 
 .session-link {
-  width: 5em;
-  height: 5em;
-  background: orange;
+  width: 8rem;
+  height: 8rem;
+  border: 0.2rem solid orange;
+  margin: 1.1rem;
+  border-radius: 0.8rem;
   display: inline-block;
   vertical-align: top;
-  padding: 1em;
-  margin: 1em;
+  padding: 1rem;
   cursor: pointer;
+
+  div {
+    opacity: 0;
+  }
+
+  &:hover {
+    background: #fafafa;
+    border-width: 0.3rem;
+    margin: 1rem;
+  }
+
+  &.active {
+    border: 0.3rem solid purple;
+    margin: 1rem;
+  }
 }
 
-.session-link.active {
-  background: purple;
+.session-link .fetched {
+  opacity: 1;
+  transition: opacity 1s;
 }
 
 .session-links {
   margin: 0 auto;
+}
+
+.writer {
+  textarea {
+    padding: 3.2rem;
+    font-size: 1.6rem;
+  }
+
+}
+
+.write-qualifications {
+  margin-top: 1.6rem;
+}
+
+.qualifications-input {
+  .qualification {
+    margin-top: 1.6rem;
+  }
+
+  label {
+    text-transform: capitalize;
+    color: $text-color-lighter;
+    font-size: 1.6rem;
+    font-weight: normal;
+  }
+
+  textarea {
+    padding: 3.2rem;
+    font-size: 1.6rem;
+    height: 12.8rem;
+  }
+}
+
+.section-header {
+  color: $text-color;
+  font-size: 2.0rem;
+  margin: 1.6rem 0;
+}
+
+.section-sub-header {
+  margin-top: -1.6rem;
+  font-size: 1.2rem;
+  color: $text-color-lighter;
+}
+
+.composer-nav {
+  margin-bottom: 0.8rem;
+
+  .write-nav, .preview-nav {
+    float: left;
+  }
+
+  .save-opinion, .publish-opinion {
+    float: right;
+  }
+
+  .publish-opinion {
+    border-color: green;
+  }
+
+  .save-opinion {
+    border-color: lightgreen;
+  }
+
+  > div {
+    padding: 0.8rem 1.6rem;
+    margin: 0.8rem;
+    border: 2px solid orange;
+    border-radius: 0.4rem;
+    cursor: pointer;
+  }
+
+  .write-nav {
+    margin-left: 0px;
+
+    &:hover, &.active {
+      margin-left: -0.1rem;
+    }
+
+    &:hover {
+      background: #fafafa;
+    }
+  }
+
+  .publish-opinion {
+    margin-right:0px;
+
+    &:hover, &.active {
+      margin-right: -0.1rem;
+    }
+  }
+
+
+
+  > div:hover {
+    border-width: 3px;
+    margin: 0.7rem;
+    background: #fafafa;
+  }
+
+  .active {
+    border-color: purple;
+    border-width: 3px;
+    margin: 0.7rem;
+  }
 }

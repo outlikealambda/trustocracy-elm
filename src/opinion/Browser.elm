@@ -11,16 +11,18 @@ module Opinion.Browser
 
 import Opinion.Opinion as Opinion exposing (Opinion)
 import Opinion.Presenter as Presenter
+import Routes
 import Topic.Model exposing (Topic)
 
 
 import Effects exposing (Effects)
-import Html exposing (Html, div, text)
+import Html exposing (Html, div, text, br)
 import Html.Attributes exposing (class)
 
 
 type alias Browser =
   { opinions : List Opinion
+  , opinionsFetched : Bool
   }
 
 type Action
@@ -30,6 +32,7 @@ type Action
 empty : Browser
 empty =
   { opinions = []
+  , opinionsFetched = False
   }
 
 
@@ -45,7 +48,8 @@ update action browser =
   case action of
     FetchComplete opinions ->
       ( { browser
-        | opinions =
+        | opinionsFetched = True
+        , opinions =
             opinions
               |> List.map Presenter.prepare
               |> List.sortBy .influence
@@ -55,18 +59,23 @@ update action browser =
       )
 
 
-view : Browser -> Html
-view {opinions} =
+view : (Int -> Routes.Route) -> Browser -> Html
+view routeBuilder {opinions} =
   div
     [ class "opinion-browser" ]
-    (List.map Presenter.view opinions)
+    (List.map (Presenter.viewCollapsed routeBuilder) opinions)
 
 
 navButton : Browser -> Html
-navButton {opinions} =
+navButton {opinions, opinionsFetched} =
   let
-    count = List.length opinions
+    opinionCount = toString <| List.length opinions
   in
-    div
-      [ class "browse" ]
-      [ text <| (toString count) ++ " opinions" ]
+    if opinionsFetched then
+      div
+        [ class "browse fetched" ]
+        [ text opinionCount
+        , br [] []
+        , text "Total Opinions" ]
+    else
+      div [] []

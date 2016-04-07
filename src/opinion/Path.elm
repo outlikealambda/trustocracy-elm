@@ -1,6 +1,5 @@
 module Opinion.Path
   ( Model
-  , view
   , viewAbbreviated
   , viewHeader
   , decoder
@@ -19,18 +18,20 @@ import Html exposing (Html, div, span, text)
 import Html.Attributes exposing (class)
 
 
-type alias Model = {
-  friend: User,
-  path: List Relationship.Model,
-  opiner: User,
-  opinionId: Int,
-  score: Int
-}
+type alias Model =
+  { friendRelationship: Relationship.Model
+  , friend: User
+  , path: List Relationship.Model
+  , opiner: User
+  , opinionId: Int
+  , score: Int
+  }
 
 
 decoder : Json.Decoder Model
 decoder =
-  Json.object5 Model
+  Json.object6 Model
+    ("friendRelationship" := Json.string)
     ("friend" := User.decoder)
     ("path" := Json.list Json.string)
     ("opiner" := User.decoder)
@@ -38,23 +39,15 @@ decoder =
     ("score" := Json.int)
 
 
-view : Model -> Html
-view op =
-  let relationships =
-    List.map Relationship.view op.path
-  in
-    div [class "op single-line"]
-      [ span [class "op-text friend"] [text op.friend.name]
-      , span [class "single-line path"] relationships
-      ]
-
-
 viewHeader : Model -> Int -> Html
-viewHeader op count =
+viewHeader {friendRelationship, friend, path} count =
    div
     [ class "opg-header op single-line cf" ]
-    [ div [class "op-text friend"] [ text op.friend.name ]
-    , div [class "single-line path"] (List.map Relationship.view op.path)
+    [ div
+      [ class "single-line path" ]
+      [ Relationship.view friendRelationship ]
+    , div [class "op-text friend"] [ text friend.name ]
+    , div [class "single-line path"] (List.map Relationship.view path)
     , div
       [ class "path-count numbered-badge" ]
       [ span
@@ -68,12 +61,15 @@ viewHeader op count =
 
 
 viewAbbreviated : Model -> Html
-viewAbbreviated op =
+viewAbbreviated {friendRelationship, friend, path} =
   let relationships =
-    List.map Relationship.view op.path
+    List.map Relationship.view path
   in
     div [class "op single-line cf"]
-      [ div [class "op-text friend"] [text op.friend.name]
+      [ div
+        [ class "single-line path" ]
+        [ Relationship.view friendRelationship ]
+      , div [class "op-text friend"] [text friend.name]
       , div [class "single-line path"] relationships
       ]
 

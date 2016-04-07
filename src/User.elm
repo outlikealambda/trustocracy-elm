@@ -1,10 +1,13 @@
 module User
   ( User
   , decoder
+  , encode
   , empty
+  , isEmpty
   ) where
 
-import Json.Decode as Json exposing ((:=))
+import Json.Decode as Decode exposing ((:=))
+import Json.Encode as Encode
 
 
 type alias User =
@@ -18,8 +21,21 @@ empty =
   , id = -1
   }
 
-decoder : Json.Decoder User
+decoder : Decode.Decoder User
 decoder =
-  Json.object2 User
-    ("name" := Json.string)
-    ("id" := Json.int)
+  Decode.object2 User
+    ("name" := Decode.string)
+    ("id" := Decode.int)
+
+
+encode : User -> Encode.Value
+encode {name, id} =
+  Encode.object
+    [ ("name", Encode.string name)
+    , ("id", Encode.int id)
+    ]
+
+
+isEmpty : User -> Bool
+isEmpty user =
+  user.id == -1

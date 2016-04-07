@@ -2,19 +2,23 @@ module Opinion.Opinion
   ( Opinion
   , empty
   , fetchById
-  , fetchByUserTopic
+  , fetchDraftByUserTopic
   , fetchAllByTopic
+  , save
+  , publish
   ) where
 
 
 import User exposing (User)
+import Qualifications as Qualifications exposing (Qualifications)
 
 
 import Effects exposing (Effects)
 import String
 import Http
 import Task
-import Json.Decode as Json exposing ((:=))
+import Json.Decode as Decode exposing ((:=))
+import Json.Encode as Encode
 
 
 type alias Opinion =
@@ -24,6 +28,7 @@ type alias Opinion =
   , text : String
   , influence : Int
   , user : User
+  , qualifications : Qualifications
 
   -- derived
   , snippet : String
@@ -38,26 +43,29 @@ empty =
   , text = ""
   , influence = -1
   , user = User.empty
+  , qualifications = Qualifications.empty
   , snippet = ""
   , expanded = False
   , fetched = False
   }
 
 
-fetchById : Int -> Effects Opinion
+fetchById : Int -> (Opinion, Effects Opinion)
 fetchById opinionId =
-  "http://localhost:3714/api/opinion/" ++ (toString opinionId)
+  ( { empty | id = opinionId }
+  , "http://localhost:3714/api/opinion/" ++ (toString opinionId)
     |> Http.get decoder
     |> Task.toMaybe
     |> Task.map (Maybe.withDefault empty)
     |> Effects.task
+  )
 
 
 -- used by the topics page to get browsable opinions
 fetchAllByTopic : Int -> Effects (List Opinion)
 fetchAllByTopic topicId =
     "http://localhost:3714/api/topic/" ++ (toString topicId) ++ "/opinion"
-    |> Http.get (Json.list decoder)
+    |> Http.get (Decode.list decoder)
     |> Task.toMaybe
     |> Task.map (Maybe.withDefault [])
     |> Effects.task
@@ -65,17 +73,53 @@ fetchAllByTopic topicId =
 
 -- used by Writer; we don't have the opinionId to load the opinion,
 -- we only have the user and topic
-fetchByUserTopic : Int -> Int -> Effects Opinion
-fetchByUserTopic userId topicId =
-  buildFetchByUserTopicUrl userId topicId
+fetchByUserTopic : (Int -> Int -> String) -> User -> Int -> Effects Opinion
+fetchByUserTopic buildUrl user topicId =
+  buildUrl user.id topicId
     |> Http.get decoder
     |> Task.toMaybe
-    |> Task.map (Maybe.withDefault empty)
+    |> Task.map (Maybe.withDefault { empty | user = user, fetched = True })
     |> Effects.task
 
 
-buildFetchByUserTopicUrl : Int -> Int -> String
-buildFetchByUserTopicUrl userId topicId =
+fetchDraftByUserTopic : User -> Int -> Effects Opinion
+fetchDraftByUserTopic = fetchByUserTopic buildFetchDraftByUserTopicUrl
+
+
+save : Opinion -> Int -> Effects (Maybe Opinion)
+save opinion topicId =
+  write (Debug.log "saving" opinion) <| buildWriteUrl opinion topicId "save"
+
+
+publish : Opinion -> Int -> Effects (Maybe Opinion)
+publish opinion topicId =
+  write opinion <| buildWriteUrl opinion topicId "publish"
+
+
+write : Opinion -> String -> Effects (Maybe Opinion)
+write opinion url =
+  encode opinion
+    |> Encode.encode 0
+    |> Http.string
+    |> post' decoder url
+    |> Task.toMaybe
+    |> Effects.task
+
+
+buildWriteUrl : Opinion -> Int -> String -> String
+buildWriteUrl opinion topicId writeType =
+  String.concat
+    [ "http://localhost:3714/api/user/"
+    , toString opinion.user.id
+    , "/topic/"
+    , toString topicId
+    , "/opinion/"
+    , writeType
+    ]
+
+
+buildFetchDraftByUserTopicUrl : Int -> Int -> String
+buildFetchDraftByUserTopicUrl userId topicId =
   String.concat
     [ "http://localhost:3714/api/user/"
     , toString userId
@@ -85,21 +129,49 @@ buildFetchByUserTopicUrl userId topicId =
     ]
 
 
-decoder : Json.Decoder Opinion
+decoder : Decode.Decoder Opinion
 decoder =
-  Json.object4 fromApi
-    ( "id" := Json.int )
-    ( "text" := Json.string )
-    ( "influence" := Json.int )
+  Decode.object5 fromApi
+    ( "id" := Decode.int )
+    ( "text" := Decode.string )
+    ( "influence" := Decode.int )
     ( "user" := User.decoder )
+    ( Decode.oneOf
+      [ "qualifications" := Qualifications.decoder
+      , Decode.succeed Qualifications.empty
+      ]
+    )
+
+encode : Opinion -> Encode.Value
+encode opinion =
+  Encode.object
+    [ ("id", Encode.int opinion.id)
+    , ("text", Encode.string opinion.text)
+    , ("influence", Encode.int opinion.influence)
+    , ("user", User.encode opinion.user)
+    , ("qualifications", Qualifications.encode opinion.qualifications)
+    ]
 
 
-fromApi : Int -> String -> Int -> User -> Opinion
-fromApi id text influence user =
+fromApi : Int -> String -> Int -> User -> Qualifications -> Opinion
+fromApi id text influence user qualifications =
   { empty
-  | id = id
-  , text = text
-  , influence = influence
-  , user = user
-  , fetched = True
+    | id = id
+    , text = text
+    , influence = influence
+    , user = user
+    , qualifications = qualifications
+    , fetched = True
   }
+
+-- because post is pretty worthless
+-- see: https://groups.google.com/forum/#!topic/elm-discuss/Zpq9itvtLEY
+post' : Decode.Decoder a -> String -> Http.Body -> Task.Task Http.Error a
+post' decoder url body =
+    Http.send Http.defaultSettings
+      { verb = "POST"
+      , headers = [("Content-type", "application/json")]
+      , url = url
+      , body = body
+      }
+    |> Http.fromJson decoder

@@ -76,14 +76,20 @@ mountRoute prevRoute route world =
       , updateSession <| Session.GoCompose topicId
       )
 
-    Routes.Connect topicId ->
+    Routes.Survey topicId ->
       ( world
-      , updateSession <| Session.GoConnect topicId
+      , updateSession <| Session.GoSurvey topicId
       )
 
     Routes.Browse topicId ->
       ( world
       , updateSession <| Session.GoBrowse topicId
+      )
+
+
+    Routes.Read topicId opinionId ->
+      ( world
+      , updateSession <| Session.GoRead topicId opinionId
       )
 
 
@@ -121,7 +127,9 @@ init path activeUser =
     ( world
     , Effects.batch
       [ fx
-      , updateSession <| Session.SetUser (ActiveUser.toUser activeUser)])
+      , updateSession <| Session.SetActiveUser activeUser
+      ]
+    )
 
 
 initialModel : Model
@@ -183,22 +191,12 @@ update message world =
         )
 
     SetUser activeUser ->
-      case (Debug.log "setting active user" activeUser) of
-        LoggedIn user ->
-          ( world
-          , Effects.batch
-            [ updateSession <| Session.SetUser user
-            , goHome
-            ]
-          )
-
-        LoggedOut ->
-          ( world
-          , Effects.batch
-            [ updateSession <| Session.ClearUser
-            , goHome
-            ]
-          )
+      ( world
+      , Effects.batch
+        [ updateSession <| Session.SetActiveUser (Debug.log "setting active user" activeUser)
+        , goHome
+        ]
+      )
 
 
 addUser : User -> Effects Action
@@ -219,7 +217,6 @@ clearUser =
     |> Effects.map (\_ -> SNoOp "cleared user")
 
 
-
 updateSession : Session.Action -> Effects Action
 updateSession sessionAction =
   Task.succeed sessionAction
@@ -238,7 +235,7 @@ view address world =
   in
     div []
       [ Login.view (Signal.forwardTo address LoginMsg) world.login
-      , Header.view headerContext world.session.user
+      , Header.view headerContext world.session.activeUser
       , div
         [ class "world" ]
         ( case TransitRouter.getRoute world of
@@ -249,13 +246,16 @@ view address world =
           Routes.Home ->
             [ Topic.View.viewAll world.topics ]
 
-          Routes.Connect _ ->
+          Routes.Survey _ ->
             [ Session.view (Signal.forwardTo address SessionMsg) world.session ]
 
           Routes.Compose _ ->
             [ Session.view (Signal.forwardTo address SessionMsg) world.session ]
 
           Routes.Browse _ ->
+            [ Session.view (Signal.forwardTo address SessionMsg) world.session ]
+
+          Routes.Read _ _ ->
             [ Session.view (Signal.forwardTo address SessionMsg) world.session ]
 
           Routes.EmptyRoute ->

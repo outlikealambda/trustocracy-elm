@@ -1,5 +1,6 @@
-module Opinion.Connector
-  ( Connector
+-- displays plotted opinions
+module Opinion.Surveyor
+  ( Surveyor
   , Action
   , empty
   , init
@@ -17,8 +18,9 @@ import Dict
 import String
 import Http
 
-import Opinion.Group as Group exposing (Group)
+import Opinion.Plot as Plot exposing (Plot)
 import Opinion.Path as Path
+import Routes
 import User exposing (User)
 import Topic.Model exposing (Topic)
 
@@ -27,63 +29,72 @@ type alias Key = Int
 type alias Paths = List Path.Model
 
 
-type alias Connector =
+type alias Surveyor =
   { rawPaths : Paths
-  , buckets : Dict.Dict Key Group-- opinion paths bucketed by key
-  , longestGroupPath : Int
+  , buckets : Dict.Dict Key Plot-- opinion paths bucketed by key
+  , longestPlotPath : Int
+  , pathsFetched : Bool
   }
 
 
 type Action
   = SetRaw Paths
-  | GroupMsg Key Group.Action
+  | PlotMsg Key Plot.Action
 
 
-empty : Connector
+empty : Surveyor
 empty =
   { rawPaths = []
   , buckets = Dict.empty
-  , longestGroupPath = 0
+  , longestPlotPath = 0
+  , pathsFetched = False
   }
 
 
-init : User -> Topic -> (Connector, Effects Action)
+init : User -> Topic -> (Surveyor, Effects Action)
 init user topic =
   ( empty
-  , getConnectedOpinions topic user
+  , fetchPlotted topic user
   )
 
 
-update : Action -> Connector -> (Connector, Effects Action)
+update : Action -> Surveyor -> (Surveyor, Effects Action)
 update message model =
   case message of
     SetRaw opaths ->
       case opaths of
-
-        [] -> (model, Effects.none)
-
         opaths ->
           let
-            (groups, fxs) =
-              Group.initGroups opaths
-                |> List.map (\(g, fx) -> (g, Effects.map (GroupMsg g.groupId) fx))
+            keyGen = .id << .opinion
+            -- super ugly, fix
+            -- this gets tricky, because we need to route the PlotMsg to the
+            -- appropriate Dict.value, so we need to map to the appropriate key
+            (plots, plotFxs) =
+              Plot.initPlots opaths
+                |> List.map
+                  (\(plot, plotFx) ->
+                    ( plot
+                    , Effects.map (PlotMsg (keyGen plot)) plotFx
+                    )
+                  )
                 |> List.unzip
             buckets =
-              Group.toDict groups
+              Plot.toDict keyGen plots
           in
             ( { model
               | rawPaths = opaths
+              , pathsFetched = True
               , buckets = buckets
-              , longestGroupPath =
+              , longestPlotPath =
                 Dict.values buckets
                 |> List.map .shortestPath
                 |> List.maximum
                 |> Maybe.withDefault 0
               }
-            , Effects.batch fxs
+            , Effects.batch plotFxs
             )
 
-    GroupMsg key subMsg ->
+    PlotMsg key subMsg ->
       case Dict.get key model.buckets of
 
         Nothing ->
@@ -93,18 +104,18 @@ update message model =
         Just bucket ->
           let
             (updatedBucket, fx) =
-              Group.update subMsg bucket
+              Plot.update subMsg bucket
             updatedBuckets =
               Dict.insert key updatedBucket model.buckets
           in
             ( { model | buckets = updatedBuckets }
-            , Effects.map (GroupMsg key) fx
+            , Effects.map (PlotMsg key) fx
             )
 
 
-getConnectedOpinions : Topic -> User -> Effects Action
-getConnectedOpinions topic user =
-  buildConnectedOpinionsUrl topic.id user.id
+fetchPlotted : Topic -> User -> Effects Action
+fetchPlotted topic user =
+  buildPlottedUrl topic.id user.id
     |> Http.get opathsDecoder
     |> Task.toMaybe
     |> Task.map (Maybe.withDefault [])
@@ -117,8 +128,8 @@ opathsDecoder =
   "paths" := Json.list Path.decoder
 
 
-buildConnectedOpinionsUrl : Int -> Int -> String
-buildConnectedOpinionsUrl tid uid =
+buildPlottedUrl : Int -> Int -> String
+buildPlottedUrl tid uid =
   String.concat
     [ "http://localhost:3714/api/user/"
     , toString uid
@@ -128,11 +139,17 @@ buildConnectedOpinionsUrl tid uid =
     ]
 
 
-view : Signal.Address Action -> Connector -> List Html
-view address {buckets, longestGroupPath} =
+type alias ViewContext =
+  { address : Signal.Address Action
+  , routeBuilder : Int -> Routes.Route
+  }
+
+
+view : ViewContext -> Surveyor -> List Html
+view context {buckets, longestPlotPath} =
   let
     sectionCreators =
-      List.map (viewGroupSection address) [0..longestGroupPath]
+      List.map (viewPlotSection context) [0..longestPlotPath]
     maybeSections =
       -- mapping a value (here, a list) over a list of functions is a little
       -- bit tricky
@@ -143,12 +160,12 @@ view address {buckets, longestGroupPath} =
     sections
 
 
-viewGroupSection : Signal.Address Action -> Int -> List (Key, Group) -> Maybe Html
-viewGroupSection address pathLength keyGroups =
+viewPlotSection : ViewContext -> Int -> List (Key, Plot) -> Maybe Html
+viewPlotSection address pathLength keyPlots =
   let
     groupDivs =
-      groupsOfLength pathLength keyGroups
-        |> List.map (viewGroup address)
+      groupsOfLength pathLength keyPlots
+        |> List.map (viewPlot address)
     header =
       h4
         [ class "group-section-header" ]
@@ -165,15 +182,19 @@ viewGroupSection address pathLength keyGroups =
         Just section
 
 
-viewGroup : Signal.Address Action -> (Key, Group) -> Html
-viewGroup address (key, opg) =
-  Group.view (Signal.forwardTo address (GroupMsg key)) opg
+viewPlot : ViewContext -> (Key, Plot) -> Html
+viewPlot {address, routeBuilder} (key, opg) =
+  Plot.view
+    { address = Signal.forwardTo address (PlotMsg key)
+    , routeBuilder = routeBuilder
+    }
+    opg
 
 
-groupsOfLength : Int -> List (Key, Group) -> List (Key, Group)
+groupsOfLength : Int -> List (Key, Plot) -> List (Key, Plot)
 groupsOfLength pathLength groups =
   List.filter
-    (\keyGroup -> pathLength == (.shortestPath <| snd keyGroup))
+    (\keyPlot -> pathLength == (.shortestPath <| snd keyPlot))
     groups
 
 
@@ -187,11 +208,14 @@ degreeLabel n =
     k -> (toString k) ++ "th degree"
 
 
-navButton : Connector -> Html
-navButton {buckets} =
+navButton : Surveyor -> Html
+navButton {buckets, pathsFetched} =
   let
     count = Dict.size buckets
   in
-    div
-      [ class "connect" ]
-      [ text <| (toString count) ++ " connected opinions" ]
+    if pathsFetched then
+      div
+        [ class "connect fetched" ]
+        [ text <| (toString count) ++ " Connected Opinions" ]
+    else
+      div [] []
