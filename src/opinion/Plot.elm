@@ -2,6 +2,7 @@
 module Opinion.Plot
   ( Plot
   , Action
+  , init
   , initPlots
   , view
   , update
@@ -47,8 +48,7 @@ init opinionId opaths =
     shortest =
       List.map Path.getLength sorted
       |> List.minimum
-      |> Maybe.withDefault 0
-
+      |> Maybe.withDefault -1
     (opinion, opinionFx) =
       Opinion.fetchById opinionId
 
@@ -123,9 +123,10 @@ collapsedHeader paths =
         [] ->
           []
     badge =
-      case List.length paths - 1 of
-        0 -> div [] []
-        n -> countBadge n
+      if List.length paths > 1 then
+        countBadge (List.length paths - 1)
+      else
+        div [] []
 
   in
     div

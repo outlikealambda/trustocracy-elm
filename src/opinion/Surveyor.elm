@@ -20,11 +20,12 @@ import Dict
 import String
 import Http
 
+import Opinion.Opinion as Opinion
 import Opinion.Plot as Plot exposing (Plot)
 import Opinion.Path as Path
 import Routes
 import User exposing (User)
-import Topic.Model exposing (Topic)
+import Topic.Model as Topic exposing (Topic)
 
 
 type alias Key = Int
@@ -36,11 +37,13 @@ type alias Surveyor =
   , longestPlotPath : Int
   , pathsFetched : Bool
   , zoom : Zoom
+  , topic : Topic
   }
 
 
 type Action
-  = SetRaw Paths
+  = SetConnected Paths
+  | SetUnconnected (List Int)
   | SetTopic Topic User
   | PlotMsg Key Plot.Action
 
@@ -57,6 +60,7 @@ empty =
   , longestPlotPath = 0
   , pathsFetched = False
   , zoom = Blur
+  , topic = Topic.empty
   }
 
 
@@ -65,11 +69,11 @@ update message model =
   case message of
 
     SetTopic topic user ->
-      ( model
+      ( { model | topic = topic }
       , fetchPlotted topic user
       )
 
-    SetRaw opaths ->
+    SetConnected opaths ->
       case opaths of
         opaths ->
           let
@@ -77,17 +81,14 @@ update message model =
             -- super ugly, fix
             -- this gets tricky, because we need to route the PlotMsg to the
             -- appropriate Dict.value, so we need to map to the appropriate key
-            (plots, plotFxs) =
+            (keyedPlots, keyedPlotFxs) =
               Plot.initPlots opaths
-                |> List.map
-                  (\(plot, plotFx) ->
-                    ( plot
-                    , Effects.map (PlotMsg (keyGen plot)) plotFx
-                    )
-                  )
-                |> List.unzip
+              |> List.map
+                (\(plot, plotFx) -> ((keyGen plot, plot), (keyGen plot, plotFx)))
+              |> List.unzip
+
             buckets =
-              Plot.toDict keyGen plots
+              Dict.fromList keyedPlots
           in
             ( { model
               | rawPaths = opaths
@@ -99,8 +100,31 @@ update message model =
                 |> List.maximum
                 |> Maybe.withDefault 0
               }
-            , Effects.batch plotFxs
+            , List.map (\(k, fx) -> Effects.map (PlotMsg k) fx) keyedPlotFxs
+              |> (::) (fetchAllOpinionIds model.topic)
+              |> Effects.batch
             )
+
+    SetUnconnected ids ->
+      let
+        keyGen =
+          .id << .opinion
+        (keyedPlots, keyedPlotFxs) =
+          List.filter (not << flip Dict.member model.buckets) ids
+          |> List.map (\id -> Plot.init id [])
+          |> List.map
+            (\(plot, plotFx) -> ((keyGen plot, plot), (keyGen plot, plotFx)))
+          |> List.unzip
+        unconnectedBuckets =
+          Dict.fromList keyedPlots
+      in
+        ( { model
+          | buckets = Dict.union unconnectedBuckets model.buckets
+          }
+        , List.map (\(k, fx) -> Effects.map (PlotMsg k) fx) keyedPlotFxs
+          |> Effects.batch
+        )
+
 
     PlotMsg key subMsg ->
       case Dict.get key model.buckets of
@@ -120,6 +144,10 @@ update message model =
             , Effects.map (PlotMsg key) fx
             )
 
+addKey : Int -> a -> (Int, a)
+addKey key v =
+  (key, v)
+
 focus : Int -> Surveyor -> Surveyor
 focus target surveyor =
   { surveyor | zoom = Focus target }
@@ -136,8 +164,15 @@ fetchPlotted topic user =
     |> Http.get opathsDecoder
     |> Task.toMaybe
     |> Task.map (Maybe.withDefault [])
-    |> Task.map SetRaw
+    |> Task.map SetConnected
     |> Effects.task
+
+
+fetchAllOpinionIds : Topic -> Effects Action
+fetchAllOpinionIds topic =
+  Opinion.fetchAllByTopic topic.id
+    |> Effects.map (List.map .id)
+    |> Effects.map SetUnconnected
 
 
 opathsDecoder : Json.Decoder Paths
@@ -178,14 +213,17 @@ view context surveyor =
 viewAll : ViewContext -> Surveyor -> List Html
 viewAll context {buckets, longestPlotPath} =
   let
-    sectionCreators =
+    sectionConstructors =
       List.map (viewPlotSection context) [0..longestPlotPath]
-    maybeSections =
+    connectedSections =
       -- mapping a value (here, a list) over a list of functions is a little
-      -- bit tricky
-      List.map ((|>) (Dict.toList buckets)) sectionCreators
+      -- bit unwieldy
+      List.map ((|>) (Dict.toList buckets)) sectionConstructors
+    unconnectedSection =
+      [ viewPlotSection context -1 <| Dict.toList buckets ]
     sections =
-      List.filterMap identity maybeSections
+      connectedSections ++ unconnectedSection
+      |> List.filterMap identity
   in
     sections
 
@@ -199,7 +237,7 @@ viewPlotSection address pathLength keyPlots =
     header =
       h4
         [ class "group-section-header" ]
-        [ text <| (degreeLabel pathLength) ++ " connections"]
+        [ text <| degreeLabel pathLength ]
     section =
       div
         [ class "group-section" ]
@@ -230,13 +268,24 @@ groupsOfLength pathLength groups =
 
 degreeLabel : Int -> String
 degreeLabel n =
+  (degreeLabelHead n) ++ (degreeLabelTail n)
+
+
+degreeLabelHead : Int -> String
+degreeLabelHead n =
   case n of
+    -1 -> "Unconnected"
     0 -> "Direct"
     1 -> "1st degree"
     2 -> "2nd degree"
     3 -> "3rd degree"
     k -> (toString k) ++ "th degree"
 
+degreeLabelTail : Int -> String
+degreeLabelTail n =
+  case n of
+    -1 -> ""
+    n -> " connections"
 
 navButton : Surveyor -> Html
 navButton {buckets, pathsFetched} =
