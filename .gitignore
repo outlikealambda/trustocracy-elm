@@ -9,5 +9,5 @@ css/trusto.css*
 .DS_Store
 **/.DS_Store
 
-dist
-node_modules
+dist/
+node_modules/

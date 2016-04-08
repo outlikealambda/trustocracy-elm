@@ -21,6 +21,7 @@ import ActiveUser exposing (ActiveUser(LoggedIn, LoggedOut))
 import Login
 import Header
 import User exposing (User)
+import Auth.Facebook as Facebook
 
 
 import Routes exposing (Route)
@@ -45,12 +46,14 @@ type Action
   | SNoOp String
 
 
-actions : Signal Action
-actions =
+actions : Signal (Maybe Facebook.AuthResponse) -> Signal Action
+actions fbAuthResponses =
   -- use mergeMany if you have other mailboxes or signals to feed into StartApp
-  Signal.merge
-    (Signal.map RouterAction TransitRouter.actions)
-    (Signal.map SetUser ActiveUser.signal)
+  Signal.mergeMany
+    [ Signal.map RouterAction TransitRouter.actions
+    , Signal.map SetUser ActiveUser.signal
+    , Signal.map (LoginMsg << Login.FacebookAuth) fbAuthResponses
+    ]
 
 
 mountRoute : Route -> Route -> Model -> (Model, Effects Action)
@@ -190,7 +193,7 @@ update message world =
     SetUser activeUser ->
       ( world
       , Effects.batch
-        [ updateSession <| Session.SetActiveUser activeUser
+        [ updateSession <| Session.SetActiveUser (Debug.log "setting active user" activeUser)
         , goHome
         ]
       )
@@ -205,8 +208,12 @@ addUser user =
 
 clearUser : Effects Action
 clearUser =
-  Signal.send ActiveUser.clear ()
-    |> Effects.task
+  Effects.batch
+    [ Signal.send ActiveUser.clear ()
+        |> Effects.task
+    , Signal.send Facebook.address Facebook.Logout
+        |> Effects.task
+    ]
     |> Effects.map (\_ -> SNoOp "cleared user")
 
 

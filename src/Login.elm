@@ -1,7 +1,7 @@
 module Login
   ( Model
   , Action
-    ( Show )
+    ( Show, FacebookAuth )
   , Context
   , init
   , update
@@ -12,15 +12,16 @@ module Login
 
 import String
 import Task
-import Http
-import Html exposing (Html, h2, div, text, input)
+import Html exposing (Html, h2, div, text, input, button)
 import Html.Attributes exposing (placeholder, value, class)
-import Html.Events exposing (on, targetValue, keyCode)
+import Html.Events exposing (on, targetValue, keyCode, onClick)
 import Effects exposing (Effects)
 import Json.Decode as Json
 
 
+import Common.API as API
 import User exposing (User)
+import Auth.Facebook as Facebook
 
 
 type alias Model =
@@ -51,6 +52,7 @@ type Action
   | Show
   | LoadUser
   | NoOp
+  | FacebookAuth (Maybe Facebook.AuthResponse)
 
 
 type alias Context a =
@@ -90,7 +92,7 @@ update context message model =
         case model.input of
 
           (UserId userId) ->
-            fetchUser userId
+            API.fetchUser userId ValidateUser
 
           Empty ->
             Effects.none
@@ -125,6 +127,15 @@ update context message model =
       ( { model | visible = Debug.log "setting visible to True" True }
       , Effects.none )
 
+    FacebookAuth maybeAuthResponse ->
+      let
+        fx = Maybe.map (API.fetchUserByFacebookAuth ValidateUser) maybeAuthResponse
+          |> Maybe.withDefault (Effects.task (Task.succeed (ValidateUser Nothing)))
+      in
+        ( model
+        , Effects.map context.next fx
+        )
+
     NoOp ->
       ( model
       , Effects.none
@@ -155,30 +166,14 @@ view address model =
             , onEnter address LoadUser
             ] []
           ]
+        , button [ onClick Facebook.address Facebook.Login ] [ text "FB Login" ]
+        , button [ onClick Facebook.address Facebook.Logout ] [ text "FB Logout" ]
         ]
       ]
 
 
 getUser : Model -> User
 getUser = .user
-
-
--- no need to user.init because the decoder maps the exact fields
-fetchUser : Int -> Effects Action
-fetchUser userId =
-  buildUserUrl userId
-    |> Http.get User.decoder
-    |> Task.toMaybe
-    |> Task.map ValidateUser
-    |> Effects.task
-
-
-buildUserUrl : Int -> String
-buildUserUrl userId =
-  String.concat
-    [ "http://localhost:3714/api/user/"
-    , toString userId
-    ]
 
 
 -- from the Elm Architecture tutorial
