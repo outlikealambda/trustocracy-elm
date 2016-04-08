@@ -10,6 +10,8 @@ $text-font: "EB Garamond";
 
 $header-font: "Roboto";
 
+$link-color: color("purple", "lighten-2");
+
 html {
   font-family: $header-font, serif;
   line-height: 1.5;
@@ -62,10 +64,6 @@ h1, h2, h3, h4 {
   background-color: $primary-color-light;
   color: $text-color;
 
-}
-
-.t-card-title:hover {
-  background-color: $primary-color;
 }
 
 .subtitle {
@@ -134,7 +132,7 @@ h1, h2, h3, h4 {
   }
 }
 
-.op .path-count {
+.path-count {
   float: right;
   background: lightskyblue;
   font-size: 1.5rem;
@@ -299,9 +297,6 @@ $opinion-link-color : #aaa;
   }
 
   .read-more {
-    font-size: 1.6rem;
-    color: $opinion-link-color;
-    margin-top: 1.6rem;
   }
 
   .snippet p {
@@ -516,5 +511,15 @@ $opinion-link-color : #aaa;
     border-color: purple;
     border-width: 3px;
     margin: 0.7rem;
+  }
+}
+
+.read-more {
+  font-size: 1.6rem;
+  margin-top: 1.6rem;
+  cursor: pointer;
+  color: $link-color;
+  &:hover {
+    text-decoration: underline;
   }
 }

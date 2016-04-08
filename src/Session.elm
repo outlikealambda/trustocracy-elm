@@ -23,12 +23,12 @@ import Topic.Model as Topic exposing (Topic)
 import Opinion.Surveyor as Surveyor
 import Opinion.Composer as Composer
 import Opinion.Browser as Browser
-import Opinion.Reader as Reader
 import Routes
 
 
 import Effects exposing (Effects)
 import String
+import Task
 import Html exposing
   ( Html
   , div
@@ -46,7 +46,6 @@ type alias Session =
   , composer : Composer.Composer
   , surveyor : Surveyor.Surveyor
   , browser : Browser.Browser
-  , reader : Reader.Reader
   }
 
 type alias TopicId = Int
@@ -67,7 +66,6 @@ type Action
   | ComposerMsg Composer.Action
   | SurveyorMsg Surveyor.Action
   | BrowserMsg Browser.Action
-  | ReaderMsg Reader.Action
   | NoOp
 
 
@@ -77,7 +75,6 @@ type SessionView
   = Compose
   | Survey
   | Browse
-  | Read
   | Empty
 
 
@@ -89,7 +86,6 @@ init =
   , composer = Composer.empty
   , surveyor = Surveyor.empty
   , browser = Browser.empty
-  , reader = Reader.empty
   }
 
 
@@ -109,24 +105,24 @@ update action session =
       setSessionTopic session Compose topicId
 
     GoSurvey topicId ->
-      setSessionTopic session Survey topicId
+      let
+        (sessionUpdate, sessionUpdateFx) =
+          setSessionTopic session Survey topicId
+      in
+        ( { sessionUpdate | surveyor = Surveyor.blur sessionUpdate.surveyor }
+        , sessionUpdateFx )
 
     GoBrowse topicId ->
       setSessionTopic session Browse topicId
 
+    -- we'll focus the Surveyor instead of using a separate reader
     GoRead topicId opinionId ->
       let
         (sessionUpdate, sessionUpdateFx) =
-          setSessionTopic session Read topicId
-        (reader, readerFx) =
-          Reader.init session.activeUser opinionId
+          setSessionTopic session Survey topicId
       in
-        ( { sessionUpdate | reader = reader }
-        , Effects.batch
-          [ sessionUpdateFx
-          , Effects.map ReaderMsg readerFx
-          ]
-        )
+        ( { sessionUpdate | surveyor = Surveyor.focus opinionId sessionUpdate.surveyor }
+        , sessionUpdateFx )
 
     -- PRIVATE
     TopicMsg topicAction ->
@@ -175,14 +171,6 @@ update action session =
         , Effects.map BrowserMsg updateFx
         )
 
-    ReaderMsg readerAction ->
-      let
-        (update, updateFx) =
-          Reader.update readerAction session.reader
-      in
-        ( { session | reader = update }
-        , Effects.map ReaderMsg updateFx )
-
     NoOp ->
       ( session, Effects.none )
 
@@ -220,25 +208,29 @@ updateViews session =
           Browser.init session.topic
       in
         ( { session | browser = browserUpdate }
-        , Effects.map BrowserMsg browserUpdateFx )
+        , Effects.batch
+          [ Task.succeed (Surveyor.Init session.topic session.activeUser)
+            |> Effects.task
+            |> Effects.map SurveyorMsg
+          , Effects.map BrowserMsg browserUpdateFx
+          ]
+        )
     LoggedIn user ->
       let
         (composerUpdate, composerUpdateFx) =
           Composer.init user session.topic
-        (surveyorUpdate, surveyorUpdateFx) =
-          Surveyor.init user session.topic
-        -- this is user independent, does it belong in Session?
         (browserUpdate, browserUpdateFx) =
           Browser.init session.topic
       in
         ( { session
           | composer = composerUpdate
-          , surveyor = surveyorUpdate
           , browser = browserUpdate
           }
         , Effects.batch
           [ Effects.map ComposerMsg composerUpdateFx
-          , Effects.map SurveyorMsg surveyorUpdateFx
+          , Task.succeed (Surveyor.Init session.topic session.activeUser)
+            |> Effects.task
+            |> Effects.map SurveyorMsg
           , Effects.map BrowserMsg browserUpdateFx
           ]
         )
@@ -343,7 +335,9 @@ inactiveSessionHeader session =
     [ h1 [ class "topic-title" ] [ text session.topic.text ]
     , div
       [ class "session-links" ]
-      [ browseLinker session ]
+      [ connectLinker session
+      , browseLinker session
+      ]
     ]
 
 
@@ -373,11 +367,6 @@ activeSessionContent address session =
           [ class "content" ]
           [ Browser.view opinionRouter session.browser ]
 
-      Read ->
-        div
-          [ class "content" ]
-          [ Reader.view session.reader ]
-
       Empty ->
         div [] [ text "whoops, why we here?" ]
 
@@ -386,6 +375,15 @@ activeSessionContent address session =
 inactiveSessionContent : Signal.Address Action -> Session -> Html
 inactiveSessionContent address session =
   case session.currentView of
+    Survey ->
+      div
+        [ class "content" ]
+        <| Surveyor.view
+          { address = Signal.forwardTo address SurveyorMsg
+          , routeBuilder = Routes.Read session.topic.id
+          }
+          session.surveyor
+
     Browse ->
       div
         [ class "content" ]
