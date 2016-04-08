@@ -33,11 +33,15 @@ buildUserUrl userId =
        - our app secret (stored on server)
 -}
 
+
 fetchUserByFacebookAuth : (Maybe User -> a) -> Facebook.AuthResponse -> Effects a
 fetchUserByFacebookAuth transform fbAuthResponse =
   Http.send Http.defaultSettings
     { verb = "GET"
-    , headers = [("fbSignedRequest", fbAuthResponse.signedRequest)]
+    , headers =
+      [ ("fbsignedrequest", fbAuthResponse.signedRequest)
+      , ("fbaccesstoken", fbAuthResponse.accessToken)
+      ]
     , url = "http://localhost:3714/api/fbUser"
     , body = Http.empty
     }
