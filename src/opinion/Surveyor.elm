@@ -288,7 +288,7 @@ viewPlot {address, routeBuilder} (key, opg) =
     { address = Signal.forwardTo address (PlotMsg key)
     , routeBuilder = routeBuilder
     }
-    opg
+    (key, opg)
 
 
 groupsOfLength : Int -> List (Key, Plot) -> List (Key, Plot)

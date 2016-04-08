@@ -5,7 +5,6 @@ module Session
     ( SetActiveUser
     , GoCompose
     , GoSurvey
-    , GoBrowse
     , GoRead
     )
   , update
@@ -22,7 +21,6 @@ import ActiveUser exposing
 import Topic.Model as Topic exposing (Topic)
 import Opinion.Surveyor as Surveyor
 import Opinion.Composer as Composer
-import Opinion.Browser as Browser
 import Routes
 
 
@@ -45,7 +43,6 @@ type alias Session =
   , currentView : SessionView
   , composer : Composer.Composer
   , surveyor : Surveyor.Surveyor
-  , browser : Browser.Browser
   }
 
 type alias TopicId = Int
@@ -57,7 +54,6 @@ type Action
   = SetActiveUser ActiveUser
   | GoCompose TopicId
   | GoSurvey TopicId
-  | GoBrowse TopicId
   | GoRead TopicId OpinionId
 
   -- private
@@ -65,7 +61,6 @@ type Action
   | PropagateTopic
   | ComposerMsg Composer.Action
   | SurveyorMsg Surveyor.Action
-  | BrowserMsg Browser.Action
   | NoOp
 
 
@@ -74,7 +69,6 @@ type Action
 type SessionView
   = Compose
   | Survey
-  | Browse
   | Empty
 
 
@@ -85,7 +79,6 @@ init =
   , currentView = Empty
   , composer = Composer.empty
   , surveyor = Surveyor.empty
-  , browser = Browser.empty
   }
 
 
@@ -111,9 +104,6 @@ update action session =
       in
         ( { sessionUpdate | surveyor = Surveyor.blur sessionUpdate.surveyor }
         , sessionUpdateFx )
-
-    GoBrowse topicId ->
-      setSessionTopic session Browse topicId
 
     -- we'll focus the Surveyor instead of using a separate reader
     GoRead topicId opinionId ->
@@ -162,15 +152,6 @@ update action session =
         , Effects.map SurveyorMsg updateFx
         )
 
-    BrowserMsg browserAction ->
-      let
-        (update, updateFx) =
-          Browser.update browserAction session.browser
-      in
-        ( { session | browser = update }
-        , Effects.map BrowserMsg updateFx
-        )
-
     NoOp ->
       ( session, Effects.none )
 
@@ -203,35 +184,24 @@ updateViews : Session -> (Session, Effects Action)
 updateViews session =
   case session.activeUser of
     LoggedOut ->
-      let
-        (browserUpdate, browserUpdateFx) =
-          Browser.init session.topic
-      in
-        ( { session | browser = browserUpdate }
-        , Effects.batch
-          [ Task.succeed (Surveyor.Init session.topic session.activeUser)
-            |> Effects.task
-            |> Effects.map SurveyorMsg
-          , Effects.map BrowserMsg browserUpdateFx
-          ]
+        ( session
+        , Task.succeed (Surveyor.Init session.topic session.activeUser)
+          |> Effects.task
+          |> Effects.map SurveyorMsg
         )
     LoggedIn user ->
       let
         (composerUpdate, composerUpdateFx) =
           Composer.init user session.topic
-        (browserUpdate, browserUpdateFx) =
-          Browser.init session.topic
       in
         ( { session
           | composer = composerUpdate
-          , browser = browserUpdate
           }
         , Effects.batch
           [ Effects.map ComposerMsg composerUpdateFx
           , Task.succeed (Surveyor.Init session.topic session.activeUser)
             |> Effects.task
             |> Effects.map SurveyorMsg
-          , Effects.map BrowserMsg browserUpdateFx
           ]
         )
 
@@ -305,15 +275,6 @@ connectLinker = buildNavLink
   }
 
 
-browseLinker : Session -> Html
-browseLinker = buildNavLink
-  { routeView = Browse
-  , buildRoute = Routes.Browse
-  , makeHtml = Browser.navButton
-  , getter = .browser
-  }
-
-
 activeSessionHeader : Session -> Html
 activeSessionHeader session =
   div
@@ -322,7 +283,6 @@ activeSessionHeader session =
     , div
       [ class "session-links" ]
       [ connectLinker session
-      , browseLinker session
       , composeLinker session
       ]
     ]
@@ -336,39 +296,30 @@ inactiveSessionHeader session =
     , div
       [ class "session-links" ]
       [ connectLinker session
-      , browseLinker session
       ]
     ]
 
 
 activeSessionContent : Signal.Address Action -> Session -> Html
 activeSessionContent address session =
-  let
-    opinionRouter = Routes.Read session.topic.id
-  in
-    case session.currentView of
+  case session.currentView of
 
-      Survey ->
-        div
-          [ class "content" ]
-          <| Surveyor.view
-            { address = Signal.forwardTo address SurveyorMsg
-            , routeBuilder = opinionRouter
-            }
-            session.surveyor
+    Survey ->
+      div
+        [ class "content" ]
+        <| Surveyor.view
+          { address = Signal.forwardTo address SurveyorMsg
+          , routeBuilder = Routes.Read session.topic.id
+          }
+          session.surveyor
 
-      Compose ->
-        div
-          [ class "content" ]
-          [ Composer.view (Signal.forwardTo address ComposerMsg) session.composer ]
+    Compose ->
+      div
+        [ class "content" ]
+        [ Composer.view (Signal.forwardTo address ComposerMsg) session.composer ]
 
-      Browse ->
-        div
-          [ class "content" ]
-          [ Browser.view opinionRouter session.browser ]
-
-      Empty ->
-        div [] [ text "whoops, why we here?" ]
+    Empty ->
+      div [] [ text "whoops, why we here?" ]
 
 
 -- an inactiveSession should only route to browse
@@ -384,9 +335,5 @@ inactiveSessionContent address session =
           }
           session.surveyor
 
-    Browse ->
-      div
-        [ class "content" ]
-        [ Browser.view (Routes.Read session.topic.id) session.browser ]
     _ ->
       div [] [ text "Sorry, you must be logged in to see this content" ]

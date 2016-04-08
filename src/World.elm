@@ -81,12 +81,6 @@ mountRoute prevRoute route world =
       , updateSession <| Session.GoSurvey topicId
       )
 
-    Routes.Browse topicId ->
-      ( world
-      , updateSession <| Session.GoBrowse topicId
-      )
-
-
     Routes.Read topicId opinionId ->
       ( world
       , updateSession <| Session.GoRead topicId opinionId
@@ -250,9 +244,6 @@ view address world =
             [ Session.view (Signal.forwardTo address SessionMsg) world.session ]
 
           Routes.Compose _ ->
-            [ Session.view (Signal.forwardTo address SessionMsg) world.session ]
-
-          Routes.Browse _ ->
             [ Session.view (Signal.forwardTo address SessionMsg) world.session ]
 
           Routes.Read _ _ ->

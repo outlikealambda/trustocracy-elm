@@ -14,7 +14,6 @@ type Route
   | Topics
   | Survey Int
   | Compose Int
-  | Browse Int
   | Read Int Int
   | EmptyRoute
 
@@ -25,7 +24,6 @@ routeParsers =
   , RouteParser.static Topics "/topics"
   , RouteParser.dyn1 Survey "/topic/" RouteParser.int "/survey"
   , RouteParser.dyn1 Compose "/topic/" RouteParser.int "/compose"
-  , RouteParser.dyn1 Browse "/topic/" RouteParser.int "/browse"
   , RouteParser.dyn2 Read "/topic/" RouteParser.int "/read/" RouteParser.int ""
   ]
 
@@ -43,7 +41,6 @@ encode route =
     Topics -> "/topics"
     Survey topicId -> "/topic/" ++ toString topicId ++ "/survey"
     Compose topicId -> "/topic/" ++ toString topicId ++ "/compose"
-    Browse topicId -> "/topic/" ++ toString topicId ++ "/browse"
     Read topicId opinionId ->
       String.concat
         [ "/topic/"

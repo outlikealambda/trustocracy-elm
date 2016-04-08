@@ -99,8 +99,8 @@ setExpand exp plot =
   { plot | expanded = exp }
 
 
-view : ViewContext -> Plot -> Html
-view {address, routeBuilder} {opinion, paths, expanded} =
+view : ViewContext -> (Int, Plot) -> Html
+view {address, routeBuilder} (k, {opinion, paths, expanded}) =
   let
     (header, expandClass, body) =
       if expanded then
