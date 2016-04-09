@@ -8,6 +8,7 @@ import Task
 import User exposing (User)
 import Auth.Facebook as Facebook
 
+
 fetchUser : Int -> (Maybe User -> a) -> Effects a
 fetchUser userId transform =
   buildUserUrl userId
@@ -15,6 +16,7 @@ fetchUser userId transform =
     |> Task.toMaybe
     |> Task.map transform
     |> Effects.task
+
 
 buildUserUrl : Int -> String
 buildUserUrl userId =

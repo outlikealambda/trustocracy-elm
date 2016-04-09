@@ -1,5 +1,5 @@
-module Login
-  ( Model
+module Auth
+  ( Auth
   , Action
     ( Show, FacebookAuth )
   , Context
@@ -20,21 +20,22 @@ import Json.Decode as Json
 
 
 import Common.API as API
+import ActiveUser exposing (ActiveUser)
 import User exposing (User)
 import Auth.Facebook as Facebook
 
 
-type alias Model =
-  { user : User
+type alias Auth =
+  { activeUser : ActiveUser
   , message : String
   , input : InputId
   , visible : Bool
   }
 
 
-init : Model
+init : Auth
 init =
-  { user = User.empty
+  { activeUser = ActiveUser.LoggedOut
   , message = "Welcome, please enter your user id"
   , input = Empty
   , visible = False
@@ -51,17 +52,16 @@ type Action
   | ValidateUser (Maybe User)
   | Show
   | LoadUser
-  | NoOp
   | FacebookAuth (Maybe Facebook.AuthResponse)
 
 
 type alias Context a =
   { next : (Action -> a)
-  , complete : (Action -> a)
+  , complete : (User -> a)
   }
 
 
-update : Context a -> Action -> Model -> (Model, Effects a)
+update : Context a -> Action -> Auth -> (Auth, Effects a)
 update context message model =
   case message of
 
@@ -114,11 +114,10 @@ update context message model =
 
         Just user ->
           ( { model
-            | user = user
+            | activeUser = ActiveUser.LoggedIn user
             , visible = False
             }
-          , NoOp
-            |> Task.succeed
+          , Task.succeed user
             |> Effects.task
             |> Effects.map context.complete
           )
@@ -136,13 +135,8 @@ update context message model =
         , Effects.map context.next fx
         )
 
-    NoOp ->
-      ( model
-      , Effects.none
-      )
 
-
-view : Signal.Address Action -> Model -> Html
+view : Signal.Address Action -> Auth -> Html
 view address model =
   let
     currentInput =
@@ -172,8 +166,8 @@ view address model =
       ]
 
 
-getUser : Model -> User
-getUser = .user
+getUser : Auth -> ActiveUser
+getUser = .activeUser
 
 
 -- from the Elm Architecture tutorial

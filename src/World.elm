@@ -18,7 +18,7 @@ import Session exposing (Session)
 import Topic.Model exposing (Topic)
 import Topic.View
 import ActiveUser exposing (ActiveUser(LoggedIn, LoggedOut))
-import Login
+import Auth exposing (Auth)
 import Header
 import User exposing (User)
 import Auth.Facebook as Facebook
@@ -31,13 +31,13 @@ import TransitRouter
 type alias Model = TransitRouter.WithRoute Routes.Route
   { session : Session
   , topics : List Topic
-  , login : Login.Model
+  , auth : Auth
   }
 
 
 type Action
-  = LoginMsg Login.Action
-  | LoginSuccess
+  = AuthMsg Auth.Action
+  | LoginSuccess User
   | Logout
   | SetUser ActiveUser
   | SessionMsg Session.Action
@@ -52,7 +52,7 @@ actions fbAuthResponses =
   Signal.mergeMany
     [ Signal.map RouterAction TransitRouter.actions
     , Signal.map SetUser ActiveUser.signal
-    , Signal.map (LoginMsg << Login.FacebookAuth) fbAuthResponses
+    , Signal.map (AuthMsg << Auth.FacebookAuth) fbAuthResponses
     ]
 
 
@@ -130,7 +130,7 @@ initialModel : Model
 initialModel =
   { transitRouter = TransitRouter.empty Routes.EmptyRoute
   , topics = []
-  , login = Login.init
+  , auth = Auth.init
   , session = Session.init
   }
 
@@ -147,21 +147,21 @@ update message world =
         , Effects.map SessionMsg updateFx
         )
 
-    LoginMsg msg ->
+    AuthMsg msg ->
       let
         (update, updateFx) =
-          Login.update
-            { next = LoginMsg , complete = (\_ -> LoginSuccess) }
-            (Debug.log "Login msg" msg)
-            world.login
+          Auth.update
+            { next = AuthMsg , complete = (\a -> LoginSuccess a) }
+            (Debug.log "Auth msg" msg)
+            world.auth
       in
-        ( { world | login = update }
+        ( { world | auth = update }
         , updateFx -- the Login module uses the context to create a World.Action
         )
 
-    LoginSuccess ->
+    LoginSuccess user ->
         ( world
-        , addUser <| Login.getUser world.login
+        , addUser user
         )
 
     Logout ->
@@ -224,11 +224,11 @@ view address world =
     headerContext =
       Header.Context
         (Signal.forwardTo address (\_ -> Logout))
-        (Signal.forwardTo address (\_ -> LoginMsg Login.Show))
+        (Signal.forwardTo address (\_ -> AuthMsg Auth.Show))
 
   in
     div []
-      [ Login.view (Signal.forwardTo address LoginMsg) world.login
+      [ Auth.view (Signal.forwardTo address AuthMsg) world.auth
       , Header.view headerContext world.session.activeUser
       , div
         [ class "world" ]
