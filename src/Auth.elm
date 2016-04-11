@@ -7,14 +7,15 @@ module Auth
   , Context
   , init
   , update
-  , view
+  , viewHeader
+  , viewForm
   , getUser
   ) where
 
 
 import String
 import Task
-import Html exposing (Html, h2, div, text, input, button)
+import Html exposing (Html, h2, div, text, input, button, a)
 import Html.Attributes exposing (placeholder, value, class)
 import Html.Events exposing (on, targetValue, keyCode, onClick)
 import Effects exposing (Effects)
@@ -53,6 +54,7 @@ type Action
   = UpdateInput String
   | ValidateUser (Maybe User)
   | Show
+  | Logout
   | LoadUser
   | FacebookAuth (Maybe Facebook.AuthResponse)
 
@@ -69,12 +71,13 @@ signal signalContext =
 
 type alias Context a =
   { next : (Action -> a)
-  , complete : (User -> a)
+  , login : (User -> a)
+  , logout : () -> a
   }
 
 
 update : Context a -> Action -> Auth -> (Auth, Effects a)
-update context message model =
+update context message auth =
   case message of
 
     -- could extract this into a : String -> Maybe InputId
@@ -82,7 +85,7 @@ update context message model =
       case rawInput of
 
         "" ->
-          ( { model | input = Empty }
+          ( { auth | input = Empty }
           , Effects.none
           )
 
@@ -90,18 +93,18 @@ update context message model =
           case String.toInt raw of
 
             Err _ ->
-              ( model
+              ( auth
               , Effects.none
               )
 
             Ok inputInt ->
-              ( { model | input = UserId inputInt }
+              ( { auth | input = UserId inputInt }
               , Effects.none
               )
 
     LoadUser ->
       let fx =
-        case model.input of
+        case auth.input of
 
           (UserId userId) ->
             API.fetchUser userId ValidateUser
@@ -109,7 +112,7 @@ update context message model =
           Empty ->
             Effects.none
       in
-        ( model
+        ( auth
         , Effects.map context.next fx
         )
 
@@ -118,45 +121,93 @@ update context message model =
 
         -- could just set the property on the model here?
         Nothing ->
-          ( { model
+          ( { auth
             | message = "nope, please try again"
             , input = Empty }
           , Effects.none
           )
 
         Just user ->
-          ( { model
-            | activeUser = ActiveUser.LoggedIn user
-            , visible = False
-            }
-          , Task.succeed user
-            |> Effects.task
-            |> Effects.map context.complete
+          let
+            activeUser = ActiveUser.LoggedIn user
+          in
+            ( { auth
+              | activeUser = activeUser
+              , visible = False
+              }
+            , Task.succeed user
+              |> Effects.task
+              |> Effects.map context.login
           )
 
     Show ->
-      ( { model | visible = Debug.log "setting visible to True" True }
+      ( { auth | visible = True }
       , Effects.none )
+
+    Logout ->
+      ( { auth
+        | visible = True
+        , input = Empty
+        , activeUser = ActiveUser.LoggedOut
+        }
+      , Task.succeed ()
+        |> Effects.task
+        |> Effects.map context.logout
+      )
 
     FacebookAuth maybeAuthResponse ->
       let
         fx = Maybe.map (API.fetchUserByFacebookAuth ValidateUser) maybeAuthResponse
           |> Maybe.withDefault (Effects.task (Task.succeed (ValidateUser Nothing)))
       in
-        ( model
+        ( auth
         , Effects.map context.next fx
         )
 
 
-view : Signal.Address Action -> Auth -> Html
-view address model =
+viewHeader : Signal.Address Action -> Auth -> Html
+viewHeader address {activeUser}=
+  let
+    (userName, login) =
+      case activeUser of
+        ActiveUser.LoggedOut ->
+          ( []
+          , [ div [ class "login" ]
+              [ a
+                [ onClick address Show ]
+                [ text "login"]
+              ]
+            ]
+          )
+        ActiveUser.LoggedIn user ->
+          ( [ div
+              [ class "user" ][ text user.name ] ]
+          , [ div
+              [ class "logout" ]
+              [ a
+                [ onClick address Logout ]
+                [ text "logout"]
+              ]
+            ]
+          )
+  in
+    div
+      [ class "auth-header" ]
+      <| login
+      ++ userName
+
+
+
+
+viewForm : Signal.Address Action -> Auth -> Html
+viewForm address auth =
   let
     currentInput =
-      case model.input of
+      case auth.input of
         Empty -> ""
         UserId userId -> toString userId
     toggleClass =
-      if model.visible then "login-form visible" else "login-form"
+      if auth.visible then "login-form visible" else "login-form"
 
   in
     div

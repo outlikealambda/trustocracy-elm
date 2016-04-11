@@ -4,11 +4,9 @@ module Header
   ) where
 
 
-import ActiveUser exposing (ActiveUser (LoggedIn, LoggedOut))
-
 import Html exposing (Html, Attribute, div, text, a)
 import Html.Attributes exposing (class, href)
-import Html.Events exposing (onClick, onWithOptions)
+import Html.Events exposing (onWithOptions)
 import Json.Decode as Json
 
 import TransitRouter
@@ -21,8 +19,8 @@ type alias Context =
   }
 
 
-view : Context -> ActiveUser -> Html
-view context activeUser =
+view : Html -> Html
+view authHeader =
   let
     home =
       [ div
@@ -33,35 +31,10 @@ view context activeUser =
         ]
       ]
 
-    (userName, login) =
-      case activeUser of
-        LoggedOut ->
-          ( []
-          , [ div [ class "login" ]
-              [ a
-                [ onClick context.login () ]
-                [ text "login"]
-              ]
-            ]
-          )
-        LoggedIn user ->
-          ( [ div
-              [ class "user" ][ text user.name ] ]
-          , [ div
-              [ class "logout" ]
-              [ a
-                [ onClick context.logout () ]
-                [ text "logout"]
-              ]
-            ]
-          )
-
   in
     div [ class "header" ]
-      <| []
-      ++ home
-      ++ login
-      ++ userName
+      <| home
+      ++ [ authHeader ]
 
 
 clickTo : Routes.Route -> List Attribute

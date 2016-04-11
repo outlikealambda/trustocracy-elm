@@ -37,7 +37,7 @@ type alias Model = TransitRouter.WithRoute Routes.Route
 
 type Action
   = AuthMsg Auth.Action
-  | LoginSuccess User
+  | Login User
   | Logout
   | SetUser ActiveUser
   | SessionMsg Session.Action
@@ -150,7 +150,10 @@ update message world =
       let
         (update, updateFx) =
           Auth.update
-            { next = AuthMsg , complete = (\a -> LoginSuccess a) }
+            { next = AuthMsg
+            , login = Login
+            , logout = (\_ -> Logout)
+            }
             (Debug.log "Auth msg" msg)
             world.auth
       in
@@ -158,15 +161,15 @@ update message world =
         , updateFx -- the Login module uses the context to create a World.Action
         )
 
-    LoginSuccess user ->
-        ( world
-        , addUser user
-        )
+    Login user ->
+      ( world
+      , addUser user
+      )
 
     Logout ->
-        ( world
-        , clearUser
-        )
+      ( world
+      , clearUser
+      )
 
     RouterAction routeAction ->
       TransitRouter.update routerConfig routeAction world
@@ -220,15 +223,13 @@ updateSession sessionAction =
 view : Signal.Address Action -> Model -> Html
 view address world =
   let
-    headerContext =
-      Header.Context
-        (Signal.forwardTo address (\_ -> Logout))
-        (Signal.forwardTo address (\_ -> AuthMsg Auth.Show))
+    authAddress =
+      Signal.forwardTo address AuthMsg
 
   in
     div []
-      [ Auth.view (Signal.forwardTo address AuthMsg) world.auth
-      , Header.view headerContext world.session.activeUser
+      [ Auth.viewForm authAddress world.auth
+      , Header.view (Auth.viewHeader authAddress world.auth)
       , div
         [ class "world" ]
         ( case TransitRouter.getRoute world of
