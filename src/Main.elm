@@ -52,7 +52,3 @@ port fbLogin =
 port fbLogout : Signal ()
 port fbLogout =
   Facebook.logoutRequests
-
---port fbAuthRequest : Signal String
---port fbAuthRequest =
---  Signal.map Facebook.toString Facebook.signal

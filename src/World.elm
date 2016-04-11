@@ -20,8 +20,6 @@ import Topic.View
 import ActiveUser exposing (ActiveUser(LoggedIn, LoggedOut))
 import Auth exposing (Auth)
 import Header
-import User exposing (User)
-import Auth.Facebook as Facebook
 
 
 import Routes exposing (Route)
@@ -37,8 +35,6 @@ type alias Model = TransitRouter.WithRoute Routes.Route
 
 type Action
   = AuthMsg Auth.Action
-  | Login User
-  | Logout
   | SetUser ActiveUser
   | SessionMsg Session.Action
   | TopicsLoad (List Topic)
@@ -51,7 +47,6 @@ actions authContext =
   -- use mergeMany if you have other mailboxes or signals to feed into StartApp
   Signal.mergeMany
     [ Signal.map RouterAction TransitRouter.actions
-    , Signal.map SetUser ActiveUser.signal
     , Signal.map AuthMsg (Auth.signal authContext)
     ]
 
@@ -151,8 +146,7 @@ update message world =
         (update, updateFx) =
           Auth.update
             { next = AuthMsg
-            , login = Login
-            , logout = (\_ -> Logout)
+            , setUser = SetUser
             }
             (Debug.log "Auth msg" msg)
             world.auth
@@ -160,16 +154,6 @@ update message world =
         ( { world | auth = update }
         , updateFx -- the Login module uses the context to create a World.Action
         )
-
-    Login user ->
-      ( world
-      , addUser user
-      )
-
-    Logout ->
-      ( world
-      , clearUser
-      )
 
     RouterAction routeAction ->
       TransitRouter.update routerConfig routeAction world
@@ -193,24 +177,6 @@ update message world =
         , goHome
         ]
       )
-
-
-addUser : User -> Effects Action
-addUser user =
-  Signal.send ActiveUser.save user
-    |> Effects.task
-    |> Effects.map (\_ -> SNoOp "added user")
-
-
-clearUser : Effects Action
-clearUser =
-  Effects.batch
-    [ Signal.send ActiveUser.clear ()
-        |> Effects.task
-    , Signal.send Facebook.address Facebook.Logout
-        |> Effects.task
-    ]
-    |> Effects.map (\_ -> SNoOp "cleared user")
 
 
 updateSession : Session.Action -> Effects Action

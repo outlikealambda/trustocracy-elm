@@ -14,7 +14,7 @@ module Auth
 
 
 import String
-import Task
+import Task exposing (Task)
 import Html exposing (Html, h2, div, text, input, button, a)
 import Html.Attributes exposing (placeholder, value, class)
 import Html.Events exposing (on, targetValue, keyCode, onClick)
@@ -71,8 +71,7 @@ signal signalContext =
 
 type alias Context a =
   { next : (Action -> a)
-  , login : (User -> a)
-  , logout : () -> a
+  , setUser : (ActiveUser -> a)
   }
 
 
@@ -135,9 +134,9 @@ update context message auth =
               | activeUser = activeUser
               , visible = False
               }
-            , Task.succeed user
+            , saveUser user
               |> Effects.task
-              |> Effects.map context.login
+              |> Effects.map context.setUser
           )
 
     Show ->
@@ -146,13 +145,12 @@ update context message auth =
 
     Logout ->
       ( { auth
-        | visible = True
-        , input = Empty
+        | input = Empty
         , activeUser = ActiveUser.LoggedOut
         }
-      , Task.succeed ()
+      , clearUser
         |> Effects.task
-        |> Effects.map context.logout
+        |> Effects.map context.setUser
       )
 
     FacebookAuth maybeAuthResponse ->
@@ -163,6 +161,19 @@ update context message auth =
         ( auth
         , Effects.map context.next fx
         )
+
+
+clearUser : Task x ActiveUser
+clearUser =
+  Task.map2 (\_ _ -> ActiveUser.LoggedOut)
+    (Signal.send ActiveUser.clear ())
+    (Signal.send Facebook.address Facebook.Logout)
+
+
+saveUser : User -> Task x ActiveUser
+saveUser user =
+  Task.map (\_ -> ActiveUser.LoggedIn user)
+    (Signal.send ActiveUser.save user)
 
 
 viewHeader : Signal.Address Action -> Auth -> Html
@@ -224,7 +235,6 @@ viewForm address auth =
             ] []
           ]
         , button [ onClick Facebook.address Facebook.Login ] [ text "FB Login" ]
-        , button [ onClick Facebook.address Facebook.Logout ] [ text "FB Logout" ]
         ]
       ]
 
