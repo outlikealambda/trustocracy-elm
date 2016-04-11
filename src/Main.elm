@@ -1,12 +1,12 @@
 import Effects exposing (Never)
 import Html exposing (Html)
-import World
 import StartApp
 import Task
 
 import ActiveUser
-import User exposing (User)
 import Auth.Facebook as Facebook
+import User exposing (User)
+import World
 
 
 port initialPath : String
@@ -19,7 +19,10 @@ app =
     { init = World.init initialPath (ActiveUser.fromMaybe activeUser)
     , update = World.update
     , view = World.view
-    , inputs = [ World.actions fbAuthResponses ]
+    , inputs =
+      [ World.actions
+        { facebook = fbAuthResponses }
+      ]
     }
 
 

@@ -1,7 +1,9 @@
 module Auth
   ( Auth
   , Action
-    ( Show, FacebookAuth )
+    ( Show )
+  , SignalContext
+  , signal
   , Context
   , init
   , update
@@ -53,6 +55,16 @@ type Action
   | Show
   | LoadUser
   | FacebookAuth (Maybe Facebook.AuthResponse)
+
+
+type alias SignalContext =
+  { facebook : Signal (Maybe Facebook.AuthResponse)
+  }
+
+
+signal : SignalContext -> Signal Action
+signal signalContext =
+  Signal.map FacebookAuth signalContext.facebook
 
 
 type alias Context a =

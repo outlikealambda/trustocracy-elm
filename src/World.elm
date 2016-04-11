@@ -46,13 +46,13 @@ type Action
   | SNoOp String
 
 
-actions : Signal (Maybe Facebook.AuthResponse) -> Signal Action
-actions fbAuthResponses =
+actions : Auth.SignalContext -> Signal Action
+actions authContext =
   -- use mergeMany if you have other mailboxes or signals to feed into StartApp
   Signal.mergeMany
     [ Signal.map RouterAction TransitRouter.actions
     , Signal.map SetUser ActiveUser.signal
-    , Signal.map (AuthMsg << Auth.FacebookAuth) fbAuthResponses
+    , Signal.map AuthMsg (Auth.signal authContext)
     ]
 
 
@@ -85,7 +85,6 @@ mountRoute prevRoute route world =
       ( world
       , updateSession <| Session.GoRead topicId opinionId
       )
-
 
     -- map to [] if fail, since this will probably be the
     -- home page and we don't want to continually redirect
