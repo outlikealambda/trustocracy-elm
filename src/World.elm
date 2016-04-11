@@ -115,7 +115,7 @@ init : String -> ActiveUser -> (Model, Effects Action)
 init path activeUser =
   let
     (world, fx) =
-      TransitRouter.init routerConfig path initialModel
+      TransitRouter.init routerConfig path <| initialModel activeUser
 
   in
     ( world
@@ -126,11 +126,11 @@ init path activeUser =
     )
 
 
-initialModel : Model
-initialModel =
+initialModel : ActiveUser -> Model
+initialModel activeUser =
   { transitRouter = TransitRouter.empty Routes.EmptyRoute
   , topics = []
-  , auth = Auth.init
+  , auth = Auth.init activeUser
   , session = Session.init
   }
 

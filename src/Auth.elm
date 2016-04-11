@@ -33,9 +33,9 @@ type alias Auth =
   }
 
 
-init : Auth
-init =
-  { activeUser = ActiveUser.LoggedOut
+init : ActiveUser -> Auth
+init activeUser =
+  { activeUser = activeUser
   , message = "Welcome, please enter your user id"
   , input = Empty
   , visible = False
