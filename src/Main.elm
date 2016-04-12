@@ -5,6 +5,7 @@ import Task
 
 import ActiveUser
 import Auth.Facebook as Facebook
+import Auth.Google as Google
 import User exposing (User)
 import World
 
@@ -21,7 +22,9 @@ app =
     , view = World.view
     , inputs =
       [ World.actions
-        { facebook = fbAuthResponses }
+        { facebook = fbAuthResponse
+        , google = gaResponse
+        }
       ]
     }
 
@@ -42,7 +45,7 @@ port saveActiveUser =
 
 
 -- Facebook integration
-port fbAuthResponses : Signal (Maybe Facebook.AuthResponse)
+port fbAuthResponse : Signal (Maybe Facebook.AuthResponse)
 
 port fbLogin : Signal (List String)
 port fbLogin =
@@ -52,3 +55,17 @@ port fbLogin =
 port fbLogout : Signal ()
 port fbLogout =
   Facebook.logoutRequests
+
+
+-- Google integration
+port gaResponse : Signal (Maybe Google.AuthResponse)
+
+
+port gaLogin : Signal ()
+port gaLogin =
+  Google.loginRequests
+
+
+port gaLogout : Signal ()
+port gaLogout =
+  Google.logoutRequests

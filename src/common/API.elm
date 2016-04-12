@@ -7,6 +7,7 @@ import Task
 
 import User exposing (User)
 import Auth.Facebook as Facebook
+import Auth.Google as Google
 
 
 fetchUser : Int -> (Maybe User -> a) -> Effects a
@@ -45,6 +46,22 @@ fetchUserByFacebookAuth transform fbAuthResponse =
       , ("fbaccesstoken", fbAuthResponse.accessToken)
       ]
     , url = "http://localhost:3714/api/fbUser"
+    , body = Http.empty
+    }
+  |> Http.fromJson User.decoder
+  |> Task.toMaybe
+  |> Task.map transform
+  |> Effects.task
+
+
+fetchUserByGoogleAuth : (Maybe User -> a) -> Google.AuthResponse -> Effects a
+fetchUserByGoogleAuth transform gaResponse =
+  Http.send Http.defaultSettings
+    { verb = "GET"
+    , headers =
+      [ ("gasignedrequest", gaResponse.idToken)
+      ]
+    , url = "http://localhost:3714/api/gaUser"
     , body = Http.empty
     }
   |> Http.fromJson User.decoder

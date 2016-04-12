@@ -1,11 +1,9 @@
 module Auth.Facebook
-  ( LoginStatusResponse
-  , AuthResponse
+  ( AuthResponse
   , Action
     ( Login
     , Logout
     )
-  , Status
   , toString
   , loginRequests
   , logoutRequests
@@ -20,18 +18,6 @@ type Action
   = NoOp
   | Login
   | Logout
-
-
-type Status
-  = Connected
-  | NotAuthorized
-  | Unknown
-
-
-type alias LoginStatusResponse =
-  { status : String
-  , authResponse : Maybe AuthResponse
-  }
 
 
 type alias AuthResponse =

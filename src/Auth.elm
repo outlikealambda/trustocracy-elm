@@ -26,7 +26,7 @@ import Common.API as API
 import ActiveUser exposing (ActiveUser)
 import User exposing (User)
 import Auth.Facebook as Facebook
-
+import Auth.Google as Google
 
 type alias Auth =
   { activeUser : ActiveUser
@@ -57,16 +57,21 @@ type Action
   | Logout
   | LoadUser
   | FacebookAuth (Maybe Facebook.AuthResponse)
+  | GoogleAuth (Maybe Google.AuthResponse)
 
 
 type alias SignalContext =
   { facebook : Signal (Maybe Facebook.AuthResponse)
+  , google : Signal (Maybe Google.AuthResponse)
   }
 
 
 signal : SignalContext -> Signal Action
 signal signalContext =
-  Signal.map FacebookAuth signalContext.facebook
+  Signal.mergeMany
+    [ Signal.map FacebookAuth signalContext.facebook
+    , Signal.map GoogleAuth signalContext.google
+    ]
 
 
 type alias Context a =
@@ -162,12 +167,26 @@ update context message auth =
         , Effects.map context.next fx
         )
 
+    GoogleAuth maybeAuthResponse ->
+      let
+        fx =
+          case maybeAuthResponse of
+            Nothing ->
+              Task.succeed (ValidateUser Nothing) |> Effects.task
+            Just gaResponse ->
+              API.fetchUserByGoogleAuth ValidateUser gaResponse
+        in
+          ( auth
+          , Effects.map context.next fx
+          )
+
 
 clearUser : Task x ActiveUser
 clearUser =
-  Task.map2 (\_ _ -> ActiveUser.LoggedOut)
+  Task.map3 (\_ _ _ -> ActiveUser.LoggedOut)
     (Signal.send ActiveUser.clear ())
     (Signal.send Facebook.address Facebook.Logout)
+    (Signal.send Google.address Google.Logout)
 
 
 saveUser : User -> Task x ActiveUser
@@ -235,6 +254,7 @@ viewForm address auth =
             ] []
           ]
         , button [ onClick Facebook.address Facebook.Login ] [ text "FB Login" ]
+        , button [ onClick Google.address Google.Login ] [ text "GA Login" ]
         ]
       ]
 
