@@ -1,7 +1,6 @@
 module Auth
   ( Auth
   , Action
-    ( Show )
   , SignalContext
   , signal
   , Context
@@ -53,7 +52,7 @@ type InputId
 type Action
   = UpdateInput String
   | ValidateUser (Maybe User)
-  | Show
+  | SetVisible Bool
   | Logout
   | LoadUser
   | FacebookAuth (Maybe Facebook.AuthResponse)
@@ -144,8 +143,8 @@ update context message auth =
               |> Effects.map context.setUser
           )
 
-    Show ->
-      ( { auth | visible = True }
+    SetVisible isVisible ->
+      ( { auth | visible = isVisible }
       , Effects.none )
 
     Logout ->
@@ -204,7 +203,7 @@ viewHeader address {activeUser}=
           ( []
           , [ div [ class "login" ]
               [ a
-                [ onClick address Show ]
+                [ onClick address (SetVisible True) ]
                 [ text "login"]
               ]
             ]
@@ -225,8 +224,6 @@ viewHeader address {activeUser}=
       [ class "auth-header" ]
       <| login
       ++ userName
-
-
 
 
 viewForm : Signal.Address Action -> Auth -> Html
@@ -253,8 +250,21 @@ viewForm address auth =
             , onEnter address LoadUser
             ] []
           ]
-        , button [ onClick Facebook.address Facebook.Login ] [ text "FB Login" ]
-        , button [ onClick Google.address Google.Login ] [ text "GA Login" ]
+        , button
+          [ class "fb-login"
+          , onClick Facebook.address Facebook.Login
+          ]
+          [ text "FB Login" ]
+        , button
+          [ class "ga-login"
+          , onClick Google.address Google.Login
+          ]
+          [ text "GA Login" ]
+        , button
+          [ class "cancel-login"
+          , onClick address (SetVisible False)
+          ]
+          [ text "Cancel" ]
         ]
       ]
 
