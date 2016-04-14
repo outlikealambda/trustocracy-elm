@@ -558,11 +558,22 @@ $opinion-link-color : #aaa;
 }
 
 .read-more {
-  font-size: 1.6rem;
+  padding: 0.4rem 1.2rem;
   margin-top: 1.6rem;
+  margin-left: 0.1rem;
+  margin-bottom: 0.1rem;
+  border: 2px solid lightgreen;
+  border-radius: 0.4rem;
   cursor: pointer;
-  color: $link-color;
+  float: left;
+  font-size: 1.4rem;
+  color: $text-color;
+
   &:hover {
-    text-decoration: underline;
+    border-width: 3px;
+    margin-top: 1.5rem;
+    margin-left: 0;
+    margin-bottom: 0;
+    background: #fafafa
   }
 }
