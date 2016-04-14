@@ -1,6 +1,7 @@
 module Opinion.Presenter
   ( Presenter
   , prepare
+  , view
   , viewExpanded
   , viewCollapsed
   , expand
@@ -9,7 +10,7 @@ module Opinion.Presenter
 
 
 import Html exposing (Html, div, text, p, span)
-import Html.Attributes exposing (class)
+import Html.Attributes as Attribute exposing (class)
 import Markdown
 import String
 
@@ -49,9 +50,8 @@ collapse presenter =
 viewExpanded : Presenter a -> Html
 viewExpanded {text, qualifications, user, influence, fetched} =
   div
-    [ class <| buildClasses fetched ]
-    [ viewOpiner user influence
-    , Qualifications.view qualifications
+    [ class "opinion-full" ]
+    [ Qualifications.view qualifications
     , div
       [ class "text markdown"]
       [ Markdown.toHtml text ]
@@ -61,17 +61,36 @@ viewExpanded {text, qualifications, user, influence, fetched} =
 viewCollapsed : (Int -> Routes.Route) -> Presenter a -> Html
 viewCollapsed routeBuilder {id, snippet, user, influence, fetched} =
   div
-    [ class <| buildClasses fetched ]
-    [ viewOpiner user influence
-    , div
+    [ class "opinion-snippet" ]
+    [ div
       [ class "text snippet" ]
-      [ p [] [ text snippet ] ]
+      [ p [] [ Html.text snippet ] ]
     , span
       [ class "read-more"
       , Routes.goToRoute <| routeBuilder id
       ]
       [ Html.text "Read more..." ]
     ]
+
+view : Bool -> (Int -> Routes.Route) -> Presenter a -> Html
+view expanded routeBuilder presenter =
+  div
+    [ Attribute.classList
+      [ ("opinion", True)
+      , ("fetched", presenter.fetched)
+      , ("expanded", expanded)
+      , ("collapsed", not expanded)
+      ]
+    ]
+    [ viewOpiner presenter.user presenter.influence
+    , viewCollapsed routeBuilder presenter
+    , viewExpanded presenter ]
+
+
+plotClasses : Bool -> Bool -> String
+plotClasses fetched expanded =
+  "opinion " ++
+    if fetched then "fetched" else ""
 
 
 buildClasses : Bool -> String

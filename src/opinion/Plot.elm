@@ -23,7 +23,7 @@ import Utils.List as ListUtils
 
 import Effects exposing (Effects)
 import Html exposing (Html, div, span, text)
-import Html.Attributes exposing (class)
+import Html.Attributes as Attribute exposing (class)
 import Dict
 
 
@@ -102,18 +102,19 @@ setExpand exp plot =
 view : ViewContext -> (Int, Plot) -> Html
 view {address, routeBuilder} (k, {opinion, paths, expanded}) =
   let
-    (header, expandClass, body) =
+    (header, expandClass) =
       if expanded then
-        (expandedHeader paths, "expanded", Presenter.viewExpanded opinion)
+        (expandedHeader paths, "expanded")
       else
-        (collapsedHeader paths, "", Presenter.viewCollapsed routeBuilder opinion)
+        (collapsedHeader paths, "collapsed")
   in
     div
-      [ class <| "opg t-card " ++ expandClass ]
+      [ class <| "opg t-card " ++ expandClass
+      , Attribute.key <| toString k ]
       [ header
       , div
         [ class "t-card-body" ]
-        [ body ]
+        [ Presenter.view expanded routeBuilder opinion ]
       ]
 
 

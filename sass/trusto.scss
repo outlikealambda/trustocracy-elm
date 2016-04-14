@@ -57,7 +57,7 @@ h1, h2, h3, h4 {
 .t-card-title, .connections {
   font-size: 1.6rem;
   line-height: 2.4rem;
-  padding: 2.0rem 3.2rem;
+  padding: 2.4rem 3.2rem;
 
   font-family: $header-font;
 
@@ -139,7 +139,7 @@ h1, h2, h3, h4 {
 }
 
 .expanded .op {
-  margin-bottom: 16px;
+  margin-bottom: 24px;
 }
 
 .expanded .op:last-of-type {
@@ -261,22 +261,6 @@ textarea.write {
   }
 }
 
-.opg {
-  .t-card-body {
-    overflow: hidden;
-  }
-
-  .opinion {
-    transition: margin-top 1s 0.1s;
-    margin-top: -200px;
-
-    &.fetched {
-      margin-top: 0px;
-    }
-  }
-
-}
-
 $opinion-link-color : #aaa;
 
 .opinion {
@@ -323,14 +307,73 @@ $opinion-link-color : #aaa;
   }
 }
 
-.opg .t-card-title {
-  overflow:hidden;
-  max-height: 24px;
-  transition: max-height 0.2s ease-in;
+.surveyor {
+  .group-section-header {
+    max-height: 45px;
+    transition: max-height 0.3s ease-in 1.2s;
+  }
+
+  .t-card-title, .opinion-snippet, .opinion-full, .group-section-header, .opg {
+    overflow: hidden;
+  }
 }
 
-.opg.expanded .t-card-title {
-  max-height: 1000px;
+.focused {
+  .opg.collapsed {
+    max-height: 0px;
+    transition: max-height 0.3s ease-out;
+  }
+
+  .group-section-header {
+    max-height: 0px;
+    margin: 0px;
+    transition: max-height 0.3s ease-out 0s;
+  }
+
+  .group-section {
+    margin: 0;
+  }
+
+}
+
+.opg.collapsed {
+  max-height: 1400px;
+  transition: max-height 0.3s ease-in 1.2s;
+
+  .t-card-title {
+    max-height: 24px;
+    transition: max-height 0.2s ease-out 1.2s;
+  }
+
+  .opinion-snippet {
+    max-height: 400px;
+    transition: max-height 0.5s ease-in .7s;
+  }
+
+  .opinion-full {
+    max-height: 0px;
+    transition: max-height 0.5s ease-out 0.2s;
+  }
+}
+
+.opg.expanded {
+  .t-card-title {
+    overflow: hidden;
+    max-height: 1000px;
+    transition: max-height 0.3s ease-in 1.5s;
+  }
+
+  .opinion-snippet {
+    overflow: hidden;
+    max-height: 0px;
+    transition: max-height 0.5s ease-out 0.3s;
+  }
+
+  .opinion-full {
+    overflow: hidden;
+    max-height: 1400px;
+    transition: max-height 0.5s ease-in 1.0s;
+  }
 }
 
 .group-section {

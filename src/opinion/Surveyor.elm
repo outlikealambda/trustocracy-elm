@@ -90,7 +90,7 @@ update message model =
         )
 
     SetConnected opaths ->
-      case opaths of
+      case Debug.log "set connected" opaths of
         opaths ->
           let
             keyGen =
@@ -136,7 +136,7 @@ update message model =
         -- List (Plot, Effects Plot.Action)
         plotPairs =
           -- avoid re-fetching opinions we already have via SetConnected
-          List.filter (not << isOpinionFetched) ids
+          List.filter (not << isOpinionFetched) (Debug.log "set unconnected" ids)
           |> List.map (\id -> Plot.init id [])
 
         -- end up with a List (Effects (PlotMsg key Plot.Action))
@@ -229,30 +229,45 @@ type alias ViewContext =
   }
 
 
-view : ViewContext -> Surveyor -> List Html
-view context surveyor =
-  case surveyor.zoom of
+view : ViewContext -> Surveyor -> Html
+view context {zoom, buckets, longestPlotPath} =
+  case zoom of
     Blur ->
-      viewAll context surveyor
+      div
+        [ class "surveyor blurred" ]
+        (viewAllGrouped context longestPlotPath (Dict.toList buckets))
     Focus target ->
-      case Dict.get target surveyor.buckets of
-        Just plot ->
-          [ viewPlot context (target, Plot.expand plot) ]
-        Nothing ->
-          [ div [] [ text "how did we get here?" ] ]
+      let
+        focusTarget (t, p) =
+          if t == target then
+            (t, Plot.expand p)
+          else
+            (t, p)
+        focusedPlots =
+          List.map focusTarget (Dict.toList buckets)
+
+      in
+        div
+          [ class "surveyor focused" ]
+          (viewAllGrouped context longestPlotPath focusedPlots)
 
 
-viewAll : ViewContext -> Surveyor -> List Html
-viewAll context {buckets, longestPlotPath} =
+viewAll : ViewContext -> List (Int, Plot) -> List Html
+viewAll context plots =
+  List.map (viewPlot context) plots
+
+
+viewAllGrouped : ViewContext -> Int -> List (Int, Plot) -> List Html
+viewAllGrouped context longestPlotPath plots=
   let
     sectionConstructors =
       List.map (viewPlotSection context) [0..longestPlotPath]
     connectedSections =
       -- mapping a value (here, a list) over a list of functions is a little
       -- bit unwieldy
-      List.map ((|>) (Dict.toList buckets)) sectionConstructors
+      List.map ((|>) plots) sectionConstructors
     unconnectedSection =
-      [ viewPlotSection context -1 <| Dict.toList buckets ]
+      [ viewPlotSection context -1 plots ]
     sections =
       connectedSections ++ unconnectedSection
       |> List.filterMap identity
