@@ -252,11 +252,6 @@ view context {zoom, buckets, longestPlotPath} =
           (viewAllGrouped context longestPlotPath focusedPlots)
 
 
-viewAll : ViewContext -> List (Int, Plot) -> List Html
-viewAll context plots =
-  List.map (viewPlot context) plots
-
-
 viewAllGrouped : ViewContext -> Int -> List (Int, Plot) -> List Html
 viewAllGrouped context longestPlotPath plots=
   let
