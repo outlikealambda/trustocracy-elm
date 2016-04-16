@@ -15,6 +15,7 @@ type Route
   | Survey Int
   | Compose Int
   | Read Int Int
+  | UserDelegates
   | EmptyRoute
 
 
@@ -25,6 +26,7 @@ routeParsers =
   , RouteParser.dyn1 Survey "/topic/" RouteParser.int "/survey"
   , RouteParser.dyn1 Compose "/topic/" RouteParser.int "/compose"
   , RouteParser.dyn2 Read "/topic/" RouteParser.int "/read/" RouteParser.int ""
+  , RouteParser.static UserDelegates "/my/trust"
   ]
 
 
@@ -48,6 +50,7 @@ encode route =
         , "/read/"
         , toString opinionId
         ]
+    UserDelegates -> "/my/trust"
     EmptyRoute -> "/"
 
 

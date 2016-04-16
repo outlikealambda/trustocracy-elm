@@ -6,6 +6,7 @@ module Session
     , GoCompose
     , GoSurvey
     , GoRead
+    , GoUserDelegates
     )
   , update
   , view
@@ -19,8 +20,9 @@ import ActiveUser exposing
     )
   )
 import Topic.Model as Topic exposing (Topic)
-import Opinion.Surveyor as Surveyor
-import Opinion.Composer as Composer
+import Opinion.Surveyor as Surveyor exposing (Surveyor)
+import Opinion.Composer as Composer exposing (Composer)
+import Delegator exposing (Delegator)
 import Routes
 
 
@@ -41,8 +43,9 @@ type alias Session =
   { activeUser : ActiveUser
   , topic : Topic
   , currentView : SessionView
-  , composer : Composer.Composer
-  , surveyor : Surveyor.Surveyor
+  , composer : Composer
+  , surveyor : Surveyor
+  , delegator : Delegator
   }
 
 type alias TopicId = Int
@@ -55,12 +58,14 @@ type Action
   | GoCompose TopicId
   | GoSurvey TopicId
   | GoRead TopicId OpinionId
+  | GoUserDelegates
 
   -- private
   | TopicMsg Topic.Action
   | PropagateTopic
   | ComposerMsg Composer.Action
   | SurveyorMsg Surveyor.Action
+  | DelegatorMsg Delegator.Action
   | NoOp
 
 
@@ -69,6 +74,7 @@ type Action
 type SessionView
   = Compose
   | Survey
+  | UserDelegates
   | Empty
 
 
@@ -79,6 +85,7 @@ init =
   , currentView = Empty
   , composer = Composer.empty
   , surveyor = Surveyor.empty
+  , delegator = Delegator.empty
   }
 
 
@@ -113,6 +120,10 @@ update action session =
       in
         ( { sessionUpdate | surveyor = Surveyor.focus opinionId sessionUpdate.surveyor }
         , sessionUpdateFx )
+
+
+    GoUserDelegates ->
+      ( { session | currentView = UserDelegates }, Effects.none )
 
     -- PRIVATE
     TopicMsg topicAction ->
@@ -150,6 +161,15 @@ update action session =
       in
         ( { session | surveyor = update }
         , Effects.map SurveyorMsg updateFx
+        )
+
+    DelegatorMsg userDelegatesAction ->
+      let
+        (update, updateFx) =
+          Delegator.update userDelegatesAction session.delegator
+      in
+        ( { session | delegator = update }
+        , Effects.map DelegatorMsg updateFx
         )
 
     NoOp ->
@@ -209,22 +229,15 @@ updateViews session =
 view : Signal.Address Action -> Session -> Html
 view address session =
   let
-    (sessionHeader, sessionContent) =
+    sessionContent =
       case session.activeUser of
         LoggedIn user ->
-          ( activeSessionHeader session
-          , activeSessionContent address session
-          )
+          activeSessionContent address session
+
         LoggedOut ->
-          ( inactiveSessionHeader session
-          , inactiveSessionContent address session
-          )
+          inactiveSessionContent address session
   in
-    div
-      [ class "session" ]
-      [ sessionHeader
-      , sessionContent
-      ]
+    div [ class "session" ] sessionContent
 
 
 -- used to help create the nav links
@@ -300,40 +313,54 @@ inactiveSessionHeader session =
     ]
 
 
-activeSessionContent : Signal.Address Action -> Session -> Html
+activeSessionContent : Signal.Address Action -> Session -> List Html
 activeSessionContent address session =
   case session.currentView of
 
     Survey ->
-      div
+      [ activeSessionHeader session
+      , div
         [ class "content" ]
         <| Surveyor.view
           { address = Signal.forwardTo address SurveyorMsg
           , routeBuilder = Routes.Read session.topic.id
           }
           session.surveyor
+      ]
 
     Compose ->
-      div
+      [ activeSessionHeader session
+      , div
         [ class "content" ]
         [ Composer.view (Signal.forwardTo address ComposerMsg) session.composer ]
+      ]
+
+    UserDelegates ->
+      [ div
+        [ class "content" ]
+        [ Delegator.view (Signal.forwardTo address DelegatorMsg) session.delegator ]
+      ]
 
     Empty ->
-      div [] [ text "whoops, why we here?" ]
+      [ div [] [ text "whoops, why we here?" ] ]
 
 
 -- an inactiveSession should only route to browse
-inactiveSessionContent : Signal.Address Action -> Session -> Html
+inactiveSessionContent : Signal.Address Action -> Session -> List Html
 inactiveSessionContent address session =
-  case session.currentView of
-    Survey ->
-      div
-        [ class "content" ]
-        <| Surveyor.view
-          { address = Signal.forwardTo address SurveyorMsg
-          , routeBuilder = Routes.Read session.topic.id
-          }
-          session.surveyor
+  [ inactiveSessionHeader session
+  , case session.currentView of
+      Survey ->
+        div
+          [ class "content" ]
+          <| Surveyor.view
+            { address = Signal.forwardTo address SurveyorMsg
+            , routeBuilder = Routes.Read session.topic.id
+            }
+            session.surveyor
 
-    _ ->
-      div [] [ text "Sorry, you must be logged in to see this content" ]
+      _ ->
+        div
+          []
+          [ text "Sorry, you must be logged in to see this content" ]
+  ]

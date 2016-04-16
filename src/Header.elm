@@ -11,6 +11,8 @@ import Json.Decode as Json
 
 import TransitRouter
 import Routes
+import Auth exposing (Auth)
+import ActiveUser exposing (ActiveUser(LoggedIn, LoggedOut))
 
 
 type alias Context =
@@ -19,21 +21,35 @@ type alias Context =
   }
 
 
-view : Html -> Html
-view authHeader =
+view : Html -> Auth -> Html
+view authHeader auth =
   let
     home =
       [ div
         [ class "home" ]
         [ a
-          (clickTo <| Routes.Home)
+          (clickTo Routes.Home)
           [ text "Home" ]
         ]
       ]
 
+    youtrust = 
+      case auth.activeUser of
+        LoggedOut ->
+          []
+
+        LoggedIn user ->
+          [ div
+            [class "home" ]
+            [ a
+              (clickTo Routes.UserDelegates)
+              [ text <| "You trust " ++ (toString <| List.length user.trustees) ++ " people" ]
+            ]
+          ]
   in
     div [ class "header" ]
       <| home
+      ++ youtrust
       ++ [ authHeader ]
 
 
