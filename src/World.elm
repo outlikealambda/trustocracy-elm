@@ -92,6 +92,11 @@ mountRoute prevRoute route world =
         |> Effects.task
       )
 
+    Routes.UserDelegates ->
+      ( world
+      , updateSession <| Session.GoUserDelegates
+      )
+
     Routes.EmptyRoute ->
       ( world, Effects.none )
 
@@ -195,7 +200,7 @@ view address world =
   in
     div []
       [ Auth.viewForm authAddress world.auth
-      , Header.view (Auth.viewHeader authAddress world.auth)
+      , Header.view (Auth.viewHeader authAddress world.auth) world.auth
       , div
         [ class "world" ]
         ( case TransitRouter.getRoute world of
@@ -213,6 +218,9 @@ view address world =
             [ Session.view (Signal.forwardTo address SessionMsg) world.session ]
 
           Routes.Read _ _ ->
+            [ Session.view (Signal.forwardTo address SessionMsg) world.session ]
+
+          Routes.UserDelegates ->
             [ Session.view (Signal.forwardTo address SessionMsg) world.session ]
 
           Routes.EmptyRoute ->
