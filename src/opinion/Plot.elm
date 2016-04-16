@@ -80,7 +80,7 @@ update message plot =
 
 type alias ViewContext =
   { address : Signal.Address Action
-  , routeBuilder : Int -> Routes.Route
+  , readRouteBuilder : Int -> Routes.Route
   }
 
 
@@ -100,7 +100,7 @@ setExpand exp plot =
 
 
 view : ViewContext -> (Int, Plot) -> Html
-view {address, routeBuilder} (k, {opinion, paths, expanded}) =
+view {address, readRouteBuilder} (k, {opinion, paths, expanded}) =
   let
     (header, expandClass) =
       if expanded then
@@ -114,7 +114,7 @@ view {address, routeBuilder} (k, {opinion, paths, expanded}) =
       [ header
       , div
         [ class "t-card-body" ]
-        [ Presenter.view expanded routeBuilder opinion ]
+        [ Presenter.view expanded readRouteBuilder opinion ]
       ]
 
 

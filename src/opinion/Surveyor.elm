@@ -225,32 +225,41 @@ buildPlottedUrl tid uid =
 
 type alias ViewContext =
   { address : Signal.Address Action
-  , routeBuilder : Int -> Routes.Route
+  , readRouteBuilder : Int -> Routes.Route
+  , showAllRoute : Routes.Route
   }
 
 
 view : ViewContext -> Surveyor -> Html
 view context {zoom, buckets, longestPlotPath} =
-  case zoom of
-    Blur ->
-      div
-        [ class "surveyor blurred" ]
-        (viewAllGrouped context longestPlotPath (Dict.toList buckets))
-    Focus target ->
-      let
-        focusTarget (t, p) =
-          if t == target then
-            (t, Plot.expand p)
-          else
-            (t, p)
-        focusedPlots =
-          List.map focusTarget (Dict.toList buckets)
+  let
+    focusTarget target (t, p) =
+      if t == target then
+        (t, Plot.expand p)
+      else
+        (t, p)
+    (zoomedClass, zoomedPlots) =
+      case zoom of
+        Blur ->
+          ("blurred", Dict.toList buckets)
+        Focus target ->
+          ("focused", List.map (focusTarget target) (Dict.toList buckets))
+  in
+    div
+      [ class <| "surveyor " ++ zoomedClass ]
+      <| showAll context.showAllRoute
+      :: (viewAllGrouped context longestPlotPath zoomedPlots)
 
-      in
-        div
-          [ class "surveyor focused" ]
-          (viewAllGrouped context longestPlotPath focusedPlots)
-
+showAll : Routes.Route -> Html
+showAll showAllRoute =
+  div
+    [ class "show-all-wrapper cf" ]
+    [ Html.span
+      [ class "show-all"
+      , Routes.goToRoute showAllRoute
+      ]
+      [ Html.text "Show all opinions" ]
+    ]
 
 viewAllGrouped : ViewContext -> Int -> List (Int, Plot) -> List Html
 viewAllGrouped context longestPlotPath plots=
@@ -293,10 +302,10 @@ viewPlotSection address pathLength keyPlots =
 
 
 viewPlot : ViewContext -> (Key, Plot) -> Html
-viewPlot {address, routeBuilder} (key, opg) =
+viewPlot {address, readRouteBuilder} (key, opg) =
   Plot.view
     { address = Signal.forwardTo address (PlotMsg key)
-    , routeBuilder = routeBuilder
+    , readRouteBuilder = readRouteBuilder
     }
     (key, opg)
 

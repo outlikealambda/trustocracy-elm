@@ -309,7 +309,8 @@ activeSessionContent address session =
         [ class "content" ]
         [ Surveyor.view
           { address = Signal.forwardTo address SurveyorMsg
-          , routeBuilder = Routes.Read session.topic.id
+          , readRouteBuilder = Routes.Read session.topic.id
+          , showAllRoute = Routes.Survey session.topic.id
           }
           session.surveyor
         ]
@@ -332,10 +333,13 @@ inactiveSessionContent address session =
         [ class "content" ]
         [ Surveyor.view
           { address = Signal.forwardTo address SurveyorMsg
-          , routeBuilder = Routes.Read session.topic.id
+          , readRouteBuilder = Routes.Read session.topic.id
+          , showAllRoute = Routes.Survey session.topic.id
           }
           session.surveyor
         ]
 
     _ ->
-      div [] [ text "Sorry, you must be logged in to see this content" ]
+      div
+        [ class "content" ]
+        [ text "Sorry, you must be logged in to see this content" ]
