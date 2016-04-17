@@ -10,10 +10,18 @@ import Auth.Facebook as Facebook
 import Auth.Google as Google
 
 
-fetchUser : Int -> (Maybe User -> a) -> Effects a
-fetchUser userId transform =
-  buildUserUrl userId
-    |> Http.get User.decoder
+fetchUser : (String, String) -> (Maybe User -> a) -> Effects a
+fetchUser (name, secret) transform =
+  Http.send Http.defaultSettings
+    { verb = "GET"
+    , headers =
+      [ ("name", name)
+      , ("secret", secret)
+      ]
+    , url = "http://localhost:3714/api/login"
+    , body = Http.empty
+    }
+    |> Http.fromJson User.decoder
     |> Task.toMaybe
     |> Task.map transform
     |> Effects.task

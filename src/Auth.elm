@@ -12,10 +12,9 @@ module Auth
   ) where
 
 
-import String
 import Task exposing (Task)
 import Html exposing (Html, h2, div, text, input, button, a)
-import Html.Attributes exposing (placeholder, value, class)
+import Html.Attributes as Attribute exposing (placeholder, value, class)
 import Html.Events exposing (on, targetValue, keyCode, onClick)
 import Effects exposing (Effects)
 import Json.Decode as Json
@@ -46,11 +45,11 @@ init activeUser =
 
 type InputId
   = Empty
-  | UserId Int
+  | UserCreds String String
 
 
 type Action
-  = UpdateInput String
+  = UpdateInput String String
   | ValidateUser (Maybe User)
   | SetVisible Bool
   | Logout
@@ -84,33 +83,25 @@ update context message auth =
   case message of
 
     -- could extract this into a : String -> Maybe InputId
-    UpdateInput rawInput ->
-      case rawInput of
+    UpdateInput name secret ->
+      case name of
 
         "" ->
           ( { auth | input = Empty }
           , Effects.none
           )
 
-        raw ->
-          case String.toInt raw of
-
-            Err _ ->
-              ( auth
-              , Effects.none
-              )
-
-            Ok inputInt ->
-              ( { auth | input = UserId inputInt }
-              , Effects.none
-              )
+        _ ->
+          ( { auth | input = UserCreds name secret }
+          , Effects.none
+          )
 
     LoadUser ->
       let fx =
         case auth.input of
 
-          (UserId userId) ->
-            API.fetchUser userId ValidateUser
+          UserCreds name secret ->
+            API.fetchUser (name, secret) ValidateUser
 
           Empty ->
             Effects.none
@@ -124,9 +115,7 @@ update context message auth =
 
         -- could just set the property on the model here?
         Nothing ->
-          ( { auth
-            | message = "nope, please try again"
-            , input = Empty }
+          ( { auth | message = "nope, please try again" }
           , Effects.none
           )
 
@@ -137,6 +126,7 @@ update context message auth =
             ( { auth
               | activeUser = activeUser
               , visible = False
+              , input = Empty
               }
             , saveUser user
               |> Effects.task
@@ -229,10 +219,13 @@ viewHeader address {activeUser}=
 viewForm : Signal.Address Action -> Auth -> Html
 viewForm address auth =
   let
-    currentInput =
+    (name, secret) =
       case auth.input of
-        Empty -> ""
-        UserId userId -> toString userId
+        Empty ->
+          ("", "")
+        UserCreds n s ->
+          (n, s)
+
     toggleClass =
       if auth.visible then "login-form visible" else "login-form"
 
@@ -242,13 +235,21 @@ viewForm address auth =
       [ div []
         [ h2 [] [ text <| "Login" ]
         , text <| "Eventually this will be a login; for now just input the id of the user you'd like to impersonate"
-        , div []
+        , div
+          [ onEnter address LoadUser ]
           [ input
-            [ placeholder "User Id"
-            , value <| currentInput
-            , on "input" targetValue (Signal.message address << UpdateInput)
-            , onEnter address LoadUser
-            ] []
+            [ placeholder "User Name"
+            , value <| name
+            , on "input" targetValue (\n -> Signal.message address (UpdateInput n secret))
+            ]
+            []
+          , input
+            [ placeholder "Password"
+            , Attribute.type' "password"
+            , value <| secret
+            , on "input" targetValue (\s -> Signal.message address (UpdateInput name s))
+            ]
+            []
           ]
         , button
           [ class "fb-login"
@@ -276,15 +277,15 @@ getUser = .activeUser
 -- from the Elm Architecture tutorial
 onEnter : Signal.Address a -> a -> Html.Attribute
 onEnter address value =
-    on "keydown"
-        (Json.customDecoder keyCode is13)
-        (\_ -> Signal.message address value)
+  on "keydown"
+    (Json.customDecoder keyCode is13)
+    (\_ -> Signal.message address value)
 
 
 is13 : Int -> Result String ()
 is13 code =
-    if code == 13 then
-        Ok ()
+  if code == 13 then
+    Ok ()
 
-    else
-        Err "not the right key code"
+  else
+    Err "not the right key code"
