@@ -110,28 +110,34 @@ routerConfig =
   }
 
 
-init : String -> ActiveUser -> (Model, Effects Action)
-init path activeUser =
+init : String -> (Model, Effects Action)
+init path =
   let
+    (initialWorld, initialWorldFx) =
+      initialModel
     (world, fx) =
-      TransitRouter.init routerConfig path <| initialModel activeUser
-
+      TransitRouter.init routerConfig path initialWorld
   in
     ( world
     , Effects.batch
       [ fx
-      , updateSession <| Session.SetActiveUser activeUser
+      , initialWorldFx
       ]
     )
 
 
-initialModel : ActiveUser -> Model
-initialModel activeUser =
-  { transitRouter = TransitRouter.empty Routes.EmptyRoute
-  , topics = []
-  , auth = Auth.init activeUser
-  , session = Session.init
-  }
+initialModel : (Model, Effects Action)
+initialModel =
+  let
+    (auth, authFx) =
+      Auth.init
+  in
+    ( { transitRouter = TransitRouter.empty Routes.EmptyRoute
+      , topics = []
+      , auth = auth
+      , session = Session.init
+      }
+    , Effects.map AuthMsg authFx )
 
 
 update : Action -> Model -> (Model, Effects Action)

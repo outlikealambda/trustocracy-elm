@@ -9,6 +9,7 @@ module Auth
   , viewHeader
   , viewForm
   , getUser
+  , logoutSignal
   ) where
 
 
@@ -26,6 +27,7 @@ import User exposing (User)
 import Auth.Facebook as Facebook
 import Auth.Google as Google
 
+
 type alias Auth =
   { activeUser : ActiveUser
   , message : String
@@ -34,13 +36,15 @@ type alias Auth =
   }
 
 
-init : ActiveUser -> Auth
-init activeUser =
-  { activeUser = activeUser
-  , message = "Welcome, please enter your user id"
-  , input = Empty
-  , visible = False
-  }
+init : (Auth, Effects Action)
+init =
+  ( { activeUser = ActiveUser.LoggedOut
+    , message = "Welcome, please enter your user id"
+    , input = Empty
+    , visible = False
+    }
+  , API.checkForActiveUser ValidateUser
+  )
 
 
 type InputId
@@ -101,7 +105,7 @@ update context message auth =
         case auth.input of
 
           UserCreds name secret ->
-            API.fetchUser (name, secret) ValidateUser
+            API.loginUser (name, secret) ValidateUser
 
           Empty ->
             Effects.none
@@ -173,15 +177,14 @@ update context message auth =
 clearUser : Task x ActiveUser
 clearUser =
   Task.map3 (\_ _ _ -> ActiveUser.LoggedOut)
-    (Signal.send ActiveUser.clear ())
+    (Signal.send mailbox.address ())
     (Signal.send Facebook.address Facebook.Logout)
     (Signal.send Google.address Google.Logout)
 
 
 saveUser : User -> Task x ActiveUser
 saveUser user =
-  Task.map (\_ -> ActiveUser.LoggedIn user)
-    (Signal.send ActiveUser.save user)
+  Task.succeed (ActiveUser.LoggedIn user)
 
 
 viewHeader : Signal.Address Action -> Auth -> Html
@@ -289,3 +292,14 @@ is13 code =
 
   else
     Err "not the right key code"
+
+
+-- FOR LOGOUT PURPOSES (clear jwt cookie)
+mailbox : Signal.Mailbox ()
+mailbox =
+  Signal.mailbox ()
+
+
+logoutSignal : Signal ()
+logoutSignal =
+  mailbox.signal

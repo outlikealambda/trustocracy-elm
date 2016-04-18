@@ -1,4 +1,9 @@
-module Common.API where
+module Common.API
+  ( loginUser
+  , checkForActiveUser
+  , fetchUserByFacebookAuth
+  , fetchUserByGoogleAuth
+  ) where
 
 import Effects exposing (Effects)
 import Http
@@ -10,8 +15,8 @@ import Auth.Facebook as Facebook
 import Auth.Google as Google
 
 
-fetchUser : (String, String) -> (Maybe User -> a) -> Effects a
-fetchUser (name, secret) transform =
+loginUser : (String, String) -> (Maybe User -> a) -> Effects a
+loginUser (name, secret) transform =
   Http.send Http.defaultSettings
     { verb = "GET"
     , headers =
@@ -25,6 +30,21 @@ fetchUser (name, secret) transform =
     |> Task.toMaybe
     |> Task.map transform
     |> Effects.task
+
+
+checkForActiveUser : (Maybe User -> a) -> Effects a
+checkForActiveUser transform =
+  Http.send Http.defaultSettings
+    { verb = "GET"
+    , headers = []
+    , url = "http://localhost:3714/api/checkUser"
+    , body = Http.empty
+    }
+    |> Http.fromJson User.decoder
+    |> Task.toMaybe
+    |> Task.map transform
+    |> Effects.task
+
 
 
 buildUserUrl : Int -> String

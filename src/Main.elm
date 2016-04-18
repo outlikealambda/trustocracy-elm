@@ -3,21 +3,19 @@ import Html exposing (Html)
 import StartApp
 import Task
 
-import ActiveUser
+import Auth
 import Auth.Facebook as Facebook
 import Auth.Google as Google
-import User exposing (User)
 import World
 
 
 port initialPath : String
-port activeUser : Maybe User
 
 
 app : StartApp.App World.Model
 app =
   StartApp.start
-    { init = World.init initialPath (ActiveUser.fromMaybe activeUser)
+    { init = World.init initialPath
     , update = World.update
     , view = World.view
     , inputs =
@@ -39,18 +37,15 @@ port tasks =
   app.tasks
 
 
-port saveActiveUser : Signal (Maybe User)
-port saveActiveUser =
-  Signal.map ActiveUser.toMaybe ActiveUser.signal
-
-
 -- Facebook integration
 port fbAuthResponse : Signal (Maybe Facebook.AuthResponse)
+
 
 port fbLogin : Signal (List String)
 port fbLogin =
   Facebook.loginRequests
   -- TODO: map the Facebook.login List Facebook.Scope to strings
+
 
 port fbLogout : Signal ()
 port fbLogout =
@@ -69,3 +64,8 @@ port gaLogin =
 port gaLogout : Signal ()
 port gaLogout =
   Google.logoutRequests
+
+
+port trustoLogout : Signal ()
+port trustoLogout =
+  Auth.logoutSignal
