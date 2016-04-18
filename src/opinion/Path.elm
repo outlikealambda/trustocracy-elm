@@ -8,8 +8,8 @@ module Opinion.Path
   ) where
 
 
-import Common.Relationship as Relationship
-import User exposing (User)
+import Common.Relationship as Relationship exposing (Relationship)
+import Trustee exposing (Trustee)
 
 
 import Json.Decode as Json exposing ((:=))
@@ -18,10 +18,9 @@ import Html.Attributes exposing (class)
 
 
 type alias Path =
-  { friendRelationship: Relationship.Model
-  , friend: User
-  , path: List Relationship.Model
-  , opiner: User
+  { friend: Trustee
+  , path: List Relationship
+  , opiner: Trustee
   , opinionId: Int
   , score: Int
   }
@@ -29,11 +28,10 @@ type alias Path =
 
 decoder : Json.Decoder Path
 decoder =
-  Json.object6 Path
-    ("friendRelationship" := Json.string)
-    ("friend" := User.decoder)
-    ("path" := Json.list Json.string)
-    ("opiner" := User.decoder)
+  Json.object5 Path
+    ("friend" := Trustee.decoder)
+    ("path" := Json.list Relationship.decoder)
+    ("opiner" := Trustee.decoder)
     ("opinion" := Json.int)
     ("score" := Json.int)
 
@@ -54,26 +52,26 @@ viewPaths paths =
 
 
 viewHeader : Path -> Int -> Html
-viewHeader {friendRelationship, friend, path} count =
+viewHeader {friend, path} count =
    div
     [ class "opg-header op single-line cf" ]
     [ div
       [ class "single-line path" ]
-      [ Relationship.view friendRelationship ]
+      [ Relationship.view friend.relationship ]
     , div [class "op-text friend"] [ text friend.name ]
     , div [class "single-line path"] (List.map Relationship.view path)
     ]
 
 
 viewAbbreviated : Path -> Html
-viewAbbreviated {friendRelationship, friend, path} =
+viewAbbreviated {friend, path} =
   let relationships =
     List.map Relationship.view path
   in
     div [class "op single-line cf"]
       [ div
         [ class "single-line path" ]
-        [ Relationship.view friendRelationship ]
+        [ Relationship.view friend.relationship ]
       , div [class "op-text friend"] [text friend.name]
       , div [class "single-line path"] relationships
       ]

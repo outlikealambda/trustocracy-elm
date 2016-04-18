@@ -15,7 +15,7 @@ import Markdown
 import String
 
 
-import User exposing (User)
+import Trustee exposing (Trustee)
 import Qualifications exposing (Qualifications)
 import Routes
 
@@ -25,7 +25,7 @@ type alias Presenter a =
   | id : Int
   , text : String
   , influence : Int
-  , user : User
+  , opiner : Trustee
   , snippet : String
   , qualifications : Qualifications
   , expanded : Bool
@@ -48,7 +48,7 @@ collapse presenter =
 
 
 viewExpanded : Presenter a -> Html
-viewExpanded {text, qualifications, user, influence, fetched} =
+viewExpanded {text, qualifications, opiner, influence, fetched} =
   div
     [ class "opinion-full" ]
     [ Qualifications.view qualifications
@@ -59,7 +59,7 @@ viewExpanded {text, qualifications, user, influence, fetched} =
 
 
 viewCollapsed : (Int -> Routes.Route) -> Presenter a -> Html
-viewCollapsed routeBuilder {id, snippet, user, influence, fetched} =
+viewCollapsed routeBuilder {id, snippet, opiner, influence, fetched} =
   div
     [ class "opinion-snippet" ]
     [ div
@@ -82,7 +82,7 @@ view expanded routeBuilder presenter =
       , ("collapsed", not expanded)
       ]
     ]
-    [ viewOpiner presenter.user presenter.influence
+    [ viewOpiner presenter.opiner presenter.influence
     , viewCollapsed routeBuilder presenter
     , viewExpanded presenter ]
 
@@ -105,13 +105,13 @@ viewSnippet snippet =
     [ p [] [ text snippet ]
     ]
 
-viewOpiner : User -> Int -> Html
-viewOpiner user influence =
+viewOpiner : Trustee -> Int -> Html
+viewOpiner {name} influence =
   div
     [ class "opiner cf" ]
     [ div
       [ class "opiner-name" ]
-      [ text <| user.name ]
+      [ text <| name ]
     , div
       [ class "numbered-badge influence" ]
       [ span

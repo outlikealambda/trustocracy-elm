@@ -10,6 +10,7 @@ module Opinion.Opinion
 
 
 import User exposing (User)
+import Trustee exposing (Trustee)
 import Qualifications as Qualifications exposing (Qualifications)
 
 
@@ -27,7 +28,7 @@ type alias Opinion =
   { id : Int
   , text : String
   , influence : Int
-  , user : User
+  , opiner : Trustee
   , qualifications : Qualifications
 
   -- derived
@@ -42,7 +43,7 @@ empty =
   { id = -1
   , text = ""
   , influence = -1
-  , user = User.empty
+  , opiner = Trustee.empty
   , qualifications = Qualifications.empty
   , snippet = ""
   , expanded = False
@@ -78,7 +79,13 @@ fetchByUserTopic buildUrl user topicId =
   buildUrl user.id topicId
     |> Http.get decoder
     |> Task.toMaybe
-    |> Task.map (Maybe.withDefault { empty | user = user, fetched = True })
+    |> Task.map
+      ( Maybe.withDefault
+        { empty
+        | opiner = Trustee.fromSelf user.name user.id
+        , fetched = True
+        }
+      )
     |> Effects.task
 
 
@@ -107,10 +114,10 @@ write opinion url =
 
 
 buildWriteUrl : Opinion -> Int -> String -> String
-buildWriteUrl opinion topicId writeType =
+buildWriteUrl {opiner} topicId writeType =
   String.concat
     [ "http://localhost:3714/api/user/"
-    , toString opinion.user.id
+    , toString opiner.id
     , "/topic/"
     , toString topicId
     , "/opinion/"
@@ -135,12 +142,13 @@ decoder =
     ( "id" := Decode.int )
     ( "text" := Decode.string )
     ( "influence" := Decode.int )
-    ( "user" := User.decoder )
+    ( "opiner" := Trustee.decoder )
     ( Decode.oneOf
       [ "qualifications" := Qualifications.decoder
       , Decode.succeed Qualifications.empty
       ]
     )
+
 
 encode : Opinion -> Encode.Value
 encode opinion =
@@ -148,21 +156,22 @@ encode opinion =
     [ ("id", Encode.int opinion.id)
     , ("text", Encode.string opinion.text)
     , ("influence", Encode.int opinion.influence)
-    , ("user", User.encode opinion.user)
+    , ("opiner", Trustee.encoder opinion.opiner)
     , ("qualifications", Qualifications.encode opinion.qualifications)
     ]
 
 
-fromApi : Int -> String -> Int -> User -> Qualifications -> Opinion
-fromApi id text influence user qualifications =
+fromApi : Int -> String -> Int -> Trustee -> Qualifications -> Opinion
+fromApi id text influence opiner qualifications =
   { empty
-    | id = id
-    , text = text
-    , influence = influence
-    , user = user
-    , qualifications = qualifications
-    , fetched = True
+  | id = id
+  , text = text
+  , influence = influence
+  , opiner = opiner
+  , qualifications = qualifications
+  , fetched = True
   }
+
 
 -- because post is pretty worthless
 -- see: https://groups.google.com/forum/#!topic/elm-discuss/Zpq9itvtLEY
