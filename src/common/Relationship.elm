@@ -1,6 +1,8 @@
 module Common.Relationship
   ( Relationship
-    ( Distant
+    ( Bff
+    , Trusted
+    , Distant
     , Self )
   , view
   , decoder
@@ -16,7 +18,7 @@ import Json.Encode as Encode
 
 type Relationship
   = Bff
-  | Trusts
+  | Trusted
   | Public
   | Distant
   | Self
@@ -31,7 +33,7 @@ getCircleType : Relationship -> String
 getCircleType relationship =
   case relationship of
     Bff -> "circle-explicit"
-    Trusts -> "circle-regular"
+    Trusted -> "circle-regular"
     _ -> "circle-unknown"
 
 
@@ -48,10 +50,10 @@ encoder =
 toRelationship : String -> Relationship
 toRelationship asString =
   case asString of
-    "TRUSTS_EXPLICIT" ->
+    "TRUSTS_EXPLICITLY" ->
       Bff
     "TRUSTS" ->
-      Trusts
+      Trusted
     _ ->
       Distant
 
@@ -60,8 +62,8 @@ toString : Relationship -> String
 toString relationship =
   case relationship of
     Bff ->
-      "TRUSTS_EXPLICIT"
-    Trusts ->
+      "TRUSTS_EXPLICITLY"
+    Trusted ->
       "TRUSTS"
     Public ->
       "PUBLIC"

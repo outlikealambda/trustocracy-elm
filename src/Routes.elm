@@ -2,7 +2,8 @@ module Routes where
 
 import Effects exposing (Effects)
 import Html exposing (Attribute)
-import Html.Events exposing (on)
+import Html.Attributes exposing (href)
+import Html.Events exposing (on, onWithOptions)
 import Json.Decode as Decode
 import RouteParser
 import String
@@ -67,3 +68,18 @@ goToRoute route =
     "click"
     Decode.value
     (\_ -> Signal.message TransitRouter.pushPathAddress <| encode route)
+
+
+clickTo : Route -> List Attribute
+clickTo route =
+  let
+    path =
+      encode route
+  in
+    [ href path
+    , onWithOptions
+      "click"
+      { stopPropagation = True, preventDefault = True }
+      Decode.value
+      (\_ -> Signal.message TransitRouter.pushPathAddress path)
+    ]

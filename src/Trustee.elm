@@ -4,6 +4,8 @@ module Trustee
   , decoder
   , encoder
   , fromSelf
+  , isRelated
+  , setRelationship
   ) where
 
 
@@ -47,9 +49,20 @@ encoder {name, id, relationship} =
     , ( "relationship", Relationship.encoder relationship )
     ]
 
+
 fromSelf : String -> Int -> Trustee
 fromSelf name id =
   { name = name
   , id = id
   , relationship = Relationship.Self
   }
+
+
+isRelated : Relationship -> Trustee -> Bool
+isRelated relationship trustee =
+  relationship == trustee.relationship
+
+
+setRelationship : Relationship -> Trustee -> Trustee
+setRelationship relationship trustee =
+  { trustee | relationship = relationship }

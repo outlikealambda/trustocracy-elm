@@ -1,15 +1,16 @@
 module Session
   ( Session
+  , signal
   , init
   , Action
-    ( SetActiveUser
-    , GoCompose
+    ( GoCompose
     , GoSurvey
     , GoRead
     , GoUserDelegates
     )
   , update
   , view
+  , navHeader
   ) where
 
 
@@ -19,11 +20,13 @@ import ActiveUser exposing
     , LoggedOut
     )
   )
-import Topic.Model as Topic exposing (Topic)
+import Auth exposing (Auth)
+import Delegator
 import Opinion.Surveyor as Surveyor exposing (Surveyor)
 import Opinion.Composer as Composer exposing (Composer)
-import Delegator exposing (Delegator)
 import Routes
+import Topic.Model as Topic exposing (Topic)
+import User exposing (User)
 
 
 import Effects exposing (Effects)
@@ -38,14 +41,13 @@ import Html exposing
 import Html.Attributes exposing (class)
 
 
-
 type alias Session =
   { activeUser : ActiveUser
   , topic : Topic
   , currentView : SessionView
   , composer : Composer
   , surveyor : Surveyor
-  , delegator : Delegator
+  , auth : Auth
   }
 
 type alias TopicId = Int
@@ -54,8 +56,7 @@ type alias OpinionId = Int
 
 type Action
   -- exposed
-  = SetActiveUser ActiveUser
-  | GoCompose TopicId
+  = GoCompose TopicId
   | GoSurvey TopicId
   | GoRead TopicId OpinionId
   | GoUserDelegates
@@ -63,9 +64,15 @@ type Action
   -- private
   | TopicMsg Topic.Action
   | PropagateTopic
+
+  -- exposed to children
+  | SetActiveUser ActiveUser
+
+  -- child modules
   | ComposerMsg Composer.Action
   | SurveyorMsg Surveyor.Action
-  | DelegatorMsg Delegator.Action
+  | AuthMsg Auth.Action
+
   | NoOp
 
 
@@ -78,15 +85,26 @@ type SessionView
   | Empty
 
 
-init : Session
+signal : Auth.SignalContext -> Signal Action
+signal authContext =
+  Signal.map AuthMsg (Auth.signal authContext)
+
+
+init : (Session, Effects Action)
 init =
-  { activeUser = LoggedOut
-  , topic = Topic.empty
-  , currentView = Empty
-  , composer = Composer.empty
-  , surveyor = Surveyor.empty
-  , delegator = Delegator.empty
-  }
+  let
+    (auth, authFx) =
+      Auth.init
+  in
+    ( { activeUser = LoggedOut
+      , topic = Topic.empty
+      , currentView = Empty
+      , composer = Composer.empty
+      , surveyor = Surveyor.empty
+      , auth = auth
+      }
+    , Effects.map AuthMsg authFx
+    )
 
 
 update : Action -> Session -> (Session, Effects Action)
@@ -163,14 +181,18 @@ update action session =
         , Effects.map SurveyorMsg updateFx
         )
 
-    DelegatorMsg userDelegatesAction ->
+    AuthMsg authAction ->
       let
         (update, updateFx) =
-          Delegator.update userDelegatesAction session.delegator
+          Auth.update
+            { next = AuthMsg
+            , setUser = SetActiveUser
+            }
+            authAction
+            session.auth
       in
-        ( { session | delegator = update }
-        , Effects.map DelegatorMsg updateFx
-        )
+        ( { session | auth = update }
+        , updateFx )
 
     NoOp ->
       ( session, Effects.none )
@@ -232,7 +254,7 @@ view address session =
     sessionContent =
       case session.activeUser of
         LoggedIn user ->
-          activeSessionContent address session
+          activeSessionContent address user session
 
         LoggedOut ->
           inactiveSessionContent address session
@@ -250,8 +272,8 @@ type alias SessionLinker a =
 
 
 -- builds a link, setting it to active if it matches the current view
-buildNavLink : SessionLinker a -> Session -> Html
-buildNavLink {routeView, buildRoute, makeHtml, getter} session =
+buildSubNavLink : SessionLinker a -> Session -> Html
+buildSubNavLink {routeView, buildRoute, makeHtml, getter} session =
   let
     classes =
       -- we need to examine the current view to determine whether this
@@ -271,7 +293,7 @@ buildNavLink {routeView, buildRoute, makeHtml, getter} session =
 
 
 composeLinker : Session -> Html
-composeLinker = buildNavLink
+composeLinker = buildSubNavLink
   { routeView = Compose
   , buildRoute = Routes.Compose
   , makeHtml = Composer.navButton
@@ -280,7 +302,7 @@ composeLinker = buildNavLink
 
 
 connectLinker : Session -> Html
-connectLinker = buildNavLink
+connectLinker = buildSubNavLink
   { routeView = Survey
   , buildRoute = Routes.Survey
   , makeHtml = Surveyor.navButton
@@ -288,8 +310,8 @@ connectLinker = buildNavLink
   }
 
 
-activeSessionHeader : Session -> Html
-activeSessionHeader session =
+activeSubNav : Session -> Html
+activeSubNav session =
   div
     [ class "session-overview" ]
     [ h1 [ class "topic-title" ] [ text session.topic.text ]
@@ -301,8 +323,8 @@ activeSessionHeader session =
     ]
 
 
-inactiveSessionHeader : Session -> Html
-inactiveSessionHeader session =
+inactiveSubNav : Session -> Html
+inactiveSubNav session =
   div
     [ class "session-overview" ]
     [ h1 [ class "topic-title" ] [ text session.topic.text ]
@@ -313,12 +335,12 @@ inactiveSessionHeader session =
     ]
 
 
-activeSessionContent : Signal.Address Action -> Session -> List Html
-activeSessionContent address session =
+activeSessionContent : Signal.Address Action -> User -> Session -> List Html
+activeSessionContent address user session =
   case session.currentView of
 
     Survey ->
-      [ activeSessionHeader session
+      [ activeSubNav session
       , div
         [ class "content" ]
         [ Surveyor.view
@@ -331,7 +353,7 @@ activeSessionContent address session =
       ]
 
     Compose ->
-      [ activeSessionHeader session
+      [ activeSubNav session
       , div
         [ class "content" ]
         [ Composer.view (Signal.forwardTo address ComposerMsg) session.composer ]
@@ -340,7 +362,11 @@ activeSessionContent address session =
     UserDelegates ->
       [ div
         [ class "content" ]
-        [ Delegator.view (Signal.forwardTo address DelegatorMsg) session.delegator ]
+        [ Delegator.view
+          { user = user
+          , updateUser = Signal.forwardTo address SetActiveUser
+          }
+        ]
       ]
 
     Empty ->
@@ -352,7 +378,7 @@ inactiveSessionContent : Signal.Address Action -> Session -> List Html
 inactiveSessionContent address session =
   case session.currentView of
     Survey ->
-      [ inactiveSessionHeader session
+      [ inactiveSubNav session
       , div
         [ class "content" ]
         [ Surveyor.view
@@ -365,8 +391,18 @@ inactiveSessionContent address session =
       ]
 
     _ ->
-      [ inactiveSessionHeader session
+      [ inactiveSubNav session
       , div
         [ class "content" ]
         [ text "Sorry, you must be logged in to see this content" ]
       ]
+
+
+navHeader : Signal.Address Action -> Session -> List Html
+navHeader address {auth, activeUser} =
+    Auth.view
+      { address = Signal.forwardTo address AuthMsg
+      , activeUser = activeUser
+      }
+      auth
+    ++ Delegator.navHeader activeUser

@@ -6,9 +6,7 @@ module Auth
   , Context
   , init
   , update
-  , viewHeader
-  , viewForm
-  , getUser
+  , view
   , logoutSignal
   ) where
 
@@ -29,8 +27,7 @@ import Auth.Google as Google
 
 
 type alias Auth =
-  { activeUser : ActiveUser
-  , message : String
+  { message : String
   , input : InputId
   , visible : Bool
   }
@@ -38,8 +35,7 @@ type alias Auth =
 
 init : (Auth, Effects Action)
 init =
-  ( { activeUser = ActiveUser.LoggedOut
-    , message = "Welcome, please enter your user id"
+  ( { message = "Welcome, please enter your user id"
     , input = Empty
     , visible = False
     }
@@ -124,17 +120,13 @@ update context message auth =
           )
 
         Just user ->
-          let
-            activeUser = ActiveUser.LoggedIn user
-          in
-            ( { auth
-              | activeUser = activeUser
-              , visible = False
-              , input = Empty
-              }
-            , saveUser user
-              |> Effects.task
-              |> Effects.map context.setUser
+          ( { auth
+            | visible = False
+            , input = Empty
+            }
+          , saveUser user
+            |> Effects.task
+            |> Effects.map context.setUser
           )
 
     SetVisible isVisible ->
@@ -144,7 +136,6 @@ update context message auth =
     Logout ->
       ( { auth
         | input = Empty
-        , activeUser = ActiveUser.LoggedOut
         }
       , clearUser
         |> Effects.task
@@ -187,8 +178,21 @@ saveUser user =
   Task.succeed (ActiveUser.LoggedIn user)
 
 
-viewHeader : Signal.Address Action -> Auth -> Html
-viewHeader address {activeUser}=
+type alias ViewContext =
+  { activeUser : ActiveUser
+  , address : Signal.Address Action
+  }
+
+
+view : ViewContext -> Auth -> List Html
+view context auth =
+  [ viewHeader context
+  , viewForm context.address auth
+  ]
+
+
+viewHeader : ViewContext -> Html
+viewHeader {address, activeUser}=
   let
     (userName, login) =
       case activeUser of
@@ -271,10 +275,6 @@ viewForm address auth =
           [ text "Cancel" ]
         ]
       ]
-
-
-getUser : Auth -> ActiveUser
-getUser = .activeUser
 
 
 -- from the Elm Architecture tutorial

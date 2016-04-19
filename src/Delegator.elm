@@ -1,40 +1,67 @@
 module Delegator
-  ( Delegator
-  , Action(..)
-  , empty
-  , update
-  , view
+  ( view
+  , navHeader
   ) where
 
 
-import Effects exposing (Effects)
-import Html exposing (Html, div, text, p, span)
+import Html exposing (Html, div, text, p, span, a)
+import Html.Attributes exposing (class)
 
 
-type alias Delegator =
-  { foo : String
+import ActiveUser exposing (ActiveUser (LoggedIn, LoggedOut))
+import Common.Relationship as Relationship
+import Routes
+import User exposing (User)
+import Trustee exposing (Trustee)
+
+
+type alias ViewContext =
+  { user : User
+  , updateUser : Signal.Address ActiveUser
   }
 
 
-empty : Delegator
-empty =
-  { foo = "" }
+view : ViewContext -> Html
+view {user, updateUser} =
+  let
+    bffs =
+      List.filter (Trustee.isRelated Relationship.Bff) user.trustees
+    trusted =
+      List.filter (Trustee.isRelated Relationship.Trusted) user.trustees
+  in
+    div
+      [ ]
+      <| viewBffs bffs
+      ++ viewTrusted trusted
 
 
-type alias UserId = Int
+viewBffs : List Trustee -> List Html
+viewBffs bffs =
+  bffs
+  |> List.map (Html.text << .name)
+  |> List.map (flip (::) [])
+  |> List.map (div [ class "bff" ])
 
 
-type Action
-  = Add UserId
-  | Remove UserId
-  | NoOp
+viewTrusted : List Trustee -> List Html
+viewTrusted trusted =
+  trusted
+  |> List.map (Html.text << .name)
+  |> List.map (flip (::) [])
+  |> List.map (div [ class "trusted" ])
 
 
-update : Action -> Delegator -> (Delegator, Effects Action)
-update action model =
-  (model, Effects.none)
+navHeader : ActiveUser -> List Html
+navHeader activeUser =
+  case activeUser of
+    LoggedOut ->
+      []
 
-
-view : Signal.Address Action -> Delegator -> Html
-view address model =
-  div [] [ text "hi" ]
+    LoggedIn user ->
+      [ div
+        [class "home" ]
+        [ a
+          (Routes.clickTo Routes.UserDelegates)
+          [ text <| "You trust " ++ (toString <| List.length user.trustees) ++ " people" ]
+        ]
+      ]
