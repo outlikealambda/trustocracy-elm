@@ -10,7 +10,7 @@ input[type='submit'] {
 
 	background-color: $b-color-primary;
 	border: .1rem solid $b-color-primary;
-	// border-radius: .4rem;
+	border-radius: .4rem;
 	color: $b-color-initial;
 	cursor: pointer;
 	display: inline-block;
@@ -22,7 +22,6 @@ input[type='submit'] {
 	padding: 0 3.0rem;
 	text-align: center;
 	text-decoration: none;
-	text-transform: uppercase;
 	white-space: nowrap;
 
 	&:hover,

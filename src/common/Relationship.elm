@@ -2,11 +2,14 @@ module Common.Relationship
   ( Relationship
     ( Bff
     , Trusted
+    , Public
     , Distant
     , Self )
   , view
   , decoder
   , encoder
+  , toString
+  , toReadable
   ) where
 
 
@@ -71,3 +74,17 @@ toString relationship =
       "DISTANT"
     Self ->
       "SELF"
+
+toReadable : Relationship -> String
+toReadable r =
+  case r of
+    Bff ->
+      "Bff"
+    Trusted ->
+      "Trusted"
+    Public ->
+      "Public"
+    Distant ->
+      "Distant"
+    Self ->
+      "Self"

@@ -6,6 +6,8 @@ module Trustee
   , fromSelf
   , isRelated
   , setRelationship
+  , isTrustee
+  , isTrusteeChanged
   ) where
 
 
@@ -66,3 +68,23 @@ isRelated relationship trustee =
 setRelationship : Relationship -> Trustee -> Trustee
 setRelationship relationship trustee =
   { trustee | relationship = relationship }
+
+
+isTrustee : Trustee -> Trustee -> Bool
+isTrustee =
+  matchId
+
+
+isTrusteeChanged : Trustee -> Trustee -> Bool
+isTrusteeChanged a b =
+  matchId a b && (not <| matchRelationship a b)
+
+
+matchId : Trustee -> Trustee -> Bool
+matchId a b =
+  a.id == b.id
+
+
+matchRelationship : Trustee -> Trustee -> Bool
+matchRelationship a b =
+  a.relationship == b.relationship

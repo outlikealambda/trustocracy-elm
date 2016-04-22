@@ -21,7 +21,7 @@ import ActiveUser exposing
     )
   )
 import Auth exposing (Auth)
-import Delegator
+import Delegator exposing (Delegator)
 import Opinion.Surveyor as Surveyor exposing (Surveyor)
 import Opinion.Composer as Composer exposing (Composer)
 import Routes
@@ -48,6 +48,7 @@ type alias Session =
   , composer : Composer
   , surveyor : Surveyor
   , auth : Auth
+  , delegator : Delegator
   }
 
 type alias TopicId = Int
@@ -71,9 +72,8 @@ type Action
   -- child modules
   | ComposerMsg Composer.Action
   | SurveyorMsg Surveyor.Action
+  | DelegatorMsg Delegator.Action
   | AuthMsg Auth.Action
-
-  | NoOp
 
 
 -- the current view
@@ -102,6 +102,7 @@ init =
       , composer = Composer.empty
       , surveyor = Surveyor.empty
       , auth = auth
+      , delegator = Delegator.fromActiveUser LoggedOut
       }
     , Effects.map AuthMsg authFx
     )
@@ -111,7 +112,10 @@ update : Action -> Session -> (Session, Effects Action)
 update action session =
   case action of
     SetActiveUser activeUser ->
-      ( { session | activeUser = activeUser }
+      ( { session
+        | activeUser = activeUser
+        , delegator = Delegator.fromActiveUser activeUser
+      }
       , Effects.none
       )
 
@@ -194,8 +198,22 @@ update action session =
         ( { session | auth = update }
         , updateFx )
 
-    NoOp ->
-      ( session, Effects.none )
+    DelegatorMsg delegateAction ->
+      case session.activeUser of
+
+        LoggedOut ->
+          ( session, Effects.none )
+
+        LoggedIn user ->
+          let
+            (update, updateFx) =
+              Delegator.update delegateAction session.delegator
+          in
+            ( { session
+              | delegator = update
+              , activeUser = LoggedIn { user | trustees = update.saved }
+            }
+            , Effects.map DelegatorMsg updateFx )
 
 
 setSessionTopic : Session -> SessionView -> TopicId -> (Session, Effects Action)
@@ -362,11 +380,7 @@ activeSessionContent address user session =
     UserDelegates ->
       [ div
         [ class "content" ]
-        [ Delegator.view
-          { user = user
-          , updateUser = Signal.forwardTo address SetActiveUser
-          }
-        ]
+        [ Delegator.view (Signal.forwardTo address DelegatorMsg) session.delegator ]
       ]
 
     Empty ->
