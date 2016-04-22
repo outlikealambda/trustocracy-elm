@@ -17,6 +17,7 @@ import Task exposing (Task)
 
 
 import ActiveUser exposing (ActiveUser (LoggedIn, LoggedOut))
+import Common.API as API
 import Common.Relationship as Relationship exposing (Relationship)
 import Routes
 import User exposing (User)
@@ -76,12 +77,7 @@ update action delegator =
                 if List.isEmpty diff then
                   Effects.none
                 else
-                  List.map updateDb diff
-                    |> List.map Task.toResult
-                    |> Task.sequence
-                    |> Task.map (List.filterMap Result.toMaybe)
-                    |> Effects.task
-                    |> Effects.map UpdateSuccess
+                  API.setTrustees UpdateSuccess diff
             in
               ( { updated | errors = [] }
               , fx
@@ -89,16 +85,17 @@ update action delegator =
 
     UpdateSuccess trustees ->
       let
+        -- get all the delegates which weren't saved
         unchanged =
-          List.filter (\t -> List.all (not << Trustee.isTrustee t) trustees) delegator.current
+          List.filter (\t -> List.all (not << Trustee.isTrustee t) trustees) delegator.saved
 
-        current =
+        updatedDelegateList =
           trustees ++ unchanged
 
       in
         ( { delegator
-          | saved = current
-          , current = current }
+          | saved = updatedDelegateList
+          , current = updatedDelegateList }
         , Effects.none
         )
 

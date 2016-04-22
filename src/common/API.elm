@@ -11,6 +11,8 @@ module Common.API
   , publishOpinion
   , fetchTopic
   , fetchAllTopics
+  , setTrustee
+  , setTrustees
   ) where
 
 
@@ -19,7 +21,7 @@ import Http
 import Json.Decode as Decode exposing ((:=))
 import Json.Encode as Encode
 import String
-import Task
+import Task exposing (Task)
 
 
 import Auth.Facebook as Facebook
@@ -28,6 +30,7 @@ import Opinion.Path as Path exposing (Path)
 import Opinion.Opinion as Opinion exposing (Opinion)
 import User exposing (User)
 import Topic.Model as Topic exposing (Topic)
+import Trustee exposing (Trustee)
 
 
 rootUrl : String
@@ -42,6 +45,11 @@ openEndpoint =
 secureEndpoint : List String -> String
 secureEndpoint =
   (++) (rootUrl ++ "secure/") << String.concat
+
+
+----------
+-- USER --
+----------
 
 
 loginUser : (String, String) -> (Maybe User -> a) -> Effects a
@@ -115,6 +123,11 @@ fetchUserByGoogleAuth transform gaResponse =
   |> Task.toMaybe
   |> Task.map transform
   |> Effects.task
+
+
+--------------
+-- OPINIONS --
+--------------
 
 
 fetchConnected : (Maybe (List Path) -> a) -> Topic -> Effects a
@@ -192,21 +205,11 @@ writeUrlBuilder topicId writeType =
     , writeType
     ]
 
--- because post is pretty worthless
--- see: https://groups.google.com/forum/#!topic/elm-discuss/Zpq9itvtLEY
-post' : Decode.Decoder a -> String -> Http.Body -> Task.Task Http.Error a
-post' decoder url body =
-    Http.send Http.defaultSettings
-      { verb = "POST"
-      , headers = [("Content-type", "application/json")]
-      , url = url
-      , body = body
-      }
-    |> Http.fromJson decoder
 
 ------------
 -- TOPICS --
 ------------
+
 
 fetchTopic : (Maybe Topic -> a) -> Int -> Effects a
 fetchTopic transform topicId =
@@ -224,3 +227,50 @@ fetchAllTopics transform =
     |> Task.toMaybe
     |> Task.map transform
     |> Effects.task
+
+
+
+--------------
+-- TRUSTEES --
+--------------
+
+
+setTrusteeTask : Trustee -> Task Http.Error Trustee
+setTrusteeTask trustee =
+  Trustee.encoder trustee
+    |> Encode.encode 0
+    |> Http.string
+    |> post'
+      Trustee.decoder
+      (secureEndpoint ["delegate"])
+
+
+setTrustee : (Maybe Trustee -> a) -> Trustee -> Effects a
+setTrustee transform trustee =
+  setTrusteeTask trustee
+    |> Task.toMaybe
+    |> Task.map transform
+    |> Effects.task
+
+
+setTrustees : (List Trustee -> a) -> List Trustee -> Effects a
+setTrustees transform trustees =
+  List.map setTrusteeTask trustees
+    |> List.map Task.toResult
+    |> Task.sequence
+    |> Task.map (List.filterMap Result.toMaybe)
+    |> Task.map transform
+    |> Effects.task
+
+
+-- because post is pretty worthless
+-- see: https://groups.google.com/forum/#!topic/elm-discuss/Zpq9itvtLEY
+post' : Decode.Decoder a -> String -> Http.Body -> Task.Task Http.Error a
+post' decoder url body =
+  Http.send Http.defaultSettings
+    { verb = "POST"
+    , headers = [("Content-type", "application/json")]
+    , url = url
+    , body = body
+    }
+  |> Http.fromJson decoder
