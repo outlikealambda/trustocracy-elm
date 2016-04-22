@@ -14,11 +14,12 @@ import Html.Attributes exposing (class, rel, href, placeholder, value, style)
 import Task
 
 
+import Auth exposing (Auth)
+import Common.API as API
+import Header
 import Session exposing (Session)
 import Topic.Model exposing (Topic)
 import Topic.View
-import Auth exposing (Auth)
-import Header
 
 
 import Routes exposing (Route)
@@ -53,11 +54,7 @@ mountRoute prevRoute route world =
 
     Routes.Home ->
       ( world
-      , Topic.Model.fetchAll
-        |> Task.toMaybe
-        |> Task.map (Maybe.withDefault [])
-        |> Task.map TopicsLoad
-        |> Effects.task
+      , API.fetchAllTopics (TopicsLoad << Maybe.withDefault [])
       )
 
     Routes.Compose topicId ->
@@ -81,11 +78,7 @@ mountRoute prevRoute route world =
     -- home page and we don't want to continually redirect
     Routes.Topics ->
       ( world
-      , Topic.Model.fetchAll
-        |> Task.toMaybe
-        |> Task.map (Maybe.withDefault [])
-        |> Task.map TopicsLoad
-        |> Effects.task
+      , API.fetchAllTopics (TopicsLoad << Maybe.withDefault [])
       )
 
     Routes.UserDelegates ->

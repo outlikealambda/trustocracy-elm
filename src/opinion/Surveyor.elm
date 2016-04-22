@@ -14,21 +14,16 @@ module Opinion.Surveyor
 
 
 import Effects exposing (Effects)
-import Task
 import Html exposing (Html, div, text, h4)
 import Html.Attributes exposing (class)
-import Json.Decode as Json exposing ((:=))
 import Dict
-import String
-import Http
 
 
-import Opinion.Opinion as Opinion
+import ActiveUser
+import Common.API as API
 import Opinion.Plot as Plot exposing (Plot)
 import Opinion.Path as Path
 import Routes
-import User exposing (User)
-import ActiveUser
 import Topic.Model as Topic exposing (Topic)
 
 
@@ -78,9 +73,14 @@ update message model =
         fx =
           case activeUser of
             ActiveUser.LoggedOut ->
-              fetchAllOpinionIds topic
-            ActiveUser.LoggedIn user ->
-              fetchPlotted topic user
+              API.fetchIdsByTopic
+                (SetUnconnected << Maybe.withDefault [])
+                topic
+
+            ActiveUser.LoggedIn _ ->
+              API.fetchConnected
+                (SetConnected << Maybe.withDefault [])
+                topic
       in
         ( { model
           | topic = topic
@@ -90,40 +90,38 @@ update message model =
         )
 
     SetConnected opaths ->
-      case Debug.log "set connected" opaths of
-        opaths ->
-          let
-            keyGen =
-              .id << .opinion
+      let
+        keyGen =
+          .id << .opinion
 
-            plotPairs =
-              Plot.initPlots opaths
+        plotPairs =
+          Plot.initPlots opaths
 
-            keyedPlotsFxs =
-              List.map (Plot.keyFx keyGen) plotPairs
-              |> List.map (\(k, fx) -> Effects.map (PlotMsg k) fx)
+        keyedPlotsFxs =
+          List.map (Plot.keyFx keyGen) plotPairs
+          |> List.map (\(k, fx) -> Effects.map (PlotMsg k) fx)
 
-            connectedBuckets =
-              List.map fst plotPairs
-              |> List.map (Plot.keyPlot keyGen)
-              |> Dict.fromList
+        connectedBuckets =
+          List.map fst plotPairs
+          |> List.map (Plot.keyPlot keyGen)
+          |> Dict.fromList
 
-            longestPlotPath =
-              Dict.values connectedBuckets
-              |> List.map .shortestPath
-              |> List.maximum
-              |> Maybe.withDefault 0
+        longestPlotPath =
+          Dict.values connectedBuckets
+          |> List.map .shortestPath
+          |> List.maximum
+          |> Maybe.withDefault 0
 
-          in
-            ( { model
-              | rawPaths = opaths
-              , buckets = Dict.union connectedBuckets model.buckets
-              , longestPlotPath = longestPlotPath
-              }
-            , fetchAllOpinionIds model.topic
-              :: keyedPlotsFxs
-              |> Effects.batch
-            )
+      in
+        ( { model
+          | rawPaths = opaths
+          , buckets = Dict.union connectedBuckets model.buckets
+          , longestPlotPath = longestPlotPath
+          }
+        , API.fetchIdsByTopic (SetUnconnected << Maybe.withDefault []) model.topic
+          :: keyedPlotsFxs
+          |> Effects.batch
+        )
 
     SetUnconnected ids ->
       let
@@ -188,41 +186,6 @@ blur surveyor =
   { surveyor | zoom = Blur }
 
 
-fetchPlotted : Topic -> User -> Effects Action
-fetchPlotted topic user =
-  buildPlottedUrl topic.id user.id
-    |> Http.get opathsDecoder
-    |> Task.toMaybe
-    |> Task.map (Maybe.withDefault [])
-    |> Task.map SetConnected
-    |> Effects.task
-
-
--- super inefficient; gets all the opinions, and then extracts the id
--- TODO: new endpoint on server
-fetchAllOpinionIds : Topic -> Effects Action
-fetchAllOpinionIds topic =
-  Opinion.fetchAllByTopic topic.id
-    |> Effects.map (List.map .id)
-    |> Effects.map SetUnconnected
-
-
-opathsDecoder : Json.Decoder Paths
-opathsDecoder =
-  "paths" := Json.list Path.decoder
-
-
-buildPlottedUrl : Int -> Int -> String
-buildPlottedUrl tid uid =
-  String.concat
-    [ "http://localhost:3714/api/user/"
-    , toString uid
-    , "/topic/"
-    , toString tid
-    , "/opinions"
-    ]
-
-
 type alias ViewContext =
   { address : Signal.Address Action
   , readRouteBuilder : Int -> Routes.Route
@@ -250,6 +213,7 @@ view context {zoom, buckets, longestPlotPath} =
       <| showAll context.showAllRoute
       :: (viewAllGrouped context longestPlotPath zoomedPlots)
 
+
 showAll : Routes.Route -> Html
 showAll showAllRoute =
   div
@@ -260,6 +224,7 @@ showAll showAllRoute =
       ]
       [ Html.text "Show all opinions" ]
     ]
+
 
 viewAllGrouped : ViewContext -> Int -> List (Int, Plot) -> List Html
 viewAllGrouped context longestPlotPath plots=
@@ -332,11 +297,13 @@ degreeLabelHead n =
     3 -> "3rd degree"
     k -> (toString k) ++ "th degree"
 
+
 degreeLabelTail : Int -> String
 degreeLabelTail n =
   case n of
     -1 -> ""
     n -> " connections"
+
 
 navButton : Surveyor -> Html
 navButton {buckets, isSurveyed} =

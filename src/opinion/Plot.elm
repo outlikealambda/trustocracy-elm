@@ -14,6 +14,7 @@ module Opinion.Plot
   ) where
 
 
+import Common.API as API
 import Opinion.Opinion as Opinion exposing (Opinion)
 import Opinion.Presenter as Presenter
 import Opinion.Path as Path exposing (Path)
@@ -53,16 +54,21 @@ init opinionId opaths =
       |> List.minimum
       |> Maybe.withDefault -1
 
-    (opinion, opinionFx) =
-      Opinion.fetchById opinionId
+    opinionFx =
+      API.fetchOpinionById
+        (FetchComplete << Maybe.withDefault Opinion.empty)
+        opinionId
+
+    opinion =
+      Opinion.empty
 
   in
-    ( { opinion = opinion
+    ( { opinion = { opinion | id = opinionId }
       , paths = sorted
       , shortestPath = shortest
       , expanded = False
       }
-    , Effects.map FetchComplete opinionFx
+    , opinionFx
     )
 
 

@@ -9,11 +9,13 @@ module Opinion.Composer
   ) where
 
 
+import Common.API as API
 import Opinion.Opinion as Opinion exposing (Opinion)
 import Opinion.Writer as Writer
 import Opinion.Presenter as Presenter
-import User exposing (User)
 import Topic.Model as Topic exposing (Topic)
+import Trustee
+import User exposing (User)
 
 import Effects exposing (Effects)
 import Html exposing (Html, div, text, br)
@@ -51,12 +53,26 @@ empty =
   }
 
 
+-- This is a little ugly; we only need the User to create a new opinion
+-- if there isn't an existing one.  But this means we need to import User and
+-- Trustee, and removes the Maybe response logic from the Action handler...
+-- TODO: create a new Opinion on the server side if the opinion doesn't exist?
 init : User -> Topic -> (Composer, Effects Action)
 init user topic =
-  ( { empty | topic = topic }
-  , Opinion.fetchDraftByUserTopic user topic.id
-    |> Effects.map FetchComplete
-  )
+  let
+    emptyOpinion =
+      Opinion.empty
+    default =
+      { emptyOpinion
+      | opiner = Trustee.fromSelf user.name user.id
+      , fetched = True
+      }
+  in
+    ( { empty | topic = topic }
+    , API.fetchDraftByTopic
+      (FetchComplete << Maybe.withDefault default)
+      topic.id
+    )
 
 
 update : Action -> Composer -> (Composer, Effects Action)
@@ -89,12 +105,12 @@ update action composer =
 
     Save ->
       ( composer
-      , Effects.map WriteComplete (Opinion.save composer.opinion composer.topic.id)
+      , API.saveOpinion WriteComplete composer.opinion composer.topic.id
       )
 
     Publish ->
       ( composer
-      , Effects.map WriteComplete (Opinion.publish composer.opinion composer.topic.id)
+      , API.publishOpinion WriteComplete composer.opinion composer.topic.id
       )
 
 

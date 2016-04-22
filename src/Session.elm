@@ -21,6 +21,7 @@ import ActiveUser exposing
     )
   )
 import Auth exposing (Auth)
+import Common.API as API
 import Delegator exposing (Delegator)
 import Opinion.Surveyor as Surveyor exposing (Surveyor)
 import Opinion.Composer as Composer exposing (Composer)
@@ -63,8 +64,7 @@ type Action
   | GoUserDelegates
 
   -- private
-  | TopicMsg Topic.Action
-  | PropagateTopic
+  | SetTopic (Maybe Topic)
 
   -- exposed to children
   | SetActiveUser ActiveUser
@@ -148,24 +148,17 @@ update action session =
       ( { session | currentView = UserDelegates }, Effects.none )
 
     -- PRIVATE
-    TopicMsg topicAction ->
-      let
-        (topicUpdate, topicFx) =
-          Topic.update
-            { complete = (\_ -> PropagateTopic) }
-            topicAction
-            session.topic
-
-      in
-        ( { session | topic = topicUpdate }
-        , topicFx
-        )
 
     -- we only propagate topic, and not user, because
     -- the app shouldn't normally be switching users, and only
-    -- does so in the current dev environment
-    PropagateTopic ->
-      updateViews session
+    -- does so in the current dev environment?
+    -- TODO: reload views on user change/logout
+    SetTopic maybeTopic ->
+      case maybeTopic of
+        Nothing ->
+          ( session, Effects.none )
+        Just topic ->
+          updateViews { session | topic = topic }
 
     ComposerMsg composerAction ->
       let
@@ -218,25 +211,16 @@ update action session =
 
 setSessionTopic : Session -> SessionView -> TopicId -> (Session, Effects Action)
 setSessionTopic session newSessionView topicId =
-  if session.topic.id == topicId then
-    -- same topic, change the view, but no need to reload
-    -- the models
+  let
+    fx =
+      if session.topic.id == topicId then
+        Effects.none
+      else
+        API.fetchTopic SetTopic topicId
+  in
     ( { session | currentView = newSessionView }
-    , Effects.none )
-  else
-
-    let
-      (topicInit, topicInitFx) =
-        Topic.init topicId
-
-    in
-      ( { session
-        | currentView = newSessionView
-        , topic = topicInit
-        }
-      , Effects.map TopicMsg topicInitFx
-      )
-
+    , fx
+    )
 
 -- if the user is LoggedOut, we don't need to update
 -- compose and survey
