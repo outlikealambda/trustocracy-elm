@@ -6,13 +6,12 @@
     <link rel="stylesheet" href="/css/normalize.css" />
     <link rel="stylesheet" href="/css/fonts.css" />
     <link rel="stylesheet" href="/css/trusto.css" />
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.1/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.1/css/font-awesome.min.css" />
 
   </head>
 
   <body></body>
 
-  <script src="https://apis.google.com/js/platform.js?onload=onLoadCallback" async defer ></script>
   <script type="text/javascript">
     // Google Auth
     var GA; // initialized googleAuth object
@@ -29,6 +28,7 @@
     }
 
   </script>
+  <script src="https://apis.google.com/js/platform.js?onload=onLoadCallback" async defer ></script>
 
   <script type="text/javascript">
 
@@ -65,7 +65,7 @@
     });
 
     elmApp.ports.gaLogout.subscribe(() => {
-      console.log("logging out ga...");
+      console.log("logging out ga...", GA);
       GA.signOut();
     });
 
