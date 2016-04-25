@@ -4,7 +4,10 @@ module Common.Relationship
     , Trusted
     , Public
     , Distant
-    , Self )
+    , Candidate
+    , Self
+    , None
+    )
   , view
   , decoder
   , encoder
@@ -24,6 +27,8 @@ type Relationship
   | Trusted
   | Public
   | Distant
+  | Candidate
+  | None
   | Self
 
 
@@ -57,8 +62,12 @@ toRelationship asString =
       Bff
     "TRUSTS" ->
       Trusted
-    _ ->
+    "DISTANT" ->
       Distant
+    "CANDIDATE" ->
+      Candidate
+    _ ->
+      None
 
 
 toString : Relationship -> String
@@ -72,8 +81,12 @@ toString relationship =
       "PUBLIC"
     Distant ->
       "DISTANT"
+    Candidate ->
+      "CANDIDATE"
     Self ->
       "SELF"
+    None ->
+      "NONE"
 
 toReadable : Relationship -> String
 toReadable r =
@@ -86,5 +99,9 @@ toReadable r =
       "Public"
     Distant ->
       "Distant"
+    Candidate ->
+      "Candidate"
     Self ->
       "Self"
+    None ->
+      "None"

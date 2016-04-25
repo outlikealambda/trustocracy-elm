@@ -11,15 +11,15 @@ module Auth
   ) where
 
 
-import Task exposing (Task)
+import Effects exposing (Effects)
 import Html exposing (Html, h2, div, text, input, button, a)
 import Html.Attributes as Attribute exposing (placeholder, value, class)
-import Html.Events exposing (on, targetValue, keyCode, onClick)
-import Effects exposing (Effects)
-import Json.Decode as Json
+import Html.Events exposing (on, targetValue, onClick)
+import Task exposing (Task)
 
 
 import Common.API as API
+import Common.Form as Form
 import ActiveUser exposing (ActiveUser)
 import User exposing (User)
 import Auth.Facebook as Facebook
@@ -243,7 +243,7 @@ viewForm address auth =
         [ h2 [] [ text <| "Login" ]
         , text <| "Eventually this will be a login; for now just input the id of the user you'd like to impersonate"
         , div
-          [ onEnter address LoadUser ]
+          [ Form.onEnter address LoadUser ]
           [ input
             [ placeholder "User Name"
             , value <| name
@@ -277,21 +277,6 @@ viewForm address auth =
       ]
 
 
--- from the Elm Architecture tutorial
-onEnter : Signal.Address a -> a -> Html.Attribute
-onEnter address value =
-  on "keydown"
-    (Json.customDecoder keyCode is13)
-    (\_ -> Signal.message address value)
-
-
-is13 : Int -> Result String ()
-is13 code =
-  if code == 13 then
-    Ok ()
-
-  else
-    Err "not the right key code"
 
 
 -- FOR LOGOUT PURPOSES (clear jwt cookie)

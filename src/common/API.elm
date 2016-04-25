@@ -13,6 +13,7 @@ module Common.API
   , fetchAllTopics
   , setTrustee
   , setTrustees
+  , lookupTrustee
   ) where
 
 
@@ -259,6 +260,15 @@ setTrustees transform trustees =
     |> List.map Task.toResult
     |> Task.sequence
     |> Task.map (List.filterMap Result.toMaybe)
+    |> Task.map transform
+    |> Effects.task
+
+
+lookupTrustee : (Maybe Trustee -> a) -> String -> Effects a
+lookupTrustee transform email =
+  Http.url (secureEndpoint ["delegate/lookup"]) [ ("email", email) ]
+    |> Http.get Trustee.decoder
+    |> Task.toMaybe
     |> Task.map transform
     |> Effects.task
 

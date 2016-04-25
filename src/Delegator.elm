@@ -9,15 +9,16 @@ module Delegator
 
 
 import Effects exposing (Effects)
-import Html exposing (Html, div, text, p, span, a)
-import Html.Attributes exposing (class)
-import Html.Events exposing (onClick)
+import Html as Html exposing (Html, div, text, p, span, a)
+import Html.Attributes as Attribute exposing (class)
+import Html.Events as Event exposing (onClick)
 import String
 import Task exposing (Task)
 
 
 import ActiveUser exposing (ActiveUser (LoggedIn, LoggedOut))
 import Common.API as API
+import Common.Form as Form
 import Common.Relationship as Relationship exposing (Relationship)
 import Routes
 import User exposing (User)
@@ -28,12 +29,16 @@ type alias Delegator =
   { saved : List Trustee
   , current : List Trustee
   , errors : List String
+  , input : String
   }
 
 
 type Action
   = ValidateMove Trustee
-  | UpdateSuccess (List Trustee)
+  | SaveDelegateComplete (List Trustee)
+  | InputUpdate String
+  | Lookup
+  | LookupComplete (Maybe Trustee)
 
 
 type Direction
@@ -45,9 +50,9 @@ fromActiveUser : ActiveUser -> Delegator
 fromActiveUser activeUser =
   case activeUser of
     LoggedOut ->
-      Delegator [] [] []
+      Delegator [] [] [] ""
     LoggedIn user ->
-      Delegator user.trustees user.trustees []
+      Delegator user.trustees user.trustees [] ""
 
 
 update : Action -> Delegator -> (Delegator, Effects Action)
@@ -55,7 +60,6 @@ update action delegator =
   case action of
     ValidateMove trustee ->
       let
-
         current =
           trustee
           :: (List.filter (not << Trustee.isTrustee trustee) delegator.current)
@@ -71,19 +75,25 @@ update action delegator =
             )
           Ok _ ->
             let
+              newOrChanged t =
+                (||)
+                  (List.all (not << Trustee.isTrustee t) delegator.saved) -- new
+                  (List.any (Trustee.isTrusteeChanged t) delegator.saved) -- changed
+
               diff =
-                List.filter (\t -> List.any (Trustee.isTrusteeChanged t) delegator.saved) current
+                List.filter newOrChanged current
+
               fx =
                 if List.isEmpty diff then
                   Effects.none
                 else
-                  API.setTrustees UpdateSuccess diff
+                  API.setTrustees SaveDelegateComplete diff
             in
               ( { updated | errors = [] }
               , fx
               )
 
-    UpdateSuccess trustees ->
+    SaveDelegateComplete trustees ->
       let
         -- get all the delegates which weren't saved
         unchanged =
@@ -98,6 +108,38 @@ update action delegator =
           , current = updatedDelegateList }
         , Effects.none
         )
+
+    InputUpdate input ->
+      ( { delegator | input = String.toLower(input) }
+      , Effects.none
+      )
+
+    Lookup ->
+      ( delegator
+      , API.lookupTrustee LookupComplete delegator.input
+      )
+
+    LookupComplete maybeTrustee ->
+      case maybeTrustee of
+        Nothing ->
+          ( delegator, Effects.none )
+        Just trustee ->
+          let
+            isNew =
+              not <| List.any (Trustee.isTrustee trustee) delegator.current
+            fx =
+              -- if it's a new person, let's save them as a candidate
+              if isNew then
+                { trustee | relationship = Relationship.Candidate }
+                |> Task.succeed
+                |> Task.map ValidateMove
+                |> Effects.task
+              else
+                Effects.none
+          in
+            ( delegator
+            , fx
+            )
 
 
 isValid : List Trustee -> Result (List String) ()
@@ -157,23 +199,28 @@ type alias ViewContext =
 
 
 view : Signal.Address Action -> Delegator -> Html
-view address {current, errors} =
+view address {current, errors, input} =
   let
     bffs =
       List.filter (Trustee.isRelated Relationship.Bff) current
     trusted =
       List.filter (Trustee.isRelated Relationship.Trusted) current
-    distant =
-      List.filter (Trustee.isRelated Relationship.Distant) current
-
+    candidates =
+      List.filter (Trustee.isRelated Relationship.Candidate) current
+    candidateView =
+      if List.isEmpty candidates then
+        []
+      else
+        [ viewDelegates Relationship.Candidate address candidates ]
 
   in
     div
       [ class "delegator" ]
-      [ viewDelegates Relationship.Bff address bffs
-      , viewDelegates Relationship.Trusted address trusted
-      , viewDelegates Relationship.Distant address distant
-      , viewErrors errors ]
+      <| viewDelegates Relationship.Bff address bffs
+      :: [ viewDelegates Relationship.Trusted address trusted ]
+      ++ candidateView
+      ++ [ viewErrors errors ]
+      ++ [ lookupInput address input ]
 
 
 viewErrors : List String -> Html
@@ -188,6 +235,22 @@ viewError error =
   Html.li
     [ class "error" ]
     [ Html.text error ]
+
+
+lookupInput : Signal.Address Action -> String -> Html
+lookupInput address current =
+  div
+    [ class "trustee-lookup" ]
+    [ div
+      [ Form.onEnter address Lookup ]
+      [ Html.input
+        [ Attribute.placeholder "bob@gmail.com"
+        , Attribute.value <| current
+        , Event.on "input" Event.targetValue (Signal.message address << InputUpdate)
+        ]
+        []
+      ]
+    ]
 
 
 viewDelegates : Relationship -> Signal.Address Action -> List Trustee -> Html
@@ -216,8 +279,8 @@ delegateHeader r =
           "Trusted Friends"
         Relationship.Public ->
           "Public Figures"
-        Relationship.Distant ->
-          "Former Homies"
+        Relationship.Candidate ->
+          "Persons of Interest"
         _ ->
           "Who's this?"
   in
@@ -233,18 +296,18 @@ moveButtons address trustee =
       delegateButton Relationship.Bff address trustee
     tb =
       delegateButton Relationship.Trusted address trustee
-    rb =
-      delegateButton Relationship.Distant address trustee
+    cb =
+      delegateButton Relationship.Candidate address trustee
 
   in
     case trustee.relationship of
       Relationship.Bff ->
         [ tb Down
-        , rb Down
+        , cb Down
         ]
       Relationship.Trusted ->
         [ bb Up
-        , rb Down
+        , cb Down
         ]
       _ ->
         [ bb Up
@@ -284,8 +347,10 @@ relationshipClass r =
       "bff"
     Relationship.Trusted ->
       "trusted"
+    Relationship.Candidate ->
+      "candidate"
     _ ->
-      "distant"
+      "unknown"
 
 
 toActionText : Relationship -> String
@@ -295,7 +360,7 @@ toActionText relationship =
       "Bff"
     Relationship.Trusted ->
       "Trusted"
-    Relationship.Distant ->
+    Relationship.Candidate ->
       "-"
     _ ->
       "How?"

@@ -38,7 +38,7 @@ decoder =
     ( "id" := Decode.int )
     ( Decode.oneOf
       [ "relationship" := Relationship.decoder
-      , Decode.succeed Relationship.Distant
+      , Decode.succeed Relationship.None
       ]
     )
 
