@@ -231,15 +231,25 @@ view address {current, errors, input} =
       <| viewDelegates Relationship.Bff address bffs
       :: [ viewDelegates Relationship.Trusted address trusted ]
       ++ candidateView
-      ++ [ viewErrors errors ]
+      ++ (viewErrors errors)
       ++ [ lookupInput address input ]
 
 
-viewErrors : List String -> Html
+viewErrors : List String -> List Html
 viewErrors errors =
-  Html.ul
-   [ class "delegate-errors" ]
-   <| List.map viewError errors
+  if List.isEmpty errors then
+    []
+  else
+    [ div
+      [ class "delegate-errors" ]
+      [ div
+        [ class "delegate-header" ]
+        [ Html.text "Whoops!" ]
+      , Html.ul
+         []
+         (List.map viewError errors)
+      ]
+    ]
 
 
 viewError : String -> Html
@@ -254,6 +264,9 @@ lookupInput address current =
   div
     [ class "trustee-lookup" ]
     [ div
+      [ class "delegate-header" ]
+      [ Html.text "Find People By Email" ]
+    , div
       [ Form.onEnter address Lookup ]
       [ Html.input
         [ Attribute.placeholder "bob@gmail.com"
