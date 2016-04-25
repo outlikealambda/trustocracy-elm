@@ -122,22 +122,34 @@ update action delegator =
     LookupComplete maybeTrustee ->
       case maybeTrustee of
         Nothing ->
-          ( delegator, Effects.none )
+          ( { delegator
+            | errors =
+              ("Sorry, we couldn't find anyone with the email " ++ delegator.input)
+              :: delegator.errors
+            }
+
+          , Effects.none )
         Just trustee ->
           let
             isNew =
               not <| List.any (Trustee.isTrustee trustee) delegator.current
-            fx =
+            (fx, error) =
               -- if it's a new person, let's save them as a candidate
               if isNew then
-                { trustee | relationship = Relationship.Candidate }
-                |> Task.succeed
-                |> Task.map ValidateMove
-                |> Effects.task
+                ( { trustee | relationship = Relationship.Candidate }
+                  |> Task.succeed
+                  |> Task.map ValidateMove
+                  |> Effects.task
+                , ""
+                )
               else
-                Effects.none
+                ( Effects.none
+                , trustee.name ++ " is already linked to you :)"
+                )
           in
-            ( delegator
+            ( { delegator
+              | input = ""
+              , errors = error :: delegator.errors }
             , fx
             )
 
