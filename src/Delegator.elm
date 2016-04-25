@@ -258,7 +258,7 @@ viewDelegates r address trusted =
   let
     trusteeWrapper trustee =
       div
-        [ class <| "delegate" ]
+        [ class <| "delegate cf" ]
         <| Html.text trustee.name
         :: (moveButtons address trustee)
   in
@@ -303,15 +303,13 @@ moveButtons address trustee =
     case trustee.relationship of
       Relationship.Bff ->
         [ tb Down
-        , cb Down
         ]
       Relationship.Trusted ->
-        [ bb Up
-        , cb Down
+        [ cb Down
+        , bb Up
         ]
       _ ->
-        [ bb Up
-        , tb Up
+        [ tb Up
         ]
 
 
@@ -325,19 +323,33 @@ delegateButton relationship action trustee direction =
       [ class <| buttonClass relationship direction
       , onClick action <| ValidateMove updatedTrustee
       ]
-      [ Html.text <| toActionText relationship ]
+      []
 
 
 buttonClass : Relationship -> Direction -> String
 buttonClass relationship direction =
   String.join " "
-    [ relationshipClass relationship
-    , case direction of
-      Up ->
-        "up-arrow"
-      Down ->
-        "down-arrow"
-    ]
+    <| [ relationshipClass relationship
+        , case direction of
+          Up ->
+            "up-arrow"
+          Down ->
+            "down-arrow"
+        ]
+        ++ iconClasses direction
+
+
+iconClasses : Direction -> List String
+iconClasses d =
+  case d of
+    Up ->
+      [ "fa"
+      , "fa-arrow-up"
+      ]
+    Down ->
+      [ "fa"
+      , "fa-arrow-down"
+      ]
 
 
 relationshipClass : Relationship -> String
@@ -351,19 +363,6 @@ relationshipClass r =
       "candidate"
     _ ->
       "unknown"
-
-
-toActionText : Relationship -> String
-toActionText relationship =
-  case relationship of
-    Relationship.Bff ->
-      "Bff"
-    Relationship.Trusted ->
-      "Trusted"
-    Relationship.Candidate ->
-      "-"
-    _ ->
-      "How?"
 
 
 navHeader : ActiveUser -> List Html
