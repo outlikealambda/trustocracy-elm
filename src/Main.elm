@@ -66,6 +66,11 @@ port gaLogout =
   Google.logoutRequests
 
 
+port gaContacts : Signal ()
+port gaContacts =
+  Google.contactsRequests
+
+
 port trustoLogout : Signal ()
 port trustoLogout =
   Auth.logoutSignal

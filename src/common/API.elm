@@ -3,6 +3,7 @@ module Common.API
   , checkForActiveUser
   , fetchUserByFacebookAuth
   , fetchUserByGoogleAuth
+  , updateGoogleContacts
   , fetchConnected
   , fetchOpinionById
   , fetchIdsByTopic
@@ -34,16 +35,19 @@ import Topic.Model as Topic exposing (Topic)
 import Trustee exposing (Trustee)
 
 
-rootUrl : String
+type alias Url = String
+
+
+rootUrl : Url
 rootUrl = "http://localhost:3714/api/"
 
 
-openEndpoint : List String -> String
+openEndpoint : List String -> Url
 openEndpoint =
   (++) rootUrl << String.concat
 
 
-secureEndpoint : List String -> String
+secureEndpoint : List String -> Url
 secureEndpoint =
   (++) (rootUrl ++ "secure/") << String.concat
 
@@ -111,19 +115,32 @@ fetchUserByFacebookAuth transform fbAuthResponse =
 
 
 fetchUserByGoogleAuth : (Maybe User -> a) -> Google.AuthResponse -> Effects a
-fetchUserByGoogleAuth transform gaResponse =
+fetchUserByGoogleAuth transform =
+  transmitGoogleAuth "gaUser"
+    >> Task.map transform
+    >> Effects.task
+
+
+updateGoogleContacts : (Maybe User -> a) -> Google.AuthResponse -> Effects a
+updateGoogleContacts transform =
+  transmitGoogleAuth "gaContacts"
+    >> Task.map transform
+    >> Effects.task
+
+
+transmitGoogleAuth : Url -> Google.AuthResponse -> Task x (Maybe User)
+transmitGoogleAuth url gaResponse =
   Http.send Http.defaultSettings
     { verb = "GET"
     , headers =
       [ ("gasignedrequest", gaResponse.idToken)
+      , ("gaaccesstoken", gaResponse.accessToken)
       ]
-    , url =  openEndpoint ["gaUser"]
+    , url =  openEndpoint [url]
     , body = Http.empty
     }
   |> Http.fromJson User.decoder
   |> Task.toMaybe
-  |> Task.map transform
-  |> Effects.task
 
 
 --------------

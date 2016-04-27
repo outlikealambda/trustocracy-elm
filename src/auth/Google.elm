@@ -2,9 +2,11 @@ module Auth.Google
   ( AuthResponse
   , loginRequests
   , logoutRequests
+  , contactsRequests
   , Action
     ( Login
     , Logout
+    , Contacts
     )
   , address
   ) where
@@ -13,6 +15,8 @@ module Auth.Google
 type alias AuthResponse =
   { idToken: String
   , expiresAt: Int
+  , accessToken: String
+  , scope: String
   }
 
 
@@ -20,6 +24,7 @@ type Action
   = NoOp
   | Login
   | Logout
+  | Contacts
 
 
 mailbox : Signal.Mailbox Action
@@ -57,3 +62,14 @@ logoutRequests =
         _ -> Nothing
   in
     Signal.filterMap filterLogoutAction () mailbox.signal
+
+
+contactsRequests : Signal ()
+contactsRequests =
+  let
+    filterContactsAction a =
+      case a of
+        Contacts -> Just ()
+        _ -> Nothing
+  in
+    Signal.filterMap filterContactsAction () mailbox.signal

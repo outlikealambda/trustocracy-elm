@@ -20,6 +20,7 @@ import ActiveUser exposing (ActiveUser (LoggedIn, LoggedOut))
 import Common.API as API
 import Common.Form as Form
 import Common.Relationship as Relationship exposing (Relationship)
+import Auth.Google as Google
 import Routes
 import User exposing (User)
 import Trustee exposing (Trustee)
@@ -210,8 +211,8 @@ type alias ViewContext =
   }
 
 
-view : Signal.Address Action -> Delegator -> Html
-view address {current, errors, input} =
+view : Signal.Address Action -> List String -> Delegator -> Html
+view address emails {current, errors, input} =
   let
     bffs =
       List.filter (Trustee.isRelated Relationship.Bff) current
@@ -233,6 +234,30 @@ view address {current, errors, input} =
       ++ candidateView
       ++ (viewErrors errors)
       ++ [ lookupInput address input ]
+      ++ [ googleContacts ]
+      ++ [ viewEmails emails ]
+
+
+viewEmails : List String -> Html
+viewEmails emails =
+  let
+    emailLi address =
+      Html.li
+        [ class "email" ]
+        [ Html.text address ]
+  in
+    div
+      [ class "user-emails section" ]
+      [ div
+        [ class "delegate-header" ]
+        [ Html.text "Your Emails" ]
+      , div
+        [ class "aside" ]
+        [ Html.text "Other users will be able to follow you if they know (exactly) any of your following email addresses" ]
+      , Html.ul
+        [ class "emails" ]
+        (List.map emailLi emails)
+      ]
 
 
 viewErrors : List String -> List Html
@@ -262,7 +287,7 @@ viewError error =
 lookupInput : Signal.Address Action -> String -> Html
 lookupInput address current =
   div
-    [ class "trustee-lookup" ]
+    [ class "trustee-lookup section" ]
     [ div
       [ class "delegate-header" ]
       [ Html.text "Find People By Email" ]
@@ -362,6 +387,24 @@ buttonClass relationship direction =
             "down-arrow"
         ]
         ++ iconClasses direction
+
+
+googleContacts : Html
+googleContacts =
+  div
+    [ class "ga-contacts section" ]
+    [ div
+      [ class "delegate-header" ]
+      [ Html.text "Google Contacts" ]
+    , div
+      [ class "aside" ]
+      [ Html.text "We'll check if any of your Google Contacts are part of the club.  We'll check by looking for their email address, but we won't email them.  Promise.  We're no LinkedIn." ]
+    , Html.button
+      [ onClick Google.address Google.Contacts
+      ]
+      [ text "Check Google" ]
+    ]
+
 
 
 iconClasses : Direction -> List String

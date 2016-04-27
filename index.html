@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="/css/fonts.css" />
     <link rel="stylesheet" href="/css/trusto.css" />
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.1/css/font-awesome.min.css" />
-
   </head>
 
   <body></body>
@@ -32,6 +31,7 @@
 
   <script type="text/javascript">
 
+
     var elmApp = Elm.fullscreen(Elm.Main,
       { initialPath: window.location.pathname,
         fbAuthResponse: null,
@@ -39,37 +39,56 @@
       }
     );
 
+    // OUR PORT
+
     elmApp.ports.trustoLogout.subscribe(() => {
       console.log('deleting trusto token');
       document.cookie = 'trustoToken=; expires=Thu, 01 Jan 1970 00:00:00 GMT';
     });
 
+    // GOOGLE AUTH PORTS
+
+    const contactsScope = "email openid https://www.googleapis.com/auth/contacts.readonly";
+
+    elmApp.ports.gaContacts.subscribe(() => {
+      getGaAuth({ scope: contactsScope }, elmApp.ports.gaResponse.send)
+    });
+
     elmApp.ports.gaLogin.subscribe(function () {
-      GA.signIn().then(
+      getGaAuth({}, elmApp.ports.gaResponse.send);
+    });
+
+    function getGaAuth(opts, callback) {
+      GA.signIn(opts).then(
         gaUser => {
           const authResponse = gaUser.getAuthResponse();
           console.log("auth response", authResponse);
-          elmApp.ports.gaResponse.send(Object.assign(
+          callback(Object.assign(
             {},
             {
+              // i think this only comes back when we have a scope which needs it
+              accessToken: authResponse.access_token || "",
               idToken: authResponse.id_token,
-              expiresAt: authResponse.expires_at
+              expiresAt: authResponse.expires_at,
+              // similarly, we only get scope back if we send it
+              scope: authResponse.scope || ""
             }
           ));
         },
         error => {
           console.log(error);
-          elmApp.ports.gaResponse.send(null);
+          callback(null);
         }
       );
-    });
+    }
 
     elmApp.ports.gaLogout.subscribe(() => {
       console.log("logging out ga...", GA);
       GA.signOut();
     });
 
-    // Facebook integration...
+    // FACEBOOK AUTH PORTS
+
     elmApp.ports.fbLogin.subscribe(function (scope) {
       console.log('logging in...');
       // TODO: make sure I am logged out first?

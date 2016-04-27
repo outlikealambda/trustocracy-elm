@@ -111,6 +111,7 @@ init =
 update : Action -> Session -> (Session, Effects Action)
 update action session =
   case action of
+    -- TODO: handle ActiveUser.LoggedOut
     SetActiveUser activeUser ->
       ( { session
         | activeUser = activeUser
@@ -364,7 +365,7 @@ activeSessionContent address user session =
     UserDelegates ->
       [ div
         [ class "content" ]
-        [ Delegator.view (Signal.forwardTo address DelegatorMsg) session.delegator ]
+        [ Delegator.view (Signal.forwardTo address DelegatorMsg) user.emails session.delegator ]
       ]
 
     Empty ->

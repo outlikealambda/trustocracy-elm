@@ -15,6 +15,7 @@ import Effects exposing (Effects)
 import Html exposing (Html, h2, div, text, input, button, a)
 import Html.Attributes as Attribute exposing (placeholder, value, class)
 import Html.Events exposing (on, targetValue, onClick)
+import String
 import Task exposing (Task)
 
 
@@ -158,7 +159,10 @@ update context message auth =
             Nothing ->
               Task.succeed (ValidateUser Nothing) |> Effects.task
             Just gaResponse ->
-              API.fetchUserByGoogleAuth ValidateUser gaResponse
+              if String.contains "contacts.read" gaResponse.scope then
+                API.updateGoogleContacts ValidateUser (Debug.log "gaContacts" gaResponse)
+              else
+                API.fetchUserByGoogleAuth ValidateUser (Debug.log "gaLogin" gaResponse)
         in
           ( auth
           , Effects.map context.next fx
