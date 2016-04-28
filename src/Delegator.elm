@@ -22,7 +22,6 @@ import Common.Form as Form
 import Common.Relationship as Relationship exposing (Relationship)
 import Auth.Google as Google
 import Routes
-import User exposing (User)
 import Trustee exposing (Trustee)
 
 
@@ -199,18 +198,6 @@ hasError errorCheckers trustees =
       Err errors
 
 
-
-updateDb : Trustee -> Task x Trustee
-updateDb trustee =
-  Task.succeed trustee
-
-
-type alias ViewContext =
-  { user : User
-  , address : Signal.Address Action
-  }
-
-
 view : Signal.Address Action -> List String -> Delegator -> Html
 view address emails {current, errors, input} =
   let
@@ -229,13 +216,17 @@ view address emails {current, errors, input} =
   in
     div
       [ class "delegator" ]
-      <| viewDelegates Relationship.Bff address bffs
-      :: [ viewDelegates Relationship.Trusted address trusted ]
-      ++ candidateView
-      ++ (viewErrors errors)
-      ++ [ lookupInput address input ]
-      ++ [ googleContacts ]
-      ++ [ viewEmails emails ]
+      <| [ section "Organize Your People"
+           <| [ viewDelegates Relationship.Bff address bffs ]
+           ++ [ viewDelegates Relationship.Trusted address trusted ]
+           ++ candidateView
+           ++ (viewErrors errors)
+         ]
+      ++ [ section "Find More People"
+           <| [ emailLookup address input ]
+           ++ [ googleContacts ]
+          ]
+      ++ [ section "Get Found" [ viewEmails emails ] ]
 
 
 viewEmails : List String -> Html
@@ -247,13 +238,10 @@ viewEmails emails =
         [ Html.text address ]
   in
     div
-      [ class "user-emails section" ]
-      [ div
-        [ class "delegate-header" ]
-        [ Html.text "Your Emails" ]
-      , div
-        [ class "aside" ]
-        [ Html.text "Other users will be able to follow you if they know (exactly) any of your following email addresses" ]
+      [ class "user-emails" ]
+      [ delegateSubHeader
+        "Your Emails"
+        <| Just "Other users will be able to follow you if they know (exactly) any of your following email addresses"
       , Html.ul
         [ class "emails" ]
         (List.map emailLi emails)
@@ -268,7 +256,7 @@ viewErrors errors =
     [ div
       [ class "delegate-errors" ]
       [ div
-        [ class "delegate-header" ]
+        [ class "delegate-header delegate-title" ]
         [ Html.text "Whoops!" ]
       , Html.ul
          []
@@ -284,22 +272,20 @@ viewError error =
     [ Html.text error ]
 
 
-lookupInput : Signal.Address Action -> String -> Html
-lookupInput address current =
+emailLookup : Signal.Address Action -> String -> Html
+emailLookup address current =
   div
-    [ class "trustee-lookup section" ]
-    [ div
-      [ class "delegate-header" ]
-      [ Html.text "Find People By Email" ]
-    , div
-      [ Form.onEnter address Lookup ]
-      [ Html.input
-        [ Attribute.placeholder "bob@gmail.com"
-        , Attribute.value <| current
-        , Event.on "input" Event.targetValue (Signal.message address << InputUpdate)
-        ]
-        []
+    [ class "email-lookup" ]
+    [ delegateSubHeader
+      "Email Address"
+      <| Just "Put in an email address and we'll check if they're in our system.  Exact matches only, but uppercase/lowercase doesn't matter."
+    , Html.input
+      [ Form.onEnter address Lookup
+      , Attribute.placeholder "bob@gmail.com"
+      , Attribute.value <| current
+      , Event.on "input" Event.targetValue (Signal.message address << InputUpdate)
       ]
+      []
     ]
 
 
@@ -314,30 +300,72 @@ viewDelegates r address trusted =
   in
     div
       [ class <| "delegates " ++ relationshipClass r ]
-      <| delegateHeader r
+      <| organizeHeader r
       :: List.map trusteeWrapper trusted
 
 
-delegateHeader : Relationship -> Html
-delegateHeader r =
+organizeHeader : Relationship -> Html
+organizeHeader r =
   let
-    headerText =
+    (headerText, subtitleText) =
       case r of
         Relationship.Bff ->
-          "Bffs"
+          ( "Bffs"
+          , "You trust and respect this group so deeply that when they hold an opinion, you value it higher than your own. "
+            ++ "If they offer advice, you take it as the gospel truth."
+          )
         Relationship.Trusted ->
-          "Trusted Friends"
+          ( "Trusted Friends"
+          , "You are always happy to at least listen to what this group has to say, even if sometimes you disagree. "
+            ++ "They've rarely led you astray."
+          )
         Relationship.Public ->
-          "Public Figures"
+          ("Public Figures", "10 max")
         Relationship.Candidate ->
-          "Persons of Interest"
+          ( "Persons of Interest"
+          , "People you've previously followed, have looked up via email, or discovered through Google contacts or Facebook"
+          )
         _ ->
-          "Who's this?"
+          ("Who's this?", "")
+  in
+    delegateSubHeader headerText <| Just subtitleText
+
+
+section : String -> List Html -> Html
+section title pieces =
+  div
+    [ class "section" ]
+    <| sectionHeader title :: pieces
+
+
+sectionHeader : String -> Html
+sectionHeader words =
+  div
+    [ class "delegate-header section-header" ]
+    [ Html.text words ]
+
+
+delegateSubHeader : String -> Maybe String -> Html
+delegateSubHeader titleText maybeSubtitleText =
+  let
+    title =
+      [ div
+        [ class "delegate-title" ]
+        [ Html.text titleText ]
+      ]
+    subtitle =
+      case maybeSubtitleText of
+        Nothing ->
+          []
+        Just s ->
+          [ div
+            [ class "delegate-subtitle" ]
+            [ Html.text s ]
+          ]
   in
     div
-      [ class <| "delegate-header" ]
-      [ Html.text headerText ]
-
+      [ class "delegate-header" ]
+      <| title ++ subtitle
 
 moveButtons : Signal.Address Action -> Trustee -> List Html
 moveButtons address trustee =
@@ -385,24 +413,27 @@ buttonClass relationship direction =
             "up-arrow"
           Down ->
             "down-arrow"
-        ]
+        , "btn-sm" ]
         ++ iconClasses direction
 
 
 googleContacts : Html
 googleContacts =
   div
-    [ class "ga-contacts section" ]
-    [ div
-      [ class "delegate-header" ]
-      [ Html.text "Google Contacts" ]
-    , div
-      [ class "aside" ]
-      [ Html.text "We'll check if any of your Google Contacts are part of the club.  We'll check by looking for their email address, but we won't email them.  Promise.  We're no LinkedIn." ]
+    [ class "ga-contacts" ]
+    [ delegateSubHeader
+      "Google Contacts"
+      -- TODO: add link to privacy/conduct policy
+      -- also, write privacy/conduct policy
+      <| Just
+        <| "See if any of your Google contacts are part of the club. "
+        ++ "We'll be searching for users with matching email addresses, so we'll need your permission (Google will ask you, after you click) to read your contacts. "
+        ++ "We promise not to do anything sketchy with that info. "
     , Html.button
-      [ onClick Google.address Google.Contacts
+      [ class "btn-med"
+      , onClick Google.address Google.Contacts
       ]
-      [ text "Check Google" ]
+      [ text "Check Contacts" ]
     ]
 
 
