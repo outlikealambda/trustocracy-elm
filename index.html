@@ -43,7 +43,8 @@
 
     elmApp.ports.trustoLogout.subscribe(() => {
       console.log('deleting trusto token');
-      document.cookie = 'trustoToken=; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      document.cookie = 'trustoToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      console.log('all cookies', document.cookie);
     });
 
     // GOOGLE AUTH PORTS
