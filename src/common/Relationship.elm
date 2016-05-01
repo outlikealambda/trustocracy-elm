@@ -3,7 +3,6 @@ module Common.Relationship
     ( Bff
     , Trusted
     , Public
-    , Distant
     , Candidate
     , Self
     , None
@@ -26,7 +25,6 @@ type Relationship
   = Bff
   | Trusted
   | Public
-  | Distant
   | Candidate
   | None
   | Self
@@ -62,9 +60,7 @@ toRelationship asString =
       Bff
     "TRUSTS" ->
       Trusted
-    "DISTANT" ->
-      Distant
-    "CANDIDATE" ->
+    "KNOWS" ->
       Candidate
     _ ->
       None
@@ -79,10 +75,8 @@ toString relationship =
       "TRUSTS"
     Public ->
       "PUBLIC"
-    Distant ->
-      "DISTANT"
     Candidate ->
-      "CANDIDATE"
+      "KNOWS"
     Self ->
       "SELF"
     None ->
@@ -97,8 +91,6 @@ toReadable r =
       "Trusted"
     Public ->
       "Public"
-    Distant ->
-      "Distant"
     Candidate ->
       "Candidate"
     Self ->

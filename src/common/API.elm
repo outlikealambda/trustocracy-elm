@@ -116,14 +116,14 @@ fetchUserByFacebookAuth transform fbAuthResponse =
 
 fetchUserByGoogleAuth : (Maybe User -> a) -> Google.AuthResponse -> Effects a
 fetchUserByGoogleAuth transform =
-  transmitGoogleAuth "gaUser"
+  transmitGoogleAuth (openEndpoint ["gaUser"])
     >> Task.map transform
     >> Effects.task
 
 
 updateGoogleContacts : (Maybe User -> a) -> Google.AuthResponse -> Effects a
 updateGoogleContacts transform =
-  transmitGoogleAuth "gaContacts"
+  transmitGoogleAuth (secureEndpoint ["gaContacts"])
     >> Task.map transform
     >> Effects.task
 
@@ -136,7 +136,7 @@ transmitGoogleAuth url gaResponse =
       [ ("gasignedrequest", gaResponse.idToken)
       , ("gaaccesstoken", gaResponse.accessToken)
       ]
-    , url =  openEndpoint [url]
+    , url = url
     , body = Http.empty
     }
   |> Http.fromJson User.decoder
