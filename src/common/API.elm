@@ -18,6 +18,7 @@ module Common.API
   ) where
 
 
+import Base64
 import Effects exposing (Effects)
 import Http
 import Json.Decode as Decode exposing ((:=))
@@ -59,19 +60,29 @@ secureEndpoint =
 
 loginUser : (String, String) -> (Maybe User -> a) -> Effects a
 loginUser (name, secret) transform =
-  Http.send Http.defaultSettings
-    { verb = "GET"
-    , headers =
-      [ ("name", name)
-      , ("secret", secret)
-      ]
-    , url = openEndpoint ["login"]
-    , body = Http.empty
-    }
-    |> Http.fromJson User.decoder
-    |> Task.toMaybe
-    |> Task.map transform
-    |> Effects.task
+  let
+    encodedCredentials =
+      Base64.encode <| (name ++ ":" ++ secret)
+  in
+    case encodedCredentials of
+      Err _ ->
+        Task.succeed Nothing
+        |> Task.map transform
+        |> Effects.task
+      Ok basicAuthCreds ->
+        Http.send Http.defaultSettings
+          { verb = "GET"
+          , headers =
+            [ ("Authorization", "Basic " ++ basicAuthCreds)
+            , ("secret", secret)
+            ]
+          , url = openEndpoint ["login"]
+          , body = Http.empty
+          }
+          |> Http.fromJson User.decoder
+          |> Task.toMaybe
+          |> Task.map transform
+          |> Effects.task
 
 
 checkForActiveUser : (Maybe User -> a) -> Effects a

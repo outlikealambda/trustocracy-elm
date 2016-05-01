@@ -27,7 +27,7 @@ empty : Trustee
 empty =
   { name = ""
   , id = -1
-  , relationship = Relationship.Distant
+  , relationship = Relationship.None
   }
 
 
