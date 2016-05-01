@@ -1,17 +1,17 @@
 <!DOCTYPE HTML>
 <html>
   <head>
-    <meta charset="UTF-8">
-    <script type="text/javascript" src="/dist/elm.js"></script>
-    <link rel="stylesheet" href="/css/normalize.css" />
-    <link rel="stylesheet" href="/css/fonts.css" />
-    <link rel="stylesheet" href="/css/trusto.css" />
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.1/css/font-awesome.min.css" />
+    <meta charset='UTF-8'>
+    <script type='text/javascript' src='/dist/elm.js'></script>
+    <link rel='stylesheet' href='/css/normalize.css' />
+    <link rel='stylesheet' href='/css/fonts.css' />
+    <link rel='stylesheet' href='/css/trusto.css' />
+    <link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/font-awesome/4.6.1/css/font-awesome.min.css' />
   </head>
 
   <body></body>
 
-  <script type="text/javascript">
+  <script type='text/javascript'>
     // Google Auth
     var GA; // initialized googleAuth object
 
@@ -27,9 +27,9 @@
     }
 
   </script>
-  <script src="https://apis.google.com/js/platform.js?onload=onLoadCallback" async defer ></script>
+  <script src='https://apis.google.com/js/platform.js?onload=onLoadCallback' async defer ></script>
 
-  <script type="text/javascript">
+  <script type='text/javascript'>
 
 
     var elmApp = Elm.fullscreen(Elm.Main,
@@ -49,7 +49,7 @@
 
     // GOOGLE AUTH PORTS
 
-    const contactsScope = "email openid https://www.googleapis.com/auth/contacts.readonly";
+    const contactsScope = 'email openid https://www.googleapis.com/auth/contacts.readonly';
 
     elmApp.ports.gaContacts.subscribe(() => {
       getGaAuth({ scope: contactsScope }, elmApp.ports.gaResponse.send)
@@ -63,16 +63,16 @@
       GA.signIn(opts).then(
         gaUser => {
           const authResponse = gaUser.getAuthResponse();
-          console.log("auth response", authResponse);
+          console.log('auth response', authResponse);
           callback(Object.assign(
             {},
             {
               // i think this only comes back when we have a scope which needs it
-              accessToken: authResponse.access_token || "",
+              accessToken: authResponse.access_token || '',
               idToken: authResponse.id_token,
               expiresAt: authResponse.expires_at,
               // similarly, we only get scope back if we send it
-              scope: authResponse.scope || ""
+              scope: authResponse.scope || ''
             }
           ));
         },
@@ -84,7 +84,7 @@
     }
 
     elmApp.ports.gaLogout.subscribe(() => {
-      console.log("logging out ga...", GA);
+      console.log('logging out ga...', GA);
       GA.signOut();
     });
 
@@ -120,7 +120,7 @@
        var js, fjs = d.getElementsByTagName(s)[0];
        if (d.getElementById(id)) {return;}
        js = d.createElement(s); js.id = id;
-       js.src = "//connect.facebook.net/en_US/sdk.js";
+       js.src = '//connect.facebook.net/en_US/sdk.js';
        fjs.parentNode.insertBefore(js, fjs);
      }(document, 'script', 'facebook-jssdk'));
 
