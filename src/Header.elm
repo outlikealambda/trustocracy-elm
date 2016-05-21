@@ -1,6 +1,5 @@
 module Header exposing
   ( view
-  , Context
   )
 
 
@@ -10,20 +9,14 @@ import Html.Attributes exposing (class, href)
 import Routes
 
 
-type alias Context =
-  { logout : Signal.Address ()
-  , login : Signal.Address ()
-  }
-
-
-view : List (Html m) -> Html m
-view sessionElements =
+view : (Routes.Route -> m) -> List (Html m) -> Html m
+view onRoute sessionElements =
   let
     home =
       [ div
         [ class "home" ]
         [ a
-          (Routes.clickTo Routes.Home)
+          (Routes.clickTo onRoute Routes.Home)
           [ text "Home" ]
         ]
       ]

@@ -57,34 +57,48 @@ secureEndpoint =
 ----------
 
 
-loginUser : (String, String) -> (Maybe User -> a) -> Effects a
-loginUser (name, secret) transform =
+loginUser : (String -> a) -> (User -> a) -> (String, String) -> Cmd a
+loginUser errTransform userTransform (name, secret) =
   let
     encodedCredentials =
       Base64.encode <| (name ++ ":" ++ secret)
+    task =
+      case encodedCredentials of
+        Err err ->
+          Task.fail err
+        Ok basicAuthCreds ->
+          Http.send Http.defaultSettings
+            { verb = "GET"
+            , headers =
+              [ ("Authorization", "Basic " ++ basicAuthCreds)
+              , ("secret", secret)
+              ]
+            , url = openEndpoint ["login"]
+            , body = Http.empty
+            }
+            |> Http.fromJson User.decoder
+            |> Task.mapError httpErrorToString
   in
-    case encodedCredentials of
-      Err _ ->
-        Task.succeed Nothing
-        |> Task.map transform
-        |> Effects.task
-      Ok basicAuthCreds ->
-        Http.send Http.defaultSettings
-          { verb = "GET"
-          , headers =
-            [ ("Authorization", "Basic " ++ basicAuthCreds)
-            , ("secret", secret)
-            ]
-          , url = openEndpoint ["login"]
-          , body = Http.empty
-          }
-          |> Http.fromJson User.decoder
-          |> Task.toMaybe
-          |> Task.map transform
-          |> Effects.task
+    Task.perform errTransform userTransform task
 
 
-checkForActiveUser : (Maybe User -> a) -> Effects a
+httpErrorToString : Http.Error -> String
+httpErrorToString err =
+  case err of
+    Http.Timeout ->
+      "timeout error"
+
+    Http.NetworkError ->
+      "network error"
+
+    Http.UnexpectedPayload msg ->
+      "json parse error: " ++ msg
+
+    Http.BadResponse code msg ->
+      "http response error: " ++ (toString code) ++ " " ++ msg
+
+
+checkForActiveUser : (Maybe User -> a) -> Cmd a
 checkForActiveUser transform =
   Http.send Http.defaultSettings
     { verb = "GET"
@@ -94,8 +108,7 @@ checkForActiveUser transform =
     }
     |> Http.fromJson User.decoder
     |> Task.toMaybe
-    |> Task.map transform
-    |> Effects.task
+    |> Task.perform (\_ -> transform Nothing) transform
 
 
 {- send signedRequest string as a header
@@ -107,7 +120,7 @@ checkForActiveUser transform =
        - payload (second half)
        - our app secret (stored on server)
 -}
-fetchUserByFacebookAuth : (Maybe User -> a) -> Facebook.AuthResponse -> Effects a
+fetchUserByFacebookAuth : (Maybe User -> a) -> Facebook.AuthResponse -> Cmd a
 fetchUserByFacebookAuth transform fbAuthResponse =
   Http.send Http.defaultSettings
     { verb = "GET"
@@ -120,22 +133,19 @@ fetchUserByFacebookAuth transform fbAuthResponse =
     }
   |> Http.fromJson User.decoder
   |> Task.toMaybe
-  |> Task.map transform
-  |> Effects.task
+  |> Task.perform (\_ -> transform Nothing) transform
 
 
-fetchUserByGoogleAuth : (Maybe User -> a) -> Google.AuthResponse -> Effects a
+fetchUserByGoogleAuth : (Maybe User -> a) -> Google.AuthResponse -> Cmd a
 fetchUserByGoogleAuth transform =
   transmitGoogleAuth (openEndpoint ["gaUser"])
-    >> Task.map transform
-    >> Effects.task
+    >> Task.perform (\_ -> transform Nothing) transform
 
 
-updateGoogleContacts : (Maybe User -> a) -> Google.AuthResponse -> Effects a
+updateGoogleContacts : (Maybe User -> a) -> Google.AuthResponse -> Cmd a
 updateGoogleContacts transform =
   transmitGoogleAuth (secureEndpoint ["gaContacts"])
-    >> Task.map transform
-    >> Effects.task
+    >> Task.perform (\_ -> transform Nothing) transform
 
 
 transmitGoogleAuth : Url -> Google.AuthResponse -> Task x (Maybe User)
@@ -158,70 +168,65 @@ transmitGoogleAuth url gaResponse =
 --------------
 
 
-fetchConnected : (Maybe (List Path) -> a) -> Topic -> Effects a
+fetchConnected : (Maybe (List Path) -> a) -> Topic -> Cmd a
 fetchConnected transform topic =
   secureEndpoint ["topic/", toString topic.id, "/connected"]
     |> Http.get ("paths" := Decode.list Path.decoder)
     |> Task.toMaybe
-    |> Task.map transform
-    |> Effects.task
+    |> Task.perform (\_ -> transform Nothing) transform
 
 
-fetchOpinionById : (Maybe Opinion -> a) -> Int -> Effects a
+fetchOpinionById : (Maybe Opinion -> a) -> Int -> Cmd a
 fetchOpinionById transform opinionId =
   openEndpoint ["opinion/", toString opinionId]
     |> Http.get Opinion.decoder
     |> Task.toMaybe
-    |> Task.map transform
-    |> Effects.task
+    |> Task.perform (\_ -> transform Nothing) (transform)
 
 
-fetchOpinionsByTopic : (Maybe (List Opinion) -> a) -> Int -> Effects a
+fetchOpinionsByTopic : (Maybe (List Opinion) -> a) -> Int -> Cmd a
 fetchOpinionsByTopic transform topicId =
   openEndpoint ["topic/", toString topicId, "/opinion"]
     |> Http.get (Decode.list Opinion.decoder)
     |> Task.toMaybe
-    |> Task.map transform
-    |> Effects.task
+    |> Task.perform (\_ -> transform Nothing) transform
 
 
 -- super inefficient; gets all the opinions, and then extracts the id
 -- TODO: new endpoint on server
-fetchIdsByTopic : (Maybe (List Int) -> a) -> Topic -> Effects a
+fetchIdsByTopic : (Maybe (List Int) -> a) -> Topic -> Cmd a
 fetchIdsByTopic transform topic =
   fetchOpinionsByTopic
     (transform << Maybe.map (List.map .id))
     topic.id
 
 
-fetchDraftByTopic : (Maybe Opinion -> a) -> Int -> Effects a
+fetchDraftByTopic : (Maybe Opinion -> a) -> Int -> Cmd a
 fetchDraftByTopic transform topicId =
   secureEndpoint ["topic/", toString topicId, "/opinion"]
     |> Http.get Opinion.decoder
     |> Task.toMaybe
-    |> Task.map transform
-    |> Effects.task
+    |> Task.perform (\_ -> transform Nothing) transform
 
 
-saveOpinion : (Maybe Opinion -> a) -> Opinion -> Int -> Effects a
+saveOpinion : (Maybe Opinion -> a) -> Opinion -> Int -> Cmd a
 saveOpinion =
   writeOpinion "save"
 
 
-publishOpinion : (Maybe Opinion -> a) -> Opinion -> Int -> Effects a
+publishOpinion : (Maybe Opinion -> a) -> Opinion -> Int -> Cmd a
 publishOpinion =
   writeOpinion "publish"
 
 
-writeOpinion : String -> (Maybe Opinion -> a) -> Opinion -> Int -> Effects a
+writeOpinion : String -> (Maybe Opinion -> a) -> Opinion -> Int -> Cmd a
 writeOpinion writeType transform opinion topicId =
   Opinion.encode opinion
     |> Encode.encode 0 -- no pretty print
     |> Http.string
     |> post' Opinion.decoder (writeUrlBuilder topicId writeType)
     |> Task.toMaybe
-    |> Task.map transform
-    |> Effects.task
+    |> Task.perform (\_ -> transform Nothing) transform
 
 
 writeUrlBuilder : Int -> String -> String
@@ -239,23 +244,20 @@ writeUrlBuilder topicId writeType =
 ------------
 
 
-fetchTopic : (Maybe Topic -> a) -> Int -> Effects a
+fetchTopic : (Maybe Topic -> a) -> Int -> Cmd a
 fetchTopic transform topicId =
   openEndpoint ["topic/", toString topicId]
     |> Http.get Topic.decoder
     |> Task.toMaybe
-    |> Task.map transform
-    |> Effects.task
+    |> Task.perform (\_ -> transform Nothing) transform
 
 
-fetchAllTopics : (Maybe (List Topic) -> a) -> Effects a
+fetchAllTopics : (Maybe (List Topic) -> a) -> Cmd a
 fetchAllTopics transform =
   openEndpoint ["topic"]
     |> Http.get (Decode.list Topic.decoder)
     |> Task.toMaybe
-    |> Task.map transform
-    |> Effects.task
-
+    |> Task.perform (\_ -> transform Nothing) transform
 
 
 --------------
@@ -273,31 +275,28 @@ setTrusteeTask trustee =
       (secureEndpoint ["delegate"])
 
 
-setTrustee : (Maybe Trustee -> a) -> Trustee -> Effects a
+setTrustee : (Maybe Trustee -> a) -> Trustee -> Cmd a
 setTrustee transform trustee =
   setTrusteeTask trustee
     |> Task.toMaybe
-    |> Task.map transform
-    |> Effects.task
+    |> Task.perform (\_ -> transform Nothing) transform
 
 
-setTrustees : (List Trustee -> a) -> List Trustee -> Effects a
+setTrustees : (List Trustee -> a) -> List Trustee -> Cmd a
 setTrustees transform trustees =
   List.map setTrusteeTask trustees
     |> List.map Task.toResult
     |> Task.sequence
     |> Task.map (List.filterMap Result.toMaybe)
-    |> Task.map transform
-    |> Effects.task
+    |> Task.perform (\_ -> transform []) transform
 
 
-lookupTrustee : (Maybe Trustee -> a) -> String -> Effects a
+lookupTrustee : (Maybe Trustee -> a) -> String -> Cmd a
 lookupTrustee transform email =
   Http.url (secureEndpoint ["delegate/lookup"]) [ ("email", email) ]
     |> Http.get Trustee.decoder
     |> Task.toMaybe
-    |> Task.map transform
-    |> Effects.task
+    |> Task.perform (\_ -> transform Nothing) transform
 
 
 -- because post is pretty worthless

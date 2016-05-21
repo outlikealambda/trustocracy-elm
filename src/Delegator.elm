@@ -1,17 +1,17 @@
 module Delegator exposing
   ( Delegator
   , fromActiveUser
-  , Action
+  , Msg
   , update
   , view
   , navHeader
   )
 
 
-import Platform.Cmd exposing (Cmd)
 import Html as Html exposing (Html, div, text, p, span, a)
 import Html.Attributes as Attribute exposing (class)
 import Html.Events as Event exposing (onClick)
+import Json.Decode as Json
 import String
 import Task exposing (Task)
 
@@ -20,6 +20,7 @@ import ActiveUser exposing (ActiveUser (LoggedIn, LoggedOut))
 import Common.API as API
 import Common.Form as Form
 import Common.Relationship as Relationship exposing (Relationship)
+import Location
 import Auth.Google as Google
 import Routes
 import Trustee exposing (Trustee)
@@ -34,11 +35,14 @@ type alias Delegator =
 
 
 type Msg
-  = ValidateMove Trustee
+  = NoOp
+  | ValidateMove Trustee
   | SaveDelegateComplete (List Trustee)
   | InputUpdate String
   | Lookup
   | LookupComplete (Maybe Trustee)
+  | RequestGoogleContacts
+  | SetPath Routes.Route
 
 
 type Direction
@@ -56,8 +60,12 @@ fromActiveUser activeUser =
 
 
 update : Msg -> Delegator -> (Delegator, Cmd Msg)
-update action delegator =
-  case action of
+update message delegator =
+  case message of
+
+    NoOp ->
+      ( delegator, Cmd.none )
+
     ValidateMove trustee ->
       let
         current =
@@ -138,8 +146,7 @@ update action delegator =
               if isNew then
                 ( { trustee | relationship = Relationship.Candidate }
                   |> Task.succeed
-                  |> Task.map ValidateMove
-                  |> Effects.task
+                  |> Task.perform (\_ -> NoOp) ValidateMove
                 , ""
                 )
               else
@@ -152,6 +159,12 @@ update action delegator =
               , errors = error :: delegator.errors }
             , fx
             )
+
+    RequestGoogleContacts ->
+      ( delegator, Google.requestContacts )
+
+    SetPath route ->
+      ( delegator, Location.setPath <| Routes.encode route )
 
 
 isValid : List Trustee -> Result (List String) ()
@@ -198,8 +211,8 @@ hasError errorCheckers trustees =
       Err errors
 
 
-view : Signal.Address Action -> List String -> Delegator -> Html
-view address emails {current, errors, input} =
+view : List String -> Delegator -> Html Msg
+view emails {current, errors, input} =
   let
     bffs =
       List.filter (Trustee.isRelated Relationship.Bff) current
@@ -211,25 +224,25 @@ view address emails {current, errors, input} =
       if List.isEmpty candidates then
         []
       else
-        [ viewDelegates Relationship.Candidate address candidates ]
+        [ viewDelegates Relationship.Candidate candidates ]
 
   in
     div
       [ class "delegator" ]
       <| [ section "Organize Your People"
-           <| [ viewDelegates Relationship.Bff address bffs ]
-           ++ [ viewDelegates Relationship.Trusted address trusted ]
+           <| [ viewDelegates Relationship.Bff bffs ]
+           ++ [ viewDelegates Relationship.Trusted trusted ]
            ++ candidateView
            ++ (viewErrors errors)
          ]
       ++ [ section "Find More People"
-           <| [ emailLookup address input ]
+           <| [ emailLookup input ]
            ++ [ googleContacts ]
           ]
       ++ [ section "Get Found" [ viewEmails emails ] ]
 
 
-viewEmails : List String -> Html
+viewEmails : List String -> Html msg
 viewEmails emails =
   let
     emailLi address =
@@ -248,7 +261,7 @@ viewEmails emails =
       ]
 
 
-viewErrors : List String -> List Html
+viewErrors : List String -> List (Html msg)
 viewErrors errors =
   if List.isEmpty errors then
     []
@@ -265,38 +278,38 @@ viewErrors errors =
     ]
 
 
-viewError : String -> Html
+viewError : String -> Html msg
 viewError error =
   Html.li
     [ class "error" ]
     [ Html.text error ]
 
 
-emailLookup : Signal.Address Action -> String -> Html
-emailLookup address current =
+emailLookup : String -> Html Msg
+emailLookup current =
   div
     [ class "email-lookup" ]
     [ delegateSubHeader
       "Email Address"
       <| Just "Put in an email address and we'll check if they're in our system.  Exact matches only, but uppercase/lowercase doesn't matter."
     , Html.input
-      [ Form.onEnter address Lookup
+      [ Form.onEnter (\_ -> Lookup)
       , Attribute.placeholder "bob@gmail.com"
       , Attribute.value <| current
-      , Event.on "input" Event.targetValue (Signal.message address << InputUpdate)
+      , Event.on "input" (Json.map InputUpdate Event.targetValue)
       ]
       []
     ]
 
 
-viewDelegates : Relationship -> Signal.Address Action -> List Trustee -> Html
-viewDelegates r address trusted =
+viewDelegates : Relationship -> List Trustee -> Html Msg
+viewDelegates r trusted =
   let
     trusteeWrapper trustee =
       div
         [ class <| "delegate cf" ]
         <| Html.text trustee.name
-        :: (moveButtons address trustee)
+        :: (moveButtons trustee)
   in
     div
       [ class <| "delegates " ++ relationshipClass r ]
@@ -304,7 +317,7 @@ viewDelegates r address trusted =
       :: List.map trusteeWrapper trusted
 
 
-organizeHeader : Relationship -> Html
+organizeHeader : Relationship -> Html msg
 organizeHeader r =
   let
     (headerText, subtitleText) =
@@ -331,21 +344,21 @@ organizeHeader r =
     delegateSubHeader headerText <| Just subtitleText
 
 
-section : String -> List Html -> Html
+section : String -> List (Html msg) -> Html msg
 section title pieces =
   div
     [ class "section" ]
     <| sectionHeader title :: pieces
 
 
-sectionHeader : String -> Html
+sectionHeader : String -> Html msg
 sectionHeader words =
   div
     [ class "delegate-header section-header" ]
     [ Html.text words ]
 
 
-delegateSubHeader : String -> Maybe String -> Html
+delegateSubHeader : String -> Maybe String -> Html msg
 delegateSubHeader titleText maybeSubtitleText =
   let
     title =
@@ -367,15 +380,15 @@ delegateSubHeader titleText maybeSubtitleText =
       [ class "delegate-header" ]
       <| title ++ subtitle
 
-moveButtons : Signal.Address Action -> Trustee -> List Html
-moveButtons address trustee =
+moveButtons : Trustee -> List (Html Msg)
+moveButtons trustee =
   let
     bb =
-      delegateButton Relationship.Bff address trustee
+      delegateButton Relationship.Bff trustee
     tb =
-      delegateButton Relationship.Trusted address trustee
+      delegateButton Relationship.Trusted trustee
     cb =
-      delegateButton Relationship.Candidate address trustee
+      delegateButton Relationship.Candidate trustee
 
   in
     case trustee.relationship of
@@ -391,15 +404,15 @@ moveButtons address trustee =
         ]
 
 
-delegateButton : Relationship -> Signal.Address Action -> Trustee -> Direction -> Html
-delegateButton relationship action trustee direction =
+delegateButton : Relationship -> Trustee -> Direction -> Html Msg
+delegateButton relationship trustee direction =
   let
     updatedTrustee =
       { trustee | relationship = relationship }
   in
     Html.button
       [ class <| buttonClass relationship direction
-      , onClick action <| ValidateMove updatedTrustee
+      , onClick <| ValidateMove updatedTrustee
       ]
       []
 
@@ -417,7 +430,7 @@ buttonClass relationship direction =
         ++ iconClasses direction
 
 
-googleContacts : Html
+googleContacts : Html Msg
 googleContacts =
   div
     [ class "ga-contacts" ]
@@ -431,7 +444,7 @@ googleContacts =
         ++ "We promise not to do anything sketchy with that info. "
     , Html.button
       [ class "btn-med"
-      , onClick Google.address Google.Contacts
+      , onClick RequestGoogleContacts
       ]
       [ text "Check Contacts" ]
     ]
@@ -464,8 +477,8 @@ relationshipClass r =
       "unknown"
 
 
-navHeader : ActiveUser -> List Html
-navHeader activeUser =
+navHeader : (Msg -> msg) -> ActiveUser -> List (Html msg)
+navHeader transform activeUser =
   case activeUser of
     LoggedOut ->
       []
@@ -474,7 +487,7 @@ navHeader activeUser =
       [ div
         [class "home" ]
         [ a
-          (Routes.clickTo Routes.UserDelegates)
+          (Routes.clickTo (transform << SetPath) Routes.UserDelegates)
           [ text <| "You trust " ++ (toString <| List.length user.trustees) ++ " people" ]
         ]
       ]

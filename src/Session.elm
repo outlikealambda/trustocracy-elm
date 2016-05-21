@@ -1,8 +1,8 @@
 module Session exposing
   ( Session
-  , signal
+  , subscriptions
   , init
-  , Action
+  , Msg
     ( GoCompose
     , GoSurvey
     , GoRead
@@ -40,6 +40,7 @@ import Html exposing
   , h1
   , text
   )
+import Html.App
 import Html.Attributes exposing (class)
 
 
@@ -65,8 +66,9 @@ type Msg
   | GoUserDelegates
 
   -- private
+  | NoOp
   | SetTopic (Maybe Topic)
-  | SetPath Route
+  | SetPath Routes.Route
 
   -- exposed to children
   | SetActiveUser ActiveUser
@@ -75,7 +77,7 @@ type Msg
   | ComposerMsg Composer.Msg
   | SurveyorMsg Surveyor.Msg
   | DelegatorMsg Delegator.Msg
-  | AuthMsg Auth.Action
+  | AuthMsg Auth.Msg
 
 
 -- the current view
@@ -87,9 +89,9 @@ type SessionView
   | Empty
 
 
-signal : Auth.SignalContext -> Signal Action
-signal authContext =
-  Signal.map AuthMsg (Auth.signal authContext)
+subscriptions : Sub Msg
+subscriptions =
+  Sub.map AuthMsg Auth.subscriptions
 
 
 init : (Session, Cmd Msg)
@@ -106,7 +108,7 @@ init =
       , auth = auth
       , delegator = Delegator.fromActiveUser LoggedOut
       }
-    , Effects.map AuthMsg authFx
+    , Cmd.map AuthMsg authFx
     )
 
 
@@ -119,7 +121,7 @@ update action session =
         | activeUser = activeUser
         , delegator = Delegator.fromActiveUser activeUser
       }
-      , Effects.none
+      , Cmd.none
       )
 
     -- GoCompose and GoSurvey are exposed so that World can still control
@@ -148,9 +150,11 @@ update action session =
 
 
     GoUserDelegates ->
-      ( { session | currentView = UserDelegates }, Effects.none )
+      ( { session | currentView = UserDelegates }, Cmd.none )
 
     -- PRIVATE
+    NoOp ->
+      ( session, Cmd.none )
 
     -- we only propagate topic, and not user, because
     -- the app shouldn't normally be switching users, and only
@@ -159,12 +163,12 @@ update action session =
     SetTopic maybeTopic ->
       case maybeTopic of
         Nothing ->
-          ( session, Effects.none )
+          ( session, Cmd.none )
         Just topic ->
           updateViews { session | topic = topic }
 
     SetPath route ->
-      ( session, Location.setPath <| encode route )
+      ( session, Location.setPath <| Routes.encode route )
 
     ComposerMsg composerAction ->
       let
@@ -172,7 +176,7 @@ update action session =
           Composer.update composerAction session.composer
       in
         ( { session | composer = update }
-          , Effects.map ComposerMsg updateFx
+          , Cmd.map ComposerMsg updateFx
         )
 
     SurveyorMsg connectAction ->
@@ -181,7 +185,7 @@ update action session =
           Surveyor.update connectAction session.surveyor
       in
         ( { session | surveyor = update }
-        , Effects.map SurveyorMsg updateFx
+        , Cmd.map SurveyorMsg updateFx
         )
 
     AuthMsg authAction ->
@@ -201,7 +205,7 @@ update action session =
       case session.activeUser of
 
         LoggedOut ->
-          ( session, Effects.none )
+          ( session, Cmd.none )
 
         LoggedIn user ->
           let
@@ -212,7 +216,7 @@ update action session =
               | delegator = update
               , activeUser = LoggedIn { user | trustees = update.saved }
             }
-            , Effects.map DelegatorMsg updateFx )
+            , Cmd.map DelegatorMsg updateFx )
 
 
 setSessionTopic : Session -> SessionView -> TopicId -> (Session, Cmd Msg)
@@ -220,7 +224,7 @@ setSessionTopic session newSessionView topicId =
   let
     fx =
       if session.topic.id == topicId then
-        Effects.none
+        Cmd.none
       else
         API.fetchTopic SetTopic topicId
   in
@@ -236,8 +240,7 @@ updateViews session =
     LoggedOut ->
         ( session
         , Task.succeed (Surveyor.Init session.topic session.activeUser)
-          |> Effects.task
-          |> Effects.map SurveyorMsg
+          |> Task.perform (\_ -> NoOp) SurveyorMsg
         )
     LoggedIn user ->
       let
@@ -247,40 +250,39 @@ updateViews session =
         ( { session
           | composer = composerUpdate
           }
-        , Effects.batch
-          [ Effects.map ComposerMsg composerUpdateFx
+        , Cmd.batch
+          [ Cmd.map ComposerMsg composerUpdateFx
           , Task.succeed (Surveyor.Init session.topic session.activeUser)
-            |> Effects.task
-            |> Effects.map SurveyorMsg
+            |> Task.perform (\_ -> NoOp) SurveyorMsg
           ]
         )
 
 
-view : Session -> Html Msg
-view session =
+view : (Msg -> msg) -> Session -> Html msg
+view transform session =
   let
     sessionContent =
       case session.activeUser of
         LoggedIn user ->
-          activeSessionContent address user session
+          activeSessionContent user session
 
         LoggedOut ->
-          inactiveSessionContent address session
+          inactiveSessionContent session
   in
-    div [ class "session" ] sessionContent
+    Html.App.map transform <| div [ class "session" ] sessionContent
 
 
 -- used to help create the nav links
 type alias SessionLinker a =
   { routeView : SessionView
   , buildRoute : Int -> Routes.Route
-  , makeHtml : a -> Html
+  , makeHtml : a -> Html Msg
   , getter : Session -> a
   }
 
 
 -- builds a link, setting it to active if it matches the current view
-buildSubNavLink : SessionLinker a -> Session -> Html m
+buildSubNavLink : SessionLinker a -> Session -> Html Msg
 buildSubNavLink {routeView, buildRoute, makeHtml, getter} session =
   let
     classes =
@@ -300,7 +302,7 @@ buildSubNavLink {routeView, buildRoute, makeHtml, getter} session =
       ]
 
 
-composeLinker : Session -> Html m
+composeLinker : Session -> Html Msg
 composeLinker = buildSubNavLink
   { routeView = Compose
   , buildRoute = Routes.Compose
@@ -309,7 +311,7 @@ composeLinker = buildSubNavLink
   }
 
 
-connectLinker : Session -> Html m
+connectLinker : Session -> Html Msg
 connectLinker = buildSubNavLink
   { routeView = Survey
   , buildRoute = Routes.Survey
@@ -318,7 +320,7 @@ connectLinker = buildSubNavLink
   }
 
 
-activeSubNav : Session -> Html m
+activeSubNav : Session -> Html Msg
 activeSubNav session =
   div
     [ class "session-overview" ]
@@ -331,7 +333,7 @@ activeSubNav session =
     ]
 
 
-inactiveSubNav : Session -> Html m
+inactiveSubNav : Session -> Html Msg
 inactiveSubNav session =
   div
     [ class "session-overview" ]
@@ -352,7 +354,7 @@ activeSessionContent user session =
       , div
         [ class "content" ]
         [ Surveyor.view
-          { address = Signal.forwardTo address SurveyorMsg
+          { transform = SurveyorMsg
           , readRouteBuilder = Routes.Read session.topic.id
           , showAllRoute = Routes.Survey session.topic.id
           }
@@ -364,13 +366,13 @@ activeSessionContent user session =
       [ activeSubNav session
       , div
         [ class "content" ]
-        [ Composer.view (Signal.forwardTo address ComposerMsg) session.composer ]
+        [ Html.App.map ComposerMsg (Composer.view session.composer) ]
       ]
 
     UserDelegates ->
       [ div
         [ class "content" ]
-        [ Delegator.view (Signal.forwardTo address DelegatorMsg) user.emails session.delegator ]
+        [ Html.App.map DelegatorMsg (Delegator.view user.emails session.delegator) ]
       ]
 
     Empty ->
@@ -386,7 +388,7 @@ inactiveSessionContent session =
       , div
         [ class "content" ]
         [ Surveyor.view
-          { address = Signal.forwardTo address SurveyorMsg
+          { transform = SurveyorMsg
           , readRouteBuilder = Routes.Read session.topic.id
           , showAllRoute = Routes.Survey session.topic.id
           }
@@ -402,11 +404,14 @@ inactiveSessionContent session =
       ]
 
 
-navHeader : Signal.Address Action -> Session -> List Html
-navHeader address {auth, activeUser} =
-    Auth.view
-      { address = Signal.forwardTo address AuthMsg
-      , activeUser = activeUser
-      }
-      auth
-    ++ Delegator.navHeader activeUser
+navHeader : (Msg -> msg) -> Session -> List (Html msg)
+navHeader transform {auth, activeUser} =
+  List.map
+    (Html.App.map transform)
+    (List.append
+      (Auth.view
+        { transform = AuthMsg
+        , activeUser = activeUser
+        }
+        auth)
+      (Delegator.navHeader DelegatorMsg activeUser))

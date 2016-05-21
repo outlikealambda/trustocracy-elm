@@ -1,14 +1,9 @@
-module Auth.Google exposing
+port module Auth.Google exposing
   ( AuthResponse
-  , loginRequests
-  , logoutRequests
-  , contactsRequests
-  , Action
-    ( Login
-    , Logout
-    , Contacts
-    )
-  , address
+  , login
+  , logout
+  , requestContacts
+  , authResponses
   )
 
 
@@ -20,41 +15,21 @@ type alias AuthResponse =
   }
 
 
-type Action
-  = NoOp
-  | Login
-  | Logout
-  | Contacts
+port googleAuthResponses : (Maybe AuthResponse -> msg) -> Sub msg
+authResponses : (Maybe AuthResponse -> msg) -> Sub msg
+authResponses = googleAuthResponses
 
 
-loginRequests : () -> Cmd msg
-loginRequests =
-  let
-    filterLoginAction a =
-      case a of
-        Login -> Just ()
-        _ -> Nothing
-  in
-    Signal.filterMap filterLoginAction () mailbox.signal
+port googleLogin : () -> Cmd msg
+login : Cmd msg
+login = googleLogin ()
 
 
-logoutRequests : () -> Cmd msg
-logoutRequests =
-  let
-    filterLogoutAction a =
-      case a of
-        Logout -> Just ()
-        _ -> Nothing
-  in
-    Signal.filterMap filterLogoutAction () mailbox.signal
+port googleLogout : () -> Cmd msg
+logout : Cmd msg
+logout = googleLogout ()
 
 
-contactsRequests : () -> Cmd msg
-contactsRequests =
-  let
-    filterContactsAction a =
-      case a of
-        Contacts -> Just ()
-        _ -> Nothing
-  in
-    Signal.filterMap filterContactsAction () mailbox.signal
+port googleRequestContacts : () -> Cmd msg
+requestContacts : Cmd msg
+requestContacts = googleRequestContacts ()

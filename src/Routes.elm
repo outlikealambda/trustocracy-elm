@@ -1,13 +1,11 @@
 module Routes exposing (..)
 
-import Platform.Cmd exposing (Cmd)
 import Html exposing (Attribute)
 import Html.Attributes exposing (href)
 import Html.Events exposing (on, onWithOptions)
 import Json.Decode as Decode
 import RouteParser
 import String
-import Transit
 
 
 type Route
@@ -55,13 +53,6 @@ encode route =
     EmptyRoute -> "/"
 
 
-redirect : Route -> Cmd ()
-redirect route =
-  encode route
-    |> Signal.send TransitRouter.pushPathAddress
-    |> Cmd.task
-
-
 goToRoute : m -> Attribute m
 goToRoute msg =
   on
@@ -69,16 +60,17 @@ goToRoute msg =
     (Decode.map (\_ -> msg) Decode.value)
 
 
-clickTo : Route -> List Attribute
-clickTo route =
+clickTo : (Route -> m) -> Route -> List (Attribute m)
+clickTo onRoute route =
   let
     path =
       encode route
+    msg =
+      onRoute route
   in
     [ href path
     , onWithOptions
       "click"
       { stopPropagation = True, preventDefault = True }
-      Decode.value
-      (\_ -> Signal.message TransitRouter.pushPathAddress path)
+      (Decode.map (\_ -> msg) Decode.value)
     ]

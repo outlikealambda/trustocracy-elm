@@ -32,14 +32,19 @@
   <script type='text/javascript'>
 
 
-    var elmApp = Elm.fullscreen(Elm.Main,
-      { initialPath: window.location.pathname,
-        fbAuthResponse: null,
-        gaResponse: null
-      }
-    );
+    var elmApp = Elm.Main.fullscreen(document.location.pathname);
 
-    // OUR PORT
+    // OUR PORTS
+
+    elmApp.ports.setPath.subscribe(path => {
+      history.pushState({}, "", path);
+      elmApp.ports.pathUpdates.send(path);
+    })
+
+    window.onpopstate = event => {
+      console.log(document.location);
+      app.ports.pathUpdates.send(document.location.pathname);
+    };
 
     elmApp.ports.trustoLogout.subscribe(() => {
       console.log('deleting trusto token');
@@ -51,12 +56,12 @@
 
     const contactsScope = 'email openid https://www.googleapis.com/auth/contacts.readonly';
 
-    elmApp.ports.gaContacts.subscribe(() => {
-      getGaAuth({ scope: contactsScope }, elmApp.ports.gaResponse.send)
+    elmApp.ports.googleRequestContacts.subscribe(() => {
+      getGaAuth({ scope: contactsScope }, elmApp.ports.googleAuthResponses.send)
     });
 
-    elmApp.ports.gaLogin.subscribe(function () {
-      getGaAuth({}, elmApp.ports.gaResponse.send);
+    elmApp.ports.googleLogin.subscribe(() => {
+      getGaAuth({}, elmApp.ports.googleAuthResponses.send);
     });
 
     function getGaAuth(opts, callback) {
@@ -83,14 +88,14 @@
       );
     }
 
-    elmApp.ports.gaLogout.subscribe(() => {
+    elmApp.ports.googleLogout.subscribe(() => {
       console.log('logging out ga...', GA);
       GA.signOut();
     });
 
     // FACEBOOK AUTH PORTS
 
-    elmApp.ports.fbLogin.subscribe(function (scope) {
+    elmApp.ports.fbLogin.subscribe(scope => {
       console.log('logging in...');
       // TODO: make sure I am logged out first?
       // scope is a string of comma separated things... should I pass that here?
@@ -98,13 +103,13 @@
       FB.login(handleFacebookLogin, { scope: 'email' });
     });
 
-    elmApp.ports.fbLogout.subscribe(function() {
+    elmApp.ports.fbLogout.subscribe(() => {
       console.log('logging out...');
       // TODO: should I make sure I am logged in first?
       FB.logout(handleFacebookLogout);
     });
 
-    window.fbAsyncInit = function () {
+    window.fbAsyncInit = () => {
 
       FB.Event.subscribe('auth.statusChange', handleFacebookStatusChange);
 
@@ -132,9 +137,9 @@
 
       console.log('Sending to elm port...');
       if (response.status === 'connected') {
-        elmApp.ports.fbAuthResponse.send(response.authResponse);
+        elmApp.ports.fbAuthResponses.send(response.authResponse);
       } else {
-        elmApp.ports.fbAuthResponse.send(null);
+        elmApp.ports.fbAuthResponses.send(null);
       }
 
       // The response object is returned with a status field that lets the
