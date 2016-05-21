@@ -62,12 +62,11 @@ redirect route =
     |> Cmd.task
 
 
-goToRoute : Route -> Attribute
-goToRoute route =
+goToRoute : m -> Attribute m
+goToRoute msg =
   on
     "click"
-    Decode.value
-    (\_ -> Signal.message TransitRouter.pushPathAddress <| encode route)
+    (Decode.map (\_ -> msg) Decode.value)
 
 
 clickTo : Route -> List Attribute

@@ -1,6 +1,6 @@
 module Qualifications exposing
   ( Qualifications
-  , Action
+  , Msg
   , empty
   , update
   , decoder
@@ -12,6 +12,7 @@ module Qualifications exposing
 
 
 import Html exposing (Html, ul, li, div, text)
+import Html.App
 import Html.Attributes as Attributes exposing (class)
 import Html.Events as Events
 import Json.Decode as Decode exposing ((:=))
@@ -33,7 +34,7 @@ type alias Qualification =
   }
 
 
-type Action
+type Msg
   = SetIndustry String
   | SetAcademia String
   | SetPersonal String
@@ -51,7 +52,7 @@ init industry academia personal =
   }
 
 
-update : Action -> Qualifications -> Qualifications
+update : Msg -> Qualifications -> Qualifications
 update action qualifications =
   case action of
     SetIndustry input ->
@@ -90,7 +91,7 @@ hasAnyQualification qualifications =
     List.any (not << String.isEmpty << .value) fields
 
 
-view : Qualifications -> Html
+view : Qualifications -> Html msg
 view {industry, academia, personal} =
   ul
     [ class "qualifications" ]
@@ -99,7 +100,7 @@ view {industry, academia, personal} =
     ++ viewQualification personal
 
 
-viewQualification : Qualification -> List Html
+viewQualification : Qualification -> List (Html msg)
 viewQualification {value, label} =
   if String.isEmpty value then
     []
@@ -110,18 +111,18 @@ viewQualification {value, label} =
     ]
 
 
-viewForm : Signal.Address Action -> Qualifications -> Html
-viewForm address {industry, academia, personal} =
+viewForm : Qualifications -> Html Msg
+viewForm {industry, academia, personal} =
   div
     [ class "qualifications-input" ]
-    [ viewQualificationForm (Signal.forwardTo address SetIndustry) industry
-    , viewQualificationForm (Signal.forwardTo address SetAcademia) academia
-    , viewQualificationForm (Signal.forwardTo address SetPersonal) personal
+    [ Html.App.map SetIndustry (viewQualificationForm industry)
+    , Html.App.map SetAcademia (viewQualificationForm academia)
+    , Html.App.map SetPersonal (viewQualificationForm personal)
     ]
 
 
-viewQualificationForm : Signal.Address String -> Qualification -> Html
-viewQualificationForm address {value, label, placeholder} =
+viewQualificationForm : Qualification -> Html String
+viewQualificationForm {value, label, placeholder} =
   div
     [ class <| "qualification " ++ label ]
     [ Html.label
@@ -131,7 +132,7 @@ viewQualificationForm address {value, label, placeholder} =
       [ class "qualification-input"
       , Attributes.value value
       , Attributes.placeholder placeholder
-      , Events.on "input" Events.targetValue (Signal.message address) ]
+      , Events.on "input" Events.targetValue ]
       []
     ]
 

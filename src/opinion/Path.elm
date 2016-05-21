@@ -36,7 +36,7 @@ decoder =
     ("score" := Json.int)
 
 
-viewPaths : List Path -> Html
+viewPaths : List Path -> Html msg
 viewPaths paths =
   case paths of
     first::rest ->
@@ -51,7 +51,7 @@ viewPaths paths =
 
 
 
-viewHeader : Path -> Int -> Html
+viewHeader : Path -> Int -> Html msg
 viewHeader {friend, path} count =
    div
     [ class "opg-header op single-line cf" ]
@@ -63,7 +63,7 @@ viewHeader {friend, path} count =
     ]
 
 
-viewAbbreviated : Path -> Html
+viewAbbreviated : Path -> Html msg
 viewAbbreviated {friend, path} =
   let relationships =
     List.map Relationship.view path

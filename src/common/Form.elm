@@ -7,11 +7,13 @@ import Html.Events as Events
 import Json.Decode as Decode
 
 -- from the Elm Architecture tutorial
-onEnter : Signal.Address a -> a -> Html.Attribute
-onEnter address value =
-  Events.on "keydown"
-    (Decode.customDecoder Events.keyCode is13)
-    (\_ -> Signal.message address value)
+onEnter : (() -> a) -> Html.Attribute a
+onEnter transform =
+  let
+    decoder = Decode.customDecoder Events.keyCode
+      <| Result.map transform << is13
+  in
+    Events.on "keydown" decoder
 
 
 is13 : Int -> Result String ()

@@ -44,6 +44,7 @@ type alias Surveyor =
 type Msg
   = SetConnected Paths
   | SetUnconnected (List Int)
+  | SetPath Routes.Route
   | Init Topic ActiveUser.ActiveUser
   | PlotMsg Key Plot.Action
 
@@ -156,6 +157,8 @@ update message model =
         , Effects.batch keyedPlotsFxs
         )
 
+    SetPath route ->
+      ( model, Location.setPath <| encode route )
 
     PlotMsg key subMsg ->
       case Dict.get key model.buckets of
@@ -220,7 +223,7 @@ showAll showAllRoute =
     [ class "show-all-wrapper cf" ]
     [ Html.span
       [ class "show-all"
-      , Routes.goToRoute showAllRoute
+      , Routes.goToRoute <| SetPath showAllRoute
       ]
       [ Html.text "Show all opinions" ]
     ]

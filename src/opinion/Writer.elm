@@ -1,12 +1,13 @@
 module Opinion.Writer exposing
   ( Writer
-  , Action
+  , Msg
   , update
   , view
   )
 
 
 import Html exposing (Html, div, textarea)
+import Html.App
 import Html.Attributes exposing (class, placeholder, value)
 import Html.Events exposing (on, targetValue)
 
@@ -21,12 +22,12 @@ type alias Writer a =
   }
 
 
-type Action
+type Msg
   = Write String
-  | QualificationsMsg Qualifications.Action
+  | QualificationsMsg Qualifications.Msg
 
 
-update : Action -> Writer a -> Writer a
+update : Msg -> Writer a -> Writer a
 update action writer =
   case action of
     Write raw ->
@@ -37,24 +38,24 @@ update action writer =
 
 
 
-view : Signal.Address Action -> Writer a -> Html
-view address {text, qualifications} =
+view : Writer a -> Html Msg
+view {text, qualifications} =
   div
     [ class "writer" ]
-    [ viewOpinionInput address text
-    , viewQualificationsInput address qualifications
+    [ Html.App.map Write (viewOpinionInput text)
+    , Html.App.map QualificationsMsg (viewQualificationsInput qualifications)
     ]
 
 
-viewOpinionInput : Signal.Address Action -> String -> Html
-viewOpinionInput address currentText =
+viewOpinionInput : String -> Html String
+viewOpinionInput currentText =
   div [ class "opinion-creator" ]
     [ div [ class "input-field" ]
       [ textarea
         [ class "write"
         , placeholder "Let's write something!"
         , value currentText
-        , on "input" targetValue (Signal.message address << Write)
+        , on "input" targetValue
         ]
         []
       ]
@@ -67,8 +68,8 @@ viewOpinionInput address currentText =
     ]
 
 
-viewQualificationsInput : Signal.Address Action -> Qualifications -> Html
-viewQualificationsInput address qualifications =
+viewQualificationsInput : Qualifications -> Html Qualifications.Msg
+viewQualificationsInput qualifications =
   div
     [ class "write-qualifications" ]
     [ div
@@ -77,7 +78,5 @@ viewQualificationsInput address qualifications =
     , div
       [ class "section-sub-header" ]
       [ Html.text "for general qualifications, edit your profile" ]
-    , Qualifications.viewForm
-      (Signal.forwardTo address QualificationsMsg)
-      qualifications
+    , Qualifications.viewForm qualifications
     ]

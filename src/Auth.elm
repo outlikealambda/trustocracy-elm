@@ -227,7 +227,7 @@ viewHeader {address, activeUser}=
       ++ userName
 
 
-viewForm : Signal.Address Action -> Auth -> Html
+viewForm : Auth -> Html Action
 viewForm address auth =
   let
     (name, secret) =
@@ -247,18 +247,18 @@ viewForm address auth =
         [ h2 [] [ text <| "Login" ]
         , text <| "Eventually this will be a login; for now just input the id of the user you'd like to impersonate"
         , div
-          [ Form.onEnter address LoadUser ]
-          [ input
+          [ Form.onEnter (\_ -> LoadUser) ]
+          [ Html.App.map ((flip UpdateInput) secret) <| input
             [ placeholder "User Name"
             , value <| name
-            , on "input" targetValue (\n -> Signal.message address (UpdateInput n secret))
+            , on "input" targetValue
             ]
             []
-          , input
+          , Html.App.map (UpdateInput name) <| input
             [ placeholder "Password"
             , Attribute.type' "password"
             , value <| secret
-            , on "input" targetValue (\s -> Signal.message address (UpdateInput name s))
+            , on "input" targetValue
             ]
             []
           ]

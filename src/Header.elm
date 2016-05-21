@@ -16,7 +16,7 @@ type alias Context =
   }
 
 
-view : List Html -> Html
+view : List (Html m) -> Html m
 view sessionElements =
   let
     home =

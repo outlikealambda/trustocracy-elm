@@ -47,7 +47,7 @@ collapse presenter =
   { presenter | expanded = False }
 
 
-viewExpanded : Presenter a -> Html
+viewExpanded : Presenter a -> Html msg
 viewExpanded {text, qualifications, opiner, influence, fetched} =
   div
     [ class "opinion-full" ]
@@ -58,8 +58,8 @@ viewExpanded {text, qualifications, opiner, influence, fetched} =
     ]
 
 
-viewCollapsed : (Int -> Routes.Route) -> Presenter a -> Html
-viewCollapsed routeBuilder {id, snippet, opiner, influence, fetched} =
+viewCollapsed : (Int -> msg) -> Presenter a -> Html msg
+viewCollapsed buildRoute {id, snippet, opiner, influence, fetched} =
   div
     [ class "opinion-snippet" ]
     [ div
@@ -67,12 +67,12 @@ viewCollapsed routeBuilder {id, snippet, opiner, influence, fetched} =
       [ p [] [ Html.text snippet ] ]
     , span
       [ class "read-more"
-      , Routes.goToRoute <| routeBuilder id
+      , Routes.goToRoute <| buildRoute id
       ]
       [ Html.text "Read more..." ]
     ]
 
-view : Bool -> (Int -> Routes.Route) -> Presenter a -> Html
+view : Bool -> (Int -> msg) -> Presenter a -> Html msg
 view expanded routeBuilder presenter =
   div
     [ Attribute.classList

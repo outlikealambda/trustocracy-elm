@@ -166,7 +166,7 @@ composerNav composerView =
         [ text "Save" ]
       ]
 
-navButton : Composer -> Html
+navButton : Composer -> Html m
 navButton {opinion} =
   let
     actionText =

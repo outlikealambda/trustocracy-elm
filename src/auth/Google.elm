@@ -27,22 +27,7 @@ type Action
   | Contacts
 
 
-mailbox : Signal.Mailbox Action
-mailbox =
-  Signal.mailbox NoOp
-
-
-address : Signal.Address Action
-address =
-  mailbox.address
-
-
-signal : Signal Action
-signal =
-  mailbox.signal
-
-
-loginRequests : Signal ()
+loginRequests : () -> Cmd msg
 loginRequests =
   let
     filterLoginAction a =
@@ -53,7 +38,7 @@ loginRequests =
     Signal.filterMap filterLoginAction () mailbox.signal
 
 
-logoutRequests : Signal ()
+logoutRequests : () -> Cmd msg
 logoutRequests =
   let
     filterLogoutAction a =
@@ -64,7 +49,7 @@ logoutRequests =
     Signal.filterMap filterLogoutAction () mailbox.signal
 
 
-contactsRequests : Signal ()
+contactsRequests : () -> Cmd msg
 contactsRequests =
   let
     filterContactsAction a =

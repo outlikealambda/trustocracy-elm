@@ -1,7 +1,7 @@
 -- a plotted opinion; an opinion, and where it is (via paths)
 module Opinion.Plot exposing
   ( Plot
-  , Action
+  , Msg
   , init
   , initPlots
   , view
@@ -36,14 +36,15 @@ type alias Plot =
     }
 
 
-type Action
+type Msg
   = FetchComplete Opinion
+  | SetPath Routes.Route
 
 
 -- Create with a List of OpinionPaths and the Opinion.id
 -- We're no longer guaranteed to have a path, as this could be used for
 -- un-linked opinions?
-init : Int -> List Path -> (Plot, Effects Action)
+init : Int -> List Path -> (Plot, Cmd Msg)
 init opinionId opaths =
   let
     sorted =
@@ -72,7 +73,7 @@ init opinionId opaths =
     )
 
 
-update : Action -> Plot -> (Plot, Effects Action)
+update : Msg -> Plot -> (Plot, Cmd Msg)
 update message plot =
   case message of
 
@@ -80,12 +81,15 @@ update message plot =
       ( { plot
         | opinion = Presenter.prepare opinion
         }
-      , Effects.none
+      , Cmd.none
       )
+
+    SetPath route ->
+      ( plot, Location.setPath <| encode route )
 
 
 type alias ViewContext =
-  { address : Signal.Address Action
+  { address : Signal.Address Msg
   , readRouteBuilder : Int -> Routes.Route
   }
 
@@ -120,7 +124,7 @@ view {address, readRouteBuilder} (k, {opinion, paths, expanded}) =
       [ header
       , div
         [ class "t-card-body" ]
-        [ Presenter.view expanded readRouteBuilder opinion ]
+        [ Presenter.view expanded (SetPath << readRouteBuilder) opinion ]
       ]
 
 
@@ -175,7 +179,7 @@ countBadge c =
       ]
 
 
-initPlots : List Path -> List (Plot, Effects Action)
+initPlots : List Path -> List (Plot, Cmd Msg)
 initPlots allPaths =
   ListUtils.groupBy .opinionId allPaths
     |> List.map (\(id, paths) -> init id paths)
@@ -189,7 +193,7 @@ toDict keyGen plots =
    |> Dict.fromList
 
 
-keyFx : (Plot -> comparable) -> (Plot, Effects Action) -> (comparable, Effects Action)
+keyFx : (Plot -> comparable) -> (Plot, Cmd Msg) -> (comparable, Cmd Msg)
 keyFx keyGen (plot, plotFx) =
   (keyGen plot, plotFx)
 

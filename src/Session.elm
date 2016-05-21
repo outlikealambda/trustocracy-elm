@@ -25,6 +25,7 @@ import Common.API as API
 import Delegator exposing (Delegator)
 import Opinion.Surveyor as Surveyor exposing (Surveyor)
 import Opinion.Composer as Composer exposing (Composer)
+import Location
 import Routes
 import Topic.Model as Topic exposing (Topic)
 import User exposing (User)
@@ -65,6 +66,7 @@ type Msg
 
   -- private
   | SetTopic (Maybe Topic)
+  | SetPath Route
 
   -- exposed to children
   | SetActiveUser ActiveUser
@@ -161,6 +163,9 @@ update action session =
         Just topic ->
           updateViews { session | topic = topic }
 
+    SetPath route ->
+      ( session, Location.setPath <| encode route )
+
     ComposerMsg composerAction ->
       let
         (update, updateFx) =
@@ -251,8 +256,8 @@ updateViews session =
         )
 
 
-view : Signal.Address Action -> Session -> Html
-view address session =
+view : Session -> Html Msg
+view session =
   let
     sessionContent =
       case session.activeUser of
@@ -275,7 +280,7 @@ type alias SessionLinker a =
 
 
 -- builds a link, setting it to active if it matches the current view
-buildSubNavLink : SessionLinker a -> Session -> Html
+buildSubNavLink : SessionLinker a -> Session -> Html m
 buildSubNavLink {routeView, buildRoute, makeHtml, getter} session =
   let
     classes =
@@ -290,12 +295,12 @@ buildSubNavLink {routeView, buildRoute, makeHtml, getter} session =
   in
     div
       [ class <| String.join " " classes
-      , Routes.goToRoute <| buildRoute session.topic.id ]
+      , Routes.goToRoute <| SetPath <| buildRoute session.topic.id ]
       [ makeHtml <| getter session
       ]
 
 
-composeLinker : Session -> Html
+composeLinker : Session -> Html m
 composeLinker = buildSubNavLink
   { routeView = Compose
   , buildRoute = Routes.Compose
@@ -304,7 +309,7 @@ composeLinker = buildSubNavLink
   }
 
 
-connectLinker : Session -> Html
+connectLinker : Session -> Html m
 connectLinker = buildSubNavLink
   { routeView = Survey
   , buildRoute = Routes.Survey
@@ -313,7 +318,7 @@ connectLinker = buildSubNavLink
   }
 
 
-activeSubNav : Session -> Html
+activeSubNav : Session -> Html m
 activeSubNav session =
   div
     [ class "session-overview" ]
@@ -326,7 +331,7 @@ activeSubNav session =
     ]
 
 
-inactiveSubNav : Session -> Html
+inactiveSubNav : Session -> Html m
 inactiveSubNav session =
   div
     [ class "session-overview" ]
@@ -338,8 +343,8 @@ inactiveSubNav session =
     ]
 
 
-activeSessionContent : Signal.Address Action -> User -> Session -> List Html
-activeSessionContent address user session =
+activeSessionContent : User -> Session -> List (Html Msg)
+activeSessionContent user session =
   case session.currentView of
 
     Survey ->
@@ -373,8 +378,8 @@ activeSessionContent address user session =
 
 
 -- an inactiveSession should only route to browse
-inactiveSessionContent : Signal.Address Action -> Session -> List Html
-inactiveSessionContent address session =
+inactiveSessionContent : Session -> List (Html Msg)
+inactiveSessionContent session =
   case session.currentView of
     Survey ->
       [ inactiveSubNav session

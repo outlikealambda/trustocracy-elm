@@ -1,6 +1,6 @@
 module World exposing
-  ( Action
-  , Model
+  ( Msg
+  , World
   , init
   , view
   , actions
@@ -26,7 +26,7 @@ import Routes exposing (Route)
 import Location
 
 
-type alias Model = TransitRouter.WithRoute Routes.Route
+type alias World = TransitRouter.WithRoute Routes.Route
   { session : Session
   , topics : List Topic
   }
@@ -50,8 +50,8 @@ actions authContext =
     ]
 
 
-mountRoute : Route -> Route -> Model -> (Model, Cmd Msg)
-mountRoute prevRoute route world =
+mountRoute : Route -> World -> (World, Cmd Msg)
+mountRoute route world =
   case route of
 
     Routes.Home ->
@@ -92,7 +92,7 @@ mountRoute prevRoute route world =
       ( world, Effects.none )
 
 
-routerConfig : TransitRouter.Config Route Msg Model
+routerConfig : TransitRouter.Config Route Msg World
 routerConfig =
   { mountRoute = mountRoute
   , getDurations = \_ _ _ -> (50, 200)
@@ -101,11 +101,11 @@ routerConfig =
   }
 
 
-init : String -> (Model, Cmd Msg)
+init : String -> (World, Cmd Msg)
 init path =
   let
     (initialWorld, initialWorldFx) =
-      initialModel
+      initialWorld
     (world, fx) =
       TransitRouter.init routerConfig path initialWorld
   in
@@ -117,7 +117,7 @@ init path =
     )
 
 
-initialModel : (Model, Cmd Msg)
+initialModel : (World, Cmd Msg)
 initialModel =
   let
     (session, sessionFx) =
@@ -130,7 +130,7 @@ initialModel =
     , Effects.map SessionMsg sessionFx )
 
 
-update : Msg -> Model -> (Model, Cmd Msg)
+update : Msg -> World -> (World, Cmd Msg)
 update message world =
   case message of
     SessionMsg sessionAction ->
@@ -142,8 +142,11 @@ update message world =
         , Effects.map SessionMsg updateFx
         )
 
-    RouterAction routeAction ->
-      TransitRouter.update routerConfig routeAction world
+    SetPath path ->
+      ( world, Location.setPath path )
+
+    PathUpdated path ->
+      mountRoute (Routes.decode path) world
 
     TopicsLoad topics ->
       ( { world | topics = topics }
@@ -165,7 +168,7 @@ updateSession sessionAction =
     |> Effects.task
 
 
-view : Model -> Html Msg
+view : World -> Html Msg
 view world =
   div []
     [ Header.view
@@ -196,8 +199,3 @@ view world =
           [ text "" ]
       )
     ]
-
-
-goHome : Cmd Msg
-goHome =
-  Effects.map (\_ -> SNoOp "going home") (Routes.redirect Routes.Topics)
