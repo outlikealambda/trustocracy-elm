@@ -1,4 +1,4 @@
-module Auth
+module Auth exposing
   ( Auth
   , Action
   , SignalContext
@@ -8,10 +8,10 @@ module Auth
   , update
   , view
   , logoutSignal
-  ) where
+  )
 
 
-import Effects exposing (Effects)
+import Platform.Cmd exposing (Cmd)
 import Html exposing (Html, h2, div, text, input, button, a)
 import Html.Attributes as Attribute exposing (placeholder, value, class)
 import Html.Events exposing (on, targetValue, onClick)

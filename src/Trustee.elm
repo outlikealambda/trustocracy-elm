@@ -1,4 +1,4 @@
-module Trustee
+module Trustee exposing
   ( Trustee
   , empty
   , decoder
@@ -8,7 +8,7 @@ module Trustee
   , setRelationship
   , isTrustee
   , isTrusteeChanged
-  ) where
+  )
 
 
 import Json.Decode as Decode exposing ((:=))

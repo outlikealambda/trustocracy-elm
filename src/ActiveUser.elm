@@ -1,9 +1,9 @@
-module ActiveUser
+module ActiveUser exposing
     ( ActiveUser
       ( LoggedIn
       , LoggedOut
       )
-    ) where
+    )
 
 
 import User exposing (User)

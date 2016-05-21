@@ -1,10 +1,10 @@
-module User
+module User exposing
   ( User
   , decoder
   , encode
   , empty
   , isEmpty
-  ) where
+  )
 
 import Json.Decode as Decode exposing ((:=))
 import Json.Encode as Encode

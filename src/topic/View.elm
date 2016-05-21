@@ -1,7 +1,7 @@
-module Topic.View
+module Topic.View exposing
   ( view
   , viewAll
-  ) where
+  )
 
 
 import Html exposing (Html, div, text)
@@ -12,9 +12,6 @@ import Json.Decode as Json
 
 import Topic.Model exposing (Topic)
 import Routes
-
-
-import TransitRouter
 
 
 view : Topic -> Html

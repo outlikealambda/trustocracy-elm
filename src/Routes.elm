@@ -1,13 +1,13 @@
-module Routes where
+module Routes exposing (..)
 
-import Effects exposing (Effects)
+import Platform.Cmd exposing (Cmd)
 import Html exposing (Attribute)
 import Html.Attributes exposing (href)
 import Html.Events exposing (on, onWithOptions)
 import Json.Decode as Decode
 import RouteParser
 import String
-import TransitRouter
+import Transit
 
 
 type Route
@@ -55,11 +55,11 @@ encode route =
     EmptyRoute -> "/"
 
 
-redirect : Route -> Effects ()
+redirect : Route -> Cmd ()
 redirect route =
   encode route
     |> Signal.send TransitRouter.pushPathAddress
-    |> Effects.task
+    |> Cmd.task
 
 
 goToRoute : Route -> Attribute

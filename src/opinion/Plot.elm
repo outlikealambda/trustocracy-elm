@@ -22,7 +22,7 @@ import Routes
 import Utils.List as ListUtils
 
 
-import Effects exposing (Effects)
+import Platform.Cmd exposing (Cmd)
 import Html exposing (Html, div, span, text)
 import Html.Attributes as Attribute exposing (class)
 import Dict

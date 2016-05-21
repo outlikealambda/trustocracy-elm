@@ -13,7 +13,7 @@ module Opinion.Surveyor exposing
   )
 
 
-import Effects exposing (Effects)
+import Platform.Cmd exposing (Cmd)
 import Html exposing (Html, div, text, h4)
 import Html.Attributes exposing (class)
 import Dict
@@ -41,7 +41,7 @@ type alias Surveyor =
   }
 
 
-type Action
+type Msg
   = SetConnected Paths
   | SetUnconnected (List Int)
   | Init Topic ActiveUser.ActiveUser
@@ -64,7 +64,7 @@ empty =
   }
 
 
-update : Action -> Surveyor -> (Surveyor, Effects Action)
+update : Msg -> Surveyor -> (Surveyor, Cmd Msg)
 update message model =
   case message of
 

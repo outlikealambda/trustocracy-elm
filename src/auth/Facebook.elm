@@ -24,18 +24,7 @@ type alias AuthResponse =
   , signedRequest : String
   }
 
-
-mailbox : Mailbox Action
-mailbox =
-  Signal.mailbox NoOp
-
-
-signal : Signal Action
-signal =
-  mailbox.signal
-
-
-loginRequests : Signal (List String)
+loginRequests :  List String -> Cmd msg
 loginRequests =
   let
     filterLoginAction a =
@@ -46,7 +35,7 @@ loginRequests =
     Signal.filterMap filterLoginAction [] mailbox.signal
 
 
-logoutRequests : Signal ()
+logoutRequests : () -> Cmd msg
 logoutRequests =
   let
     filterLogoutAction a =
@@ -55,11 +44,6 @@ logoutRequests =
         _ -> Nothing
   in
     Signal.filterMap filterLogoutAction () mailbox.signal
-
-
-address : Signal.Address Action
-address =
-  mailbox.address
 
 
 toString : Action -> String

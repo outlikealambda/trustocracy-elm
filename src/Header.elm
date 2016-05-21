@@ -1,7 +1,7 @@
-module Header
+module Header exposing
   ( view
   , Context
-  ) where
+  )
 
 
 import Html exposing (Html, Attribute, div, text, a)

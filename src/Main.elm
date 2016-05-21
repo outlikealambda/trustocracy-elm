@@ -1,7 +1,7 @@
-import Effects exposing (Never)
+import Platform.Cmd exposing (Cmd)
+import Platform.Sub exposing (Sub)
 import Html exposing (Html)
-import StartApp
-import Task
+import Task exposing (Task)
 
 import Auth
 import Auth.Facebook as Facebook
@@ -12,13 +12,13 @@ import World
 port initialPath : String
 
 
-app : StartApp.App World.Model
+app : Html.App World.Model
 app =
-  StartApp.start
+  Html.App.program
     { init = World.init initialPath
     , update = World.update
     , view = World.view
-    , inputs =
+    , subscriptions =
       [ World.actions
         { facebook = fbAuthResponse
         , google = gaResponse
@@ -32,45 +32,47 @@ main =
   app.html
 
 
-port tasks : Signal (Task.Task Never ())
+port tasks : Signal (Task never ())
 port tasks =
   app.tasks
 
 
 -- Facebook integration
-port fbAuthResponse : Signal (Maybe Facebook.AuthResponse)
+port fbAuthResponse : (Maybe Facebook.AuthResponse -> msg) -> Sub msg
 
 
-port fbLogin : Signal (List String)
+port fbLogin : List String -> Cmd msg
 port fbLogin =
   Facebook.loginRequests
   -- TODO: map the Facebook.login List Facebook.Scope to strings
 
 
-port fbLogout : Signal ()
+port fbLogout : () -> Cmd msg
 port fbLogout =
   Facebook.logoutRequests
 
 
 -- Google integration
-port gaResponse : Signal (Maybe Google.AuthResponse)
+port gaResponse : Maybe Google.AuthResponse -> Cmd msg
 
 
-port gaLogin : Signal ()
+port gaLogin : () -> Cmd msg
 port gaLogin =
   Google.loginRequests
 
 
-port gaLogout : Signal ()
+port gaLogout : () -> Cmd msg
 port gaLogout =
   Google.logoutRequests
 
 
-port gaContacts : Signal ()
+port gaContacts : () -> Cmd msg
 port gaContacts =
   Google.contactsRequests
 
 
-port trustoLogout : Signal ()
+port trustoLogout : () -> Cmd msg
 port trustoLogout =
   Auth.logoutSignal
+
+-- Routing

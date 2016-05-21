@@ -1,14 +1,14 @@
-module Delegator
+module Delegator exposing
   ( Delegator
   , fromActiveUser
   , Action
   , update
   , view
   , navHeader
-  ) where
+  )
 
 
-import Effects exposing (Effects)
+import Platform.Cmd exposing (Cmd)
 import Html as Html exposing (Html, div, text, p, span, a)
 import Html.Attributes as Attribute exposing (class)
 import Html.Events as Event exposing (onClick)
@@ -33,7 +33,7 @@ type alias Delegator =
   }
 
 
-type Action
+type Msg
   = ValidateMove Trustee
   | SaveDelegateComplete (List Trustee)
   | InputUpdate String
@@ -55,7 +55,7 @@ fromActiveUser activeUser =
       Delegator user.trustees user.trustees [] ""
 
 
-update : Action -> Delegator -> (Delegator, Effects Action)
+update : Msg -> Delegator -> (Delegator, Cmd Msg)
 update action delegator =
   case action of
     ValidateMove trustee ->
@@ -71,7 +71,7 @@ update action delegator =
         case isValid current of
           Err errors ->
             ( { updated | errors = errors }
-            , Effects.none
+            , Cmd.none
             )
           Ok _ ->
             let
@@ -85,7 +85,7 @@ update action delegator =
 
               fx =
                 if List.isEmpty diff then
-                  Effects.none
+                  Cmd.none
                 else
                   API.setTrustees SaveDelegateComplete diff
             in
@@ -106,12 +106,12 @@ update action delegator =
         ( { delegator
           | saved = updatedDelegateList
           , current = updatedDelegateList }
-        , Effects.none
+        , Cmd.none
         )
 
     InputUpdate input ->
       ( { delegator | input = String.toLower(input) }
-      , Effects.none
+      , Cmd.none
       )
 
     Lookup ->
@@ -128,7 +128,7 @@ update action delegator =
               :: delegator.errors
             }
 
-          , Effects.none )
+          , Cmd.none )
         Just trustee ->
           let
             isNew =
@@ -143,7 +143,7 @@ update action delegator =
                 , ""
                 )
               else
-                ( Effects.none
+                ( Cmd.none
                 , trustee.name ++ " is already linked to you :)"
                 )
           in

@@ -1,6 +1,6 @@
 module Opinion.Composer exposing
   ( Composer
-  , Action
+  , Msg
   , empty
   , init
   , update
@@ -17,7 +17,7 @@ import Topic.Model as Topic exposing (Topic)
 import Trustee
 import User exposing (User)
 
-import Effects exposing (Effects)
+import Platform.Cmd exposing (Cmd)
 import Html exposing (Html, div, text, br)
 import Html.Attributes exposing (class, placeholder, value)
 import Html.Events exposing (on, onClick)
@@ -31,7 +31,7 @@ type alias Composer =
   }
 
 
-type Action
+type Msg
   = FetchComplete Opinion
   | WriteComplete (Maybe Opinion)
   | Save
@@ -57,7 +57,7 @@ empty =
 -- if there isn't an existing one.  But this means we need to import User and
 -- Trustee, and removes the Maybe response logic from the Action handler...
 -- TODO: create a new Opinion on the server side if the opinion doesn't exist?
-init : User -> Topic -> (Composer, Effects Action)
+init : User -> Topic -> (Composer, Cmd Msg)
 init user topic =
   let
     emptyOpinion =
@@ -75,7 +75,7 @@ init user topic =
     )
 
 
-update : Action -> Composer -> (Composer, Effects Action)
+update : Msg -> Composer -> (Composer, Cmd Msg)
 update action composer =
   case action of
 
@@ -114,8 +114,8 @@ update action composer =
       )
 
 
-view : Signal.Address Action -> Composer -> Html
-view address {opinion, composerView} =
+view : Composer -> Html Msg
+view {opinion, composerView} =
   let content =
     case composerView of
       Write ->
@@ -132,8 +132,8 @@ view address {opinion, composerView} =
       ]
 
 
-composerNav : Signal.Address Action -> ComposerView -> Html
-composerNav address composerView =
+composerNav : ComposerView -> Html Msg
+composerNav composerView =
   let
     (writeClasses, previewClasses) =
       case composerView of

@@ -1,4 +1,4 @@
-module Session
+module Session exposing
   ( Session
   , signal
   , init
@@ -11,7 +11,7 @@ module Session
   , update
   , view
   , navHeader
-  ) where
+  )
 
 
 import ActiveUser exposing
@@ -30,7 +30,7 @@ import Topic.Model as Topic exposing (Topic)
 import User exposing (User)
 
 
-import Effects exposing (Effects)
+import Platform.Cmd exposing (Cmd)
 import String
 import Task
 import Html exposing
@@ -56,7 +56,7 @@ type alias TopicId = Int
 type alias OpinionId = Int
 
 
-type Action
+type Msg
   -- exposed
   = GoCompose TopicId
   | GoSurvey TopicId
@@ -70,9 +70,9 @@ type Action
   | SetActiveUser ActiveUser
 
   -- child modules
-  | ComposerMsg Composer.Action
-  | SurveyorMsg Surveyor.Action
-  | DelegatorMsg Delegator.Action
+  | ComposerMsg Composer.Msg
+  | SurveyorMsg Surveyor.Msg
+  | DelegatorMsg Delegator.Msg
   | AuthMsg Auth.Action
 
 
@@ -90,7 +90,7 @@ signal authContext =
   Signal.map AuthMsg (Auth.signal authContext)
 
 
-init : (Session, Effects Action)
+init : (Session, Cmd Msg)
 init =
   let
     (auth, authFx) =
@@ -108,7 +108,7 @@ init =
     )
 
 
-update : Action -> Session -> (Session, Effects Action)
+update : Msg -> Session -> (Session, Cmd Msg)
 update action session =
   case action of
     -- TODO: handle ActiveUser.LoggedOut
@@ -210,7 +210,7 @@ update action session =
             , Effects.map DelegatorMsg updateFx )
 
 
-setSessionTopic : Session -> SessionView -> TopicId -> (Session, Effects Action)
+setSessionTopic : Session -> SessionView -> TopicId -> (Session, Cmd Msg)
 setSessionTopic session newSessionView topicId =
   let
     fx =
@@ -225,7 +225,7 @@ setSessionTopic session newSessionView topicId =
 
 -- if the user is LoggedOut, we don't need to update
 -- compose and survey
-updateViews : Session -> (Session, Effects Action)
+updateViews : Session -> (Session, Cmd Msg)
 updateViews session =
   case session.activeUser of
     LoggedOut ->

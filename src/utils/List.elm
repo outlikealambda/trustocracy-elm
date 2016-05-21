@@ -1,6 +1,6 @@
-module Utils.List
+module Utils.List exposing
   ( groupBy
-  ) where
+  ) 
 
 
 -- not the standard function groupBy, this groups _all_ elements

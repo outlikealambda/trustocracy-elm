@@ -30,7 +30,7 @@ type Relationship
   | Self
 
 
-view : Relationship -> Html
+view : Relationship -> Html msg
 view relationship =
   span [class (getCircleType relationship)] []
 

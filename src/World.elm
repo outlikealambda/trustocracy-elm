@@ -1,15 +1,15 @@
-module World
+module World exposing
   ( Action
   , Model
   , init
   , view
   , actions
   , update
-  ) where
+  )
 
 
 import Html exposing (Html, input, div, node, h1, text)
-import Effects exposing (Effects)
+import Platform.Cmd exposing (Cmd)
 import Html.Attributes exposing (class, rel, href, placeholder, value, style)
 import Task
 
@@ -23,7 +23,7 @@ import Topic.View
 
 
 import Routes exposing (Route)
-import TransitRouter
+import Location
 
 
 type alias Model = TransitRouter.WithRoute Routes.Route
@@ -32,23 +32,25 @@ type alias Model = TransitRouter.WithRoute Routes.Route
   }
 
 
-type Action
+type Msg
   = SessionMsg Session.Action
   | TopicsLoad (List Topic)
-  | RouterAction (TransitRouter.Action Routes.Route)
+  --| RouterAction (TransitRouter.Action Routes.Route)
+  | SetPath String
+  | PathUpdated String
   | SNoOp String
 
 
-actions : Auth.SignalContext -> Signal Action
+actions : Auth.SignalContext -> Sub Msg
 actions authContext =
   -- use mergeMany if you have other mailboxes or signals to feed into StartApp
-  Signal.mergeMany
-    [ Signal.map RouterAction TransitRouter.actions
-    , Signal.map SessionMsg (Session.signal authContext)
+  Sub.batch
+    [ Location.pathUpdates PathUpdated
+    -- TODO: , Signal.map SessionMsg (Session.signal authContext)
     ]
 
 
-mountRoute : Route -> Route -> Model -> (Model, Effects Action)
+mountRoute : Route -> Route -> Model -> (Model, Cmd Msg)
 mountRoute prevRoute route world =
   case route of
 
@@ -90,7 +92,7 @@ mountRoute prevRoute route world =
       ( world, Effects.none )
 
 
-routerConfig : TransitRouter.Config Route Action Model
+routerConfig : TransitRouter.Config Route Msg Model
 routerConfig =
   { mountRoute = mountRoute
   , getDurations = \_ _ _ -> (50, 200)
@@ -99,7 +101,7 @@ routerConfig =
   }
 
 
-init : String -> (Model, Effects Action)
+init : String -> (Model, Cmd Msg)
 init path =
   let
     (initialWorld, initialWorldFx) =
@@ -115,7 +117,7 @@ init path =
     )
 
 
-initialModel : (Model, Effects Action)
+initialModel : (Model, Cmd Msg)
 initialModel =
   let
     (session, sessionFx) =
@@ -128,7 +130,7 @@ initialModel =
     , Effects.map SessionMsg sessionFx )
 
 
-update : Action -> Model -> (Model, Effects Action)
+update : Msg -> Model -> (Model, Cmd Msg)
 update message world =
   case message of
     SessionMsg sessionAction ->
@@ -156,15 +158,15 @@ update message world =
         )
 
 
-updateSession : Session.Action -> Effects Action
+updateSession : Session.Action -> Cmd Msg
 updateSession sessionAction =
   Task.succeed sessionAction
     |> Task.map SessionMsg
     |> Effects.task
 
 
-view : Signal.Address Action -> Model -> Html
-view address world =
+view : Model -> Html Msg
+view world =
   div []
     [ Header.view
       <| Session.navHeader (Signal.forwardTo address SessionMsg) world.session
@@ -196,6 +198,6 @@ view address world =
     ]
 
 
-goHome : Effects Action
+goHome : Cmd Msg
 goHome =
   Effects.map (\_ -> SNoOp "going home") (Routes.redirect Routes.Topics)

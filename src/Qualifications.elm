@@ -1,4 +1,4 @@
-module Qualifications
+module Qualifications exposing
   ( Qualifications
   , Action
   , empty
@@ -8,7 +8,7 @@ module Qualifications
   , hasAnyQualification
   , view
   , viewForm
-  ) where
+  )
 
 
 import Html exposing (Html, ul, li, div, text)

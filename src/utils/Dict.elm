@@ -1,6 +1,6 @@
-module Utils.Dict
+module Utils.Dict exposing
   ( createListBuckets
-  ) where
+  )
 
 
 import Dict exposing (Dict)

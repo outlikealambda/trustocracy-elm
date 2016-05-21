@@ -1,8 +1,8 @@
-module Topic.Model
+module Topic.Model exposing
   ( Topic
   , empty
   , decoder
-  ) where
+  ) 
 
 
 import Json.Decode as Decode exposing ((:=))
