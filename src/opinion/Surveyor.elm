@@ -1,5 +1,5 @@
 -- displays plotted opinions
-module Opinion.Surveyor
+module Opinion.Surveyor exposing
   ( Surveyor
   , Action
     ( Init
@@ -10,7 +10,7 @@ module Opinion.Surveyor
   , update
   , focus
   , blur
-  ) where
+  )
 
 
 import Effects exposing (Effects)

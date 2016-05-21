@@ -1,4 +1,4 @@
-module Auth.Google
+module Auth.Google exposing
   ( AuthResponse
   , loginRequests
   , logoutRequests
@@ -9,7 +9,7 @@ module Auth.Google
     , Contacts
     )
   , address
-  ) where
+  )
 
 
 type alias AuthResponse =

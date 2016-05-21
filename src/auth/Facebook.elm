@@ -1,4 +1,4 @@
-module Auth.Facebook
+module Auth.Facebook exposing
   ( AuthResponse
   , Action
     ( Login
@@ -8,10 +8,7 @@ module Auth.Facebook
   , loginRequests
   , logoutRequests
   , address
-  ) where
-
-
-import Signal exposing (Signal, Mailbox)
+  )
 
 
 type Action

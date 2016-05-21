@@ -1,4 +1,4 @@
-module Common.API
+module Common.API exposing
   ( loginUser
   , checkForActiveUser
   , fetchUserByFacebookAuth
@@ -15,11 +15,10 @@ module Common.API
   , setTrustee
   , setTrustees
   , lookupTrustee
-  ) where
+  )
 
 
 import Base64
-import Effects exposing (Effects)
 import Http
 import Json.Decode as Decode exposing ((:=))
 import Json.Encode as Encode

@@ -1,9 +1,9 @@
-module Opinion.Opinion
+module Opinion.Opinion exposing
   ( Opinion
   , empty
   , decoder
   , encode
-  ) where
+  )
 
 
 import Trustee exposing (Trustee)

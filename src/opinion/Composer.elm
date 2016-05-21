@@ -1,4 +1,4 @@
-module Opinion.Composer
+module Opinion.Composer exposing
   ( Composer
   , Action
   , empty
@@ -6,7 +6,7 @@ module Opinion.Composer
   , update
   , view
   , navButton
-  ) where
+  )
 
 
 import Common.API as API

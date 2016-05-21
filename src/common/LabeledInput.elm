@@ -1,6 +1,6 @@
-module Common.LabeledInput
+module Common.LabeledInput exposing
   ( view
-  ) where
+  )
 
 import Html exposing (Html, input, div, label, text)
 import Html.Attributes exposing (class, value)

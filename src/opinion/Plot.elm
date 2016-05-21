@@ -1,5 +1,5 @@
 -- a plotted opinion; an opinion, and where it is (via paths)
-module Opinion.Plot
+module Opinion.Plot exposing
   ( Plot
   , Action
   , init
@@ -11,7 +11,7 @@ module Opinion.Plot
   , keyPlot
   , expand
   , collapse
-  ) where
+  )
 
 
 import Common.API as API

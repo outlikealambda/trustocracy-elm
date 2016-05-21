@@ -1,4 +1,4 @@
-module Common.Relationship
+module Common.Relationship exposing
   ( Relationship
     ( Bff
     , Trusted
@@ -12,7 +12,7 @@ module Common.Relationship
   , encoder
   , toString
   , toReadable
-  ) where
+  )
 
 
 import Html exposing (Html, div, span)

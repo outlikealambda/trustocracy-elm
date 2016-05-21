@@ -1,11 +1,11 @@
-module Opinion.Path
+module Opinion.Path exposing
   ( Path
   , viewPaths
   , decoder
   , getOpinerName
   , getOpinionId
   , getLength
-  ) where
+  )
 
 
 import Common.Relationship as Relationship exposing (Relationship)

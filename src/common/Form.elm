@@ -1,6 +1,6 @@
-module Common.Form
+module Common.Form exposing
   ( onEnter
-  ) where
+  )
 
 import Html
 import Html.Events as Events

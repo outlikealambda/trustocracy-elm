@@ -1,4 +1,4 @@
-module Opinion.Presenter
+module Opinion.Presenter exposing
   ( Presenter
   , prepare
   , view
@@ -6,7 +6,7 @@ module Opinion.Presenter
   , viewCollapsed
   , expand
   , collapse
-  ) where
+  )
 
 
 import Html exposing (Html, div, text, p, span)

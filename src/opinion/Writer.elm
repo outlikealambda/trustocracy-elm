@@ -1,9 +1,9 @@
-module Opinion.Writer
+module Opinion.Writer exposing
   ( Writer
   , Action
   , update
   , view
-  ) where
+  )
 
 
 import Html exposing (Html, div, textarea)
