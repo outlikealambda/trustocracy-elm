@@ -1,7 +1,7 @@
 -- displays plotted opinions
 module Opinion.Surveyor exposing
   ( Surveyor
-  , Action
+  , Msg
     ( Init
     )
   , empty
@@ -13,7 +13,6 @@ module Opinion.Surveyor exposing
   )
 
 
-import Platform.Cmd exposing (Cmd)
 import Html exposing (Html, div, text, h4)
 import Html.Attributes exposing (class)
 import Dict
@@ -21,6 +20,7 @@ import Dict
 
 import ActiveUser
 import Common.API as API
+import Location
 import Opinion.Plot as Plot exposing (Plot)
 import Opinion.Path as Path
 import Routes
@@ -46,7 +46,7 @@ type Msg
   | SetUnconnected (List Int)
   | SetPath Routes.Route
   | Init Topic ActiveUser.ActiveUser
-  | PlotMsg Key Plot.Action
+  | PlotMsg Key Plot.Msg
 
 
 type Zoom
@@ -100,7 +100,7 @@ update message model =
 
         keyedPlotsFxs =
           List.map (Plot.keyFx keyGen) plotPairs
-          |> List.map (\(k, fx) -> Effects.map (PlotMsg k) fx)
+          |> List.map (\(k, fx) -> Cmd.map (PlotMsg k) fx)
 
         connectedBuckets =
           List.map fst plotPairs
@@ -121,7 +121,7 @@ update message model =
           }
         , API.fetchIdsByTopic (SetUnconnected << Maybe.withDefault []) model.topic
           :: keyedPlotsFxs
-          |> Effects.batch
+          |> Cmd.batch
         )
 
     SetUnconnected ids ->
@@ -141,7 +141,7 @@ update message model =
         -- end up with a List (Effects (PlotMsg key Plot.Action))
         keyedPlotsFxs =
           List.map (Plot.keyFx keyGen) plotPairs
-          |> List.map (\(k, fx) -> Effects.map (PlotMsg k) fx)
+          |> List.map (\(k, fx) -> Cmd.map (PlotMsg k) fx)
 
         -- end up with a Dict (key, Plot)
         unconnectedBuckets =
@@ -154,18 +154,18 @@ update message model =
           | buckets = Dict.union unconnectedBuckets model.buckets
           , isSurveyed = True
           }
-        , Effects.batch keyedPlotsFxs
+        , Cmd.batch keyedPlotsFxs
         )
 
     SetPath route ->
-      ( model, Location.setPath <| encode route )
+      ( model, Location.setPath <| Routes.encode route )
 
     PlotMsg key subMsg ->
       case Dict.get key model.buckets of
 
         Nothing ->
           ( model
-          , Effects.none )
+          , Cmd.none )
 
         Just bucket ->
           let
@@ -175,7 +175,7 @@ update message model =
               Dict.insert key updatedBucket model.buckets
           in
             ( { model | buckets = updatedBuckets }
-            , Effects.map (PlotMsg key) fx
+            , Cmd.map (PlotMsg key) fx
             )
 
 
@@ -189,14 +189,14 @@ blur surveyor =
   { surveyor | zoom = Blur }
 
 
-type alias ViewContext =
-  { address : Signal.Address Action
+type alias ViewContext msg =
+  { transform : Msg -> msg
   , readRouteBuilder : Int -> Routes.Route
   , showAllRoute : Routes.Route
   }
 
 
-view : ViewContext -> Surveyor -> Html
+view : ViewContext msg -> Surveyor -> Html msg
 view context {zoom, buckets, longestPlotPath} =
   let
     focusTarget target (t, p) =
@@ -213,23 +213,23 @@ view context {zoom, buckets, longestPlotPath} =
   in
     div
       [ class <| "surveyor " ++ zoomedClass ]
-      <| showAll context.showAllRoute
+      <| showAll context
       :: (viewAllGrouped context longestPlotPath zoomedPlots)
 
 
-showAll : Routes.Route -> Html
-showAll showAllRoute =
+showAll : ViewContext msg -> Html msg
+showAll context =
   div
     [ class "show-all-wrapper cf" ]
     [ Html.span
       [ class "show-all"
-      , Routes.goToRoute <| SetPath showAllRoute
+      , Routes.goToRoute <| context.transform (SetPath context.showAllRoute)
       ]
       [ Html.text "Show all opinions" ]
     ]
 
 
-viewAllGrouped : ViewContext -> Int -> List (Int, Plot) -> List Html
+viewAllGrouped : ViewContext msg -> Int -> List (Int, Plot) -> List (Html msg)
 viewAllGrouped context longestPlotPath plots=
   let
     sectionConstructors =
@@ -247,12 +247,12 @@ viewAllGrouped context longestPlotPath plots=
     sections
 
 
-viewPlotSection : ViewContext -> Int -> List (Key, Plot) -> Maybe Html
-viewPlotSection address pathLength keyPlots =
+viewPlotSection : ViewContext msg -> Int -> List (Key, Plot) -> Maybe (Html msg)
+viewPlotSection context pathLength keyPlots =
   let
     groupDivs =
       groupsOfLength pathLength keyPlots
-        |> List.map (viewPlot address)
+        |> List.map (viewPlot context)
     header =
       h4
         [ class "group-section-header" ]
@@ -269,10 +269,10 @@ viewPlotSection address pathLength keyPlots =
         Just section
 
 
-viewPlot : ViewContext -> (Key, Plot) -> Html
-viewPlot {address, readRouteBuilder} (key, opg) =
+viewPlot : ViewContext msg -> (Key, Plot) -> Html msg
+viewPlot {transform, readRouteBuilder} (key, opg) =
   Plot.view
-    { address = Signal.forwardTo address (PlotMsg key)
+    { transform = transform << PlotMsg key
     , readRouteBuilder = readRouteBuilder
     }
     (key, opg)
@@ -308,7 +308,7 @@ degreeLabelTail n =
     n -> " connections"
 
 
-navButton : Surveyor -> Html
+navButton : Surveyor -> Html msg
 navButton {buckets, isSurveyed} =
   let
     count = Dict.size buckets

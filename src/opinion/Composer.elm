@@ -19,6 +19,7 @@ import User exposing (User)
 
 import Platform.Cmd exposing (Cmd)
 import Html exposing (Html, div, text, br)
+import Html.App
 import Html.Attributes exposing (class, placeholder, value)
 import Html.Events exposing (on, onClick)
 import Json.Decode as Decoder
@@ -36,7 +37,7 @@ type Msg
   | WriteComplete (Maybe Opinion)
   | Save
   | Publish
-  | WriterMsg Writer.Action
+  | WriterMsg Writer.Msg
   | SetView ComposerView
 
 
@@ -83,25 +84,25 @@ update action composer =
       ( { composer
         | opinion = Presenter.prepare <| Presenter.expand opinion
         }
-      , Effects.none )
+      , Cmd.none )
 
     WriteComplete maybeOpinion ->
       case Debug.log "written!" maybeOpinion of
         Nothing ->
-          ( composer, Effects.none )
+          ( composer, Cmd.none )
         Just opinion ->
-          ( composer, Effects.none )
+          ( composer, Cmd.none )
 
     SetView composerView ->
       ( { composer | composerView = composerView }
-      , Effects.none
+      , Cmd.none
       )
 
     WriterMsg msg ->
       ( { composer
         | opinion = Writer.update msg composer.opinion
         }
-      , Effects.none )
+      , Cmd.none )
 
     Save ->
       ( composer
@@ -119,7 +120,7 @@ view {opinion, composerView} =
   let content =
     case composerView of
       Write ->
-        Writer.view (Signal.forwardTo address WriterMsg) opinion
+        Html.App.map WriterMsg (Writer.view opinion)
       Preview ->
         div
           [ class "preview" ]
@@ -127,7 +128,7 @@ view {opinion, composerView} =
   in
     div
       [ class "composer" ]
-      [ composerNav address composerView
+      [ composerNav composerView
       , content
       ]
 
@@ -144,24 +145,24 @@ composerNav composerView =
   in
     div
       [ class "composer-nav cf" ]
-      [ div
+      [ Html.App.map SetView <| div
         [ class writeClasses
-        , onClick (Signal.forwardTo address SetView) Write
+        , onClick Write
         ]
         [ text "Write" ]
-      , div
+      , Html.App.map SetView <| div
         [ class previewClasses
-        , onClick (Signal.forwardTo address SetView) Preview
+        , onClick Preview
         ]
         [ text "Preview" ]
       , div
         [ class "publish-opinion"
-        , on "click" Decoder.value (\_ -> Signal.message address Publish)
+        , on "click" (Decoder.map (\_ -> Publish) Decoder.value)
         ]
         [ text "Publish" ]
       , div
         [ class "save-opinion"
-        , on "click" Decoder.value (\_ -> Signal.message address <| Debug.log "clicked" Save)
+        , on "click" (Decoder.map (\_ -> Debug.log "clicked" Save) Decoder.value)
         ]
         [ text "Save" ]
       ]

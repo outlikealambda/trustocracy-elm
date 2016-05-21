@@ -3,37 +3,33 @@ module World exposing
   , World
   , init
   , view
-  , actions
+  , subscriptions
   , update
   )
 
 
 import Html exposing (Html, input, div, node, h1, text)
-import Platform.Cmd exposing (Cmd)
 import Html.Attributes exposing (class, rel, href, placeholder, value, style)
 import Task
 
-
-import Auth exposing (Auth)
 import Common.API as API
 import Header
+import Location
+import Routes exposing (Route)
 import Session exposing (Session)
 import Topic.Model exposing (Topic)
 import Topic.View
 
 
-import Routes exposing (Route)
-import Location
-
-
-type alias World = TransitRouter.WithRoute Routes.Route
-  { session : Session
+type alias World =
+  { route : Route
+  , session : Session
   , topics : List Topic
   }
 
 
 type Msg
-  = SessionMsg Session.Action
+  = SessionMsg Session.Msg
   | TopicsLoad (List Topic)
   --| RouterAction (TransitRouter.Action Routes.Route)
   | SetPath String
@@ -41,12 +37,11 @@ type Msg
   | SNoOp String
 
 
-actions : Auth.SignalContext -> Sub Msg
-actions authContext =
-  -- use mergeMany if you have other mailboxes or signals to feed into StartApp
+subscriptions : World -> Sub Msg
+subscriptions _ =
   Sub.batch
     [ Location.pathUpdates PathUpdated
-    -- TODO: , Signal.map SessionMsg (Session.signal authContext)
+    , Sub.map SessionMsg Session.subscriptions
     ]
 
 
@@ -89,28 +84,19 @@ mountRoute route world =
       )
 
     Routes.EmptyRoute ->
-      ( world, Effects.none )
-
-
-routerConfig : TransitRouter.Config Route Msg World
-routerConfig =
-  { mountRoute = mountRoute
-  , getDurations = \_ _ _ -> (50, 200)
-  , actionWrapper = RouterAction
-  , routeDecoder = Routes.decode
-  }
+      ( world, Cmd.none )
 
 
 init : String -> (World, Cmd Msg)
 init path =
   let
     (initialWorld, initialWorldFx) =
-      initialWorld
+      initialModel
     (world, fx) =
-      TransitRouter.init routerConfig path initialWorld
+      mountRoute (Routes.decode path) initialWorld
   in
     ( world
-    , Effects.batch
+    , Cmd.batch
       [ fx
       , initialWorldFx
       ]
@@ -123,11 +109,11 @@ initialModel =
     (session, sessionFx) =
       Session.init
   in
-    ( { transitRouter = TransitRouter.empty Routes.EmptyRoute
-      , topics = []
+    ( { topics = []
       , session = session
+      , route = Routes.EmptyRoute
       }
-    , Effects.map SessionMsg sessionFx )
+    , Cmd.map SessionMsg sessionFx )
 
 
 update : Msg -> World -> (World, Cmd Msg)
@@ -139,7 +125,7 @@ update message world =
           Session.update sessionAction world.session
       in
         ( { world | session = update }
-        , Effects.map SessionMsg updateFx
+        , Cmd.map SessionMsg updateFx
         )
 
     SetPath path ->
@@ -150,50 +136,50 @@ update message world =
 
     TopicsLoad topics ->
       ( { world | topics = topics }
-      , Effects.none )
+      , Cmd.none )
 
     SNoOp str ->
       let
         _ = Debug.log "SNoOp" str
       in
         ( world
-        , Effects.none
+        , Cmd.none
         )
 
 
-updateSession : Session.Action -> Cmd Msg
+updateSession : Session.Msg -> Cmd Msg
 updateSession sessionAction =
   Task.succeed sessionAction
-    |> Task.map SessionMsg
-    |> Effects.task
+    |> Task.perform (\_ -> SNoOp "error performing successful task") SessionMsg
 
 
 view : World -> Html Msg
 view world =
   div []
     [ Header.view
-      <| Session.navHeader (Signal.forwardTo address SessionMsg) world.session
+      (\_ -> SNoOp "FIXME")
+      <| Session.navHeader SessionMsg world.session
     , div
       [ class "world" ]
-      ( case TransitRouter.getRoute world of
+      ( case world.route of
 
         Routes.Topics ->
-          [ Topic.View.viewAll world.topics ]
+          [ Topic.View.viewAll (\_ -> SNoOp "FIXME") world.topics ]
 
         Routes.Home ->
-          [ Topic.View.viewAll world.topics ]
+          [ Topic.View.viewAll (\_ -> SNoOp "FIXME") world.topics ]
 
         Routes.Survey _ ->
-          [ Session.view (Signal.forwardTo address SessionMsg) world.session ]
+          [ Session.view SessionMsg world.session ]
 
         Routes.Compose _ ->
-          [ Session.view (Signal.forwardTo address SessionMsg) world.session ]
+          [ Session.view SessionMsg world.session ]
 
         Routes.Read _ _ ->
-          [ Session.view (Signal.forwardTo address SessionMsg) world.session ]
+          [ Session.view SessionMsg world.session ]
 
         Routes.UserDelegates ->
-          [ Session.view (Signal.forwardTo address SessionMsg) world.session ]
+          [ Session.view SessionMsg world.session ]
 
         Routes.EmptyRoute ->
           [ text "" ]

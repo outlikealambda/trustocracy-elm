@@ -1,18 +1,16 @@
 module Auth exposing
   ( Auth
-  , Action
-  , SignalContext
-  , signal
+  , Msg
   , Context
+  , subscriptions
   , init
   , update
   , view
-  , logoutSignal
   )
 
 
-import Platform.Cmd exposing (Cmd)
 import Html exposing (Html, h2, div, text, input, button, a)
+import Html.App
 import Html.Attributes as Attribute exposing (placeholder, value, class)
 import Html.Events exposing (on, targetValue, onClick)
 import String
@@ -23,6 +21,7 @@ import Common.API as API
 import Common.Form as Form
 import ActiveUser exposing (ActiveUser)
 import User exposing (User)
+import Auth.Cookie as Cookie
 import Auth.Facebook as Facebook
 import Auth.Google as Google
 
@@ -34,7 +33,7 @@ type alias Auth =
   }
 
 
-init : (Auth, Effects Action)
+init : (Auth, Cmd Msg)
 init =
   ( { message = "Welcome, please enter your user id"
     , input = Empty
@@ -49,37 +48,37 @@ type InputId
   | UserCreds String String
 
 
-type Action
+type Credential
+  = Facebook
+  | Google
+
+
+type Msg
   = UpdateInput String String
   | ValidateUser (Maybe User)
   | SetVisible Bool
   | Logout
   | LoadUser
+  | Login Credential
   | FacebookAuth (Maybe Facebook.AuthResponse)
   | GoogleAuth (Maybe Google.AuthResponse)
 
 
-type alias SignalContext =
-  { facebook : Signal (Maybe Facebook.AuthResponse)
-  , google : Signal (Maybe Google.AuthResponse)
-  }
-
-
-signal : SignalContext -> Signal Action
-signal signalContext =
-  Signal.mergeMany
-    [ Signal.map FacebookAuth signalContext.facebook
-    , Signal.map GoogleAuth signalContext.google
+subscriptions : Sub Msg
+subscriptions =
+  Sub.batch
+    [ Facebook.authResponses FacebookAuth
+    , Google.authResponses GoogleAuth
     ]
 
 
 type alias Context a =
-  { next : (Action -> a)
+  { next : (Msg -> a)
   , setUser : (ActiveUser -> a)
   }
 
 
-update : Context a -> Action -> Auth -> (Auth, Effects a)
+update : Context a -> Msg -> Auth -> (Auth, Cmd a)
 update context message auth =
   case message of
 
@@ -89,12 +88,12 @@ update context message auth =
 
         "" ->
           ( { auth | input = Empty }
-          , Effects.none
+          , Cmd.none
           )
 
         _ ->
           ( { auth | input = UserCreds name secret }
-          , Effects.none
+          , Cmd.none
           )
 
     LoadUser ->
@@ -102,13 +101,16 @@ update context message auth =
         case auth.input of
 
           UserCreds name secret ->
-            API.loginUser (name, secret) ValidateUser
+            API.loginUser
+              (\_ -> ValidateUser Nothing)
+              (\user -> ValidateUser (Just user))
+              (name, secret)
 
           Empty ->
-            Effects.none
+            Cmd.none
       in
         ( auth
-        , Effects.map context.next fx
+        , Cmd.map context.next fx
         )
 
     ValidateUser maybeUser ->
@@ -117,7 +119,7 @@ update context message auth =
         -- could just set the property on the model here?
         Nothing ->
           ( { auth | message = "nope, please try again" }
-          , Effects.none
+          , Cmd.none
           )
 
         Just user ->
@@ -126,30 +128,41 @@ update context message auth =
             , input = Empty
             }
           , saveUser user
-            |> Effects.task
-            |> Effects.map context.setUser
+            |> Task.perform
+              (\_ -> context.setUser ActiveUser.LoggedOut)
+              context.setUser
           )
 
     SetVisible isVisible ->
       ( { auth | visible = isVisible }
-      , Effects.none )
+      , Cmd.none )
+
+
+    Login credentials ->
+      ( auth
+      , case credentials of
+          Google ->
+            Google.login
+
+          Facebook ->
+            Facebook.login
+      )
 
     Logout ->
       ( { auth
         | input = Empty
         }
       , clearUser
-        |> Effects.task
-        |> Effects.map context.setUser
+        |> (Cmd.map context.setUser)
       )
 
     FacebookAuth maybeAuthResponse ->
       let
         fx = Maybe.map (API.fetchUserByFacebookAuth ValidateUser) maybeAuthResponse
-          |> Maybe.withDefault (Effects.task (Task.succeed (ValidateUser Nothing)))
+          |> Maybe.withDefault (Cmd.none)
       in
         ( auth
-        , Effects.map context.next fx
+        , Cmd.map context.next fx
         )
 
     GoogleAuth maybeAuthResponse ->
@@ -157,7 +170,10 @@ update context message auth =
         fx =
           case maybeAuthResponse of
             Nothing ->
-              Task.succeed (ValidateUser Nothing) |> Effects.task
+              Task.perform
+                (\_ -> ValidateUser Nothing)
+                ValidateUser
+                (Task.succeed Nothing)
             Just gaResponse ->
               if String.contains "contacts.read" gaResponse.scope then
                 API.updateGoogleContacts ValidateUser (Debug.log "gaContacts" gaResponse)
@@ -165,16 +181,19 @@ update context message auth =
                 API.fetchUserByGoogleAuth ValidateUser (Debug.log "gaLogin" gaResponse)
         in
           ( auth
-          , Effects.map context.next fx
+          , Cmd.map context.next fx
           )
 
 
-clearUser : Task x ActiveUser
+clearUser : Cmd ActiveUser
 clearUser =
-  Task.map3 (\_ _ _ -> ActiveUser.LoggedOut)
-    (Signal.send mailbox.address ())
-    (Signal.send Facebook.address Facebook.Logout)
-    (Signal.send Google.address Google.Logout)
+  Cmd.map
+    (\_ -> ActiveUser.LoggedOut)
+    (Cmd.batch
+      [ Cookie.logout
+      , Facebook.logout
+      , Google.logout
+      ])
 
 
 saveUser : User -> Task x ActiveUser
@@ -182,21 +201,21 @@ saveUser user =
   Task.succeed (ActiveUser.LoggedIn user)
 
 
-type alias ViewContext =
+type alias ViewContext msg =
   { activeUser : ActiveUser
-  , address : Signal.Address Action
+  , transform : Msg -> msg
   }
 
 
-view : ViewContext -> Auth -> List Html
-view context auth =
-  [ viewHeader context
-  , viewForm context.address auth
+view : ViewContext msg -> Auth -> List (Html msg)
+view {transform, activeUser} auth =
+  [ Html.App.map transform <| viewHeader activeUser
+  , Html.App.map transform <| viewForm auth
   ]
 
 
-viewHeader : ViewContext -> Html
-viewHeader {address, activeUser}=
+viewHeader : ActiveUser -> Html Msg
+viewHeader activeUser =
   let
     (userName, login) =
       case activeUser of
@@ -204,7 +223,7 @@ viewHeader {address, activeUser}=
           ( []
           , [ div [ class "login" ]
               [ a
-                [ onClick address (SetVisible True) ]
+                [ onClick (SetVisible True) ]
                 [ text "login"]
               ]
             ]
@@ -215,7 +234,7 @@ viewHeader {address, activeUser}=
           , [ div
               [ class "logout" ]
               [ a
-                [ onClick address Logout ]
+                [ onClick Logout ]
                 [ text "logout"]
               ]
             ]
@@ -227,8 +246,8 @@ viewHeader {address, activeUser}=
       ++ userName
 
 
-viewForm : Auth -> Html Action
-viewForm address auth =
+viewForm : Auth -> Html Msg
+viewForm auth =
   let
     (name, secret) =
       case auth.input of
@@ -264,31 +283,18 @@ viewForm address auth =
           ]
         , button
           [ class "fb-login"
-          , onClick Facebook.address Facebook.Login
+          , onClick <| Login Facebook
           ]
           [ text "FB Login" ]
         , button
           [ class "ga-login"
-          , onClick Google.address Google.Login
+          , onClick <| Login Google
           ]
           [ text "GA Login" ]
         , button
           [ class "cancel-login"
-          , onClick address (SetVisible False)
+          , onClick (SetVisible False)
           ]
           [ text "Cancel" ]
         ]
       ]
-
-
-
-
--- FOR LOGOUT PURPOSES (clear jwt cookie)
-mailbox : Signal.Mailbox ()
-mailbox =
-  Signal.mailbox ()
-
-
-logoutSignal : Signal ()
-logoutSignal =
-  mailbox.signal

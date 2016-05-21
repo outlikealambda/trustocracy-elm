@@ -15,6 +15,7 @@ module Opinion.Plot exposing
 
 
 import Common.API as API
+import Location
 import Opinion.Opinion as Opinion exposing (Opinion)
 import Opinion.Presenter as Presenter
 import Opinion.Path as Path exposing (Path)
@@ -22,9 +23,10 @@ import Routes
 import Utils.List as ListUtils
 
 
-import Platform.Cmd exposing (Cmd)
 import Html exposing (Html, div, span, text)
+import Html.App
 import Html.Attributes as Attribute exposing (class)
+import Json.Encode as Json
 import Dict
 
 
@@ -85,11 +87,11 @@ update message plot =
       )
 
     SetPath route ->
-      ( plot, Location.setPath <| encode route )
+      ( plot, Location.setPath <| Routes.encode route )
 
 
-type alias ViewContext =
-  { address : Signal.Address Msg
+type alias ViewContext msg =
+  { transform : Msg -> msg
   , readRouteBuilder : Int -> Routes.Route
   }
 
@@ -109,8 +111,8 @@ setExpand exp plot =
   { plot | expanded = exp }
 
 
-view : ViewContext -> (Int, Plot) -> Html
-view {address, readRouteBuilder} (k, {opinion, paths, expanded}) =
+view : ViewContext msg -> (Int, Plot) -> Html msg
+view {transform, readRouteBuilder} (k, {opinion, paths, expanded}) =
   let
     (header, expandClass) =
       if expanded then
@@ -118,9 +120,10 @@ view {address, readRouteBuilder} (k, {opinion, paths, expanded}) =
       else
         (collapsedHeader paths, "collapsed")
   in
-    div
+    Html.App.map transform <| div
       [ class <| "opg t-card " ++ expandClass
-      , Attribute.key <| toString k ]
+      , Attribute.property "key" (Json.int k)
+      ]
       [ header
       , div
         [ class "t-card-body" ]
@@ -128,7 +131,7 @@ view {address, readRouteBuilder} (k, {opinion, paths, expanded}) =
       ]
 
 
-collapsedHeader : List Path -> Html
+collapsedHeader : List Path -> Html msg
 collapsedHeader paths =
   let
     pathHeader =
@@ -151,14 +154,14 @@ collapsedHeader paths =
       ]
 
 
-expandedHeader : List Path -> Html
+expandedHeader : List Path -> Html msg
 expandedHeader paths =
   div
     [ class <| "t-card-title connections" ]
     [ Path.viewPaths paths ]
 
 
-countBadge : Int -> Html
+countBadge : Int -> Html msg
 countBadge c =
   let
     (n, label) =

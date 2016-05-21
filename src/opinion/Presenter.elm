@@ -54,7 +54,7 @@ viewExpanded {text, qualifications, opiner, influence, fetched} =
     [ Qualifications.view qualifications
     , div
       [ class "text markdown"]
-      [ Markdown.toHtml text ]
+      [ Markdown.toHtml [] text ]
     ]
 
 
@@ -99,13 +99,13 @@ buildClasses fetched =
     if fetched then "fetched" else ""
 
 
-viewSnippet : String -> Html
+viewSnippet : String -> Html msg
 viewSnippet snippet =
   div [ class "text snippet" ]
     [ p [] [ text snippet ]
     ]
 
-viewOpiner : Trustee -> Int -> Html
+viewOpiner : Trustee -> Int -> Html msg
 viewOpiner {name} influence =
   div
     [ class "opiner cf" ]

@@ -1,20 +1,9 @@
-module Auth.Facebook exposing
+port module Auth.Facebook exposing
   ( AuthResponse
-  , Action
-    ( Login
-    , Logout
-    )
-  , toString
-  , loginRequests
-  , logoutRequests
-  , address
+  , login
+  , logout
+  , authResponses
   )
-
-
-type Action
-  = NoOp
-  | Login
-  | Logout
 
 
 type alias AuthResponse =
@@ -24,31 +13,17 @@ type alias AuthResponse =
   , signedRequest : String
   }
 
-loginRequests :  List String -> Cmd msg
-loginRequests =
-  let
-    filterLoginAction a =
-      case a of
-        Login -> Just []
-        _ -> Nothing
-  in
-    Signal.filterMap filterLoginAction [] mailbox.signal
+
+port fbAuthResponses : (Maybe AuthResponse -> msg) -> Sub msg
+authResponses : (Maybe AuthResponse -> msg) -> Sub msg
+authResponses = fbAuthResponses
 
 
-logoutRequests : () -> Cmd msg
-logoutRequests =
-  let
-    filterLogoutAction a =
-      case a of
-        Logout -> Just ()
-        _ -> Nothing
-  in
-    Signal.filterMap filterLogoutAction () mailbox.signal
+port fbLogin : () -> Cmd msg
+login : Cmd msg
+login = fbLogin ()
 
 
-toString : Action -> String
-toString action =
-  case action of
-    Login -> "login"
-    Logout -> "logout"
-    _ -> "noop"
+port fbLogout : () -> Cmd msg
+logout : Cmd msg
+logout = fbLogout ()

@@ -2,7 +2,7 @@ module Topic.Model exposing
   ( Topic
   , empty
   , decoder
-  ) 
+  )
 
 
 import Json.Decode as Decode exposing ((:=))

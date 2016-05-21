@@ -14,23 +14,23 @@ import Topic.Model exposing (Topic)
 import Routes
 
 
-view : Topic -> Html
-view topic =
+view : (Routes.Route -> msg) -> Topic -> Html msg
+view onRoute topic =
   div
-    [ class "topic", clickTo <| Routes.encode (Routes.Survey topic.id) ]
+    [ class "topic", clickTo <| onRoute (Routes.Survey topic.id) ]
     [ text topic.text ]
 
 
-viewAll : List Topic -> Html
-viewAll topics =
+viewAll : (Routes.Route -> msg) -> List Topic -> Html msg
+viewAll onRoute topics =
   div [ class "topics" ]
-    (List.map view topics)
+    (List.map (view onRoute) topics)
 
 
-clickTo : String -> Html.Attribute
-clickTo path =
+clickTo : msg -> Html.Attribute msg
+clickTo msg =
   onWithOptions
     "click"
     { stopPropagation = True, preventDefault = True }
-    Json.value
-    (\_ -> Signal.message TransitRouter.pushPathAddress path)
+    (Json.map (\_ -> msg) Json.value)
+    --(\_ -> Signal.message TransitRouter.pushPathAddress path)
