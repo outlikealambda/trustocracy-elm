@@ -67,7 +67,8 @@ type Msg
 
   -- private
   | NoOp
-  | SetTopic (Maybe Topic)
+  | Error String
+  | SetTopic Topic
   | SetPath Routes.Route
 
   -- exposed to children
@@ -156,16 +157,18 @@ update action session =
     NoOp ->
       ( session, Cmd.none )
 
+    Error err ->
+      let
+        msg = Debug.log "error!" err
+      in
+        ( session, Cmd.none )
+
     -- we only propagate topic, and not user, because
     -- the app shouldn't normally be switching users, and only
     -- does so in the current dev environment?
     -- TODO: reload views on user change/logout
-    SetTopic maybeTopic ->
-      case maybeTopic of
-        Nothing ->
-          ( session, Cmd.none )
-        Just topic ->
-          updateViews { session | topic = topic }
+    SetTopic topic ->
+      updateViews { session | topic = topic }
 
     SetPath route ->
       ( session, Location.setPath <| Routes.encode route )
@@ -226,7 +229,7 @@ setSessionTopic session newSessionView topicId =
       if session.topic.id == topicId then
         Cmd.none
       else
-        API.fetchTopic SetTopic topicId
+        API.fetchTopic Error SetTopic topicId
   in
     ( { session | currentView = newSessionView }
     , fx

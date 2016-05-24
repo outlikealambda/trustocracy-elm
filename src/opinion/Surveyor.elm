@@ -47,6 +47,7 @@ type Msg
   | SetPath Routes.Route
   | Init Topic ActiveUser.ActiveUser
   | PlotMsg Key Plot.Msg
+  | Error String
 
 
 type Zoom
@@ -75,12 +76,14 @@ update message model =
           case activeUser of
             ActiveUser.LoggedOut ->
               API.fetchIdsByTopic
-                (SetUnconnected << Maybe.withDefault [])
+                Error
+                SetUnconnected
                 topic
 
             ActiveUser.LoggedIn _ ->
               API.fetchConnected
-                (SetConnected << Maybe.withDefault [])
+                Error
+                SetConnected
                 topic
       in
         ( { model
@@ -119,7 +122,7 @@ update message model =
           , buckets = Dict.union connectedBuckets model.buckets
           , longestPlotPath = longestPlotPath
           }
-        , API.fetchIdsByTopic (SetUnconnected << Maybe.withDefault []) model.topic
+        , API.fetchIdsByTopic Error SetUnconnected model.topic
           :: keyedPlotsFxs
           |> Cmd.batch
         )
@@ -178,6 +181,11 @@ update message model =
             , Cmd.map (PlotMsg key) fx
             )
 
+    Error err ->
+      let
+        msg = Debug.log "error in Surveyer!" err
+      in
+        ( model, Cmd.none )
 
 focus : Int -> Surveyor -> Surveyor
 focus target surveyor =

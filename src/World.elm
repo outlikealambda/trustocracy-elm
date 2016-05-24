@@ -30,8 +30,8 @@ type alias World =
 
 type Msg
   = SessionMsg Session.Msg
-  | TopicsLoad (List Topic)
-  --| RouterAction (TransitRouter.Action Routes.Route)
+  | TopicsLoadComplete (List Topic)
+  | TopicsLoadFailed (String)
   | SetPath String
   | PathUpdated String
   | SNoOp String
@@ -51,7 +51,7 @@ mountRoute route world =
 
     Routes.Home ->
       ( world
-      , API.fetchAllTopics (TopicsLoad << Maybe.withDefault [])
+      , API.fetchAllTopics TopicsLoadFailed TopicsLoadComplete
       )
 
     Routes.Compose topicId ->
@@ -75,7 +75,7 @@ mountRoute route world =
     -- home page and we don't want to continually redirect
     Routes.Topics ->
       ( world
-      , API.fetchAllTopics (TopicsLoad << Maybe.withDefault [])
+      , API.fetchAllTopics TopicsLoadFailed TopicsLoadComplete
       )
 
     Routes.UserDelegates ->
@@ -134,9 +134,16 @@ update message world =
     PathUpdated path ->
       mountRoute (Routes.decode path) world
 
-    TopicsLoad topics ->
+    TopicsLoadComplete topics ->
       ( { world | topics = topics }
       , Cmd.none )
+
+    TopicsLoadFailed err ->
+      let
+        msg = Debug.log "Failed to load topics" err
+      in
+        ( { world | topics = [] }
+        , Cmd.none )
 
     SNoOp str ->
       let

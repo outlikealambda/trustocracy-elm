@@ -39,7 +39,7 @@ init =
     , input = Empty
     , visible = False
     }
-  , API.checkForActiveUser ValidateUser
+  , API.checkForActiveUser InvalidUser ValidUser
   )
 
 
@@ -55,7 +55,8 @@ type Credential
 
 type Msg
   = UpdateInput String String
-  | ValidateUser (Maybe User)
+  | ValidUser User
+  | InvalidUser String
   | SetVisible Bool
   | Logout
   | LoadUser
@@ -101,10 +102,7 @@ update context message auth =
         case auth.input of
 
           UserCreds name secret ->
-            API.loginUser
-              (\_ -> ValidateUser Nothing)
-              (\user -> ValidateUser (Just user))
-              (name, secret)
+            API.loginUser InvalidUser ValidUser (name, secret)
 
           Empty ->
             Cmd.none
@@ -113,25 +111,19 @@ update context message auth =
         , Cmd.map context.next fx
         )
 
-    ValidateUser maybeUser ->
-      case Debug.log "maybeUser" maybeUser of
+    InvalidUser message ->
+      -- could just set the property on the model here?
+      ( { auth | message = message }
+      , Cmd.none
+      )
 
-        -- could just set the property on the model here?
-        Nothing ->
-          ( { auth | message = "nope, please try again" }
-          , Cmd.none
-          )
-
-        Just user ->
-          ( { auth
-            | visible = False
-            , input = Empty
-            }
-          , saveUser user
-            |> Task.perform
-              (\_ -> context.setUser ActiveUser.LoggedOut)
-              context.setUser
-          )
+    ValidUser user ->
+      ( { auth
+        | visible = False
+        , input = Empty
+        }
+      , saveUser context.setUser user
+      )
 
     SetVisible isVisible ->
       ( { auth | visible = isVisible }
@@ -158,8 +150,11 @@ update context message auth =
 
     FacebookAuth maybeAuthResponse ->
       let
-        fx = Maybe.map (API.fetchUserByFacebookAuth ValidateUser) maybeAuthResponse
-          |> Maybe.withDefault (Cmd.none)
+        fx =
+          (Maybe.map
+            (API.fetchUserByFacebookAuth InvalidUser ValidUser)
+            maybeAuthResponse)
+          |> Maybe.withDefault Cmd.none
       in
         ( auth
         , Cmd.map context.next fx
@@ -167,22 +162,22 @@ update context message auth =
 
     GoogleAuth maybeAuthResponse ->
       let
+        performGoogleRequest gaAuthResponse =
+          if String.contains "contacts.read" gaAuthResponse.scope then
+            API.updateGoogleContacts InvalidUser ValidUser
+              (Debug.log "gaContacts" gaAuthResponse)
+          else
+            API.fetchUserByGoogleAuth InvalidUser ValidUser
+              (Debug.log "gaLogin" gaAuthResponse)
         fx =
-          case maybeAuthResponse of
-            Nothing ->
-              Task.perform
-                (\_ -> ValidateUser Nothing)
-                ValidateUser
-                (Task.succeed Nothing)
-            Just gaResponse ->
-              if String.contains "contacts.read" gaResponse.scope then
-                API.updateGoogleContacts ValidateUser (Debug.log "gaContacts" gaResponse)
-              else
-                API.fetchUserByGoogleAuth ValidateUser (Debug.log "gaLogin" gaResponse)
-        in
-          ( auth
-          , Cmd.map context.next fx
-          )
+          (Maybe.map
+            performGoogleRequest
+            maybeAuthResponse)
+          |> Maybe.withDefault Cmd.none
+      in
+        ( auth
+        , Cmd.map context.next fx
+        )
 
 
 clearUser : Cmd ActiveUser
@@ -196,9 +191,12 @@ clearUser =
       ])
 
 
-saveUser : User -> Task x ActiveUser
-saveUser user =
-  Task.succeed (ActiveUser.LoggedIn user)
+saveUser : (ActiveUser -> a) -> User -> Cmd a
+saveUser setUser user =
+  Task.perform
+    (\_ -> setUser ActiveUser.LoggedOut)  -- never hit
+    setUser
+    (Task.succeed (ActiveUser.LoggedIn user))
 
 
 type alias ViewContext msg =

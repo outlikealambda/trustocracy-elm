@@ -17,7 +17,6 @@ import Topic.Model as Topic exposing (Topic)
 import Trustee
 import User exposing (User)
 
-import Platform.Cmd exposing (Cmd)
 import Html exposing (Html, div, text, br)
 import Html.App
 import Html.Attributes exposing (class, placeholder, value)
@@ -34,7 +33,8 @@ type alias Composer =
 
 type Msg
   = FetchComplete Opinion
-  | WriteComplete (Maybe Opinion)
+  | WriteComplete Opinion
+  | Error String
   | Save
   | Publish
   | WriterMsg Writer.Msg
@@ -71,7 +71,8 @@ init user topic =
   in
     ( { empty | topic = topic }
     , API.fetchDraftByTopic
-      (FetchComplete << Maybe.withDefault default)
+      Error
+      FetchComplete
       topic.id
     )
 
@@ -86,12 +87,17 @@ update action composer =
         }
       , Cmd.none )
 
-    WriteComplete maybeOpinion ->
-      case Debug.log "written!" maybeOpinion of
-        Nothing ->
-          ( composer, Cmd.none )
-        Just opinion ->
-          ( composer, Cmd.none )
+    WriteComplete opinion ->
+      let
+        msg = Debug.log "written!" opinion
+      in
+        ( composer, Cmd.none )
+
+    Error err ->
+      let
+        msg = Debug.log "failed to write!" err
+      in
+        ( composer, Cmd.none )
 
     SetView composerView ->
       ( { composer | composerView = composerView }
@@ -106,12 +112,12 @@ update action composer =
 
     Save ->
       ( composer
-      , API.saveOpinion WriteComplete composer.opinion composer.topic.id
+      , API.saveOpinion Error WriteComplete composer.opinion composer.topic.id
       )
 
     Publish ->
       ( composer
-      , API.publishOpinion WriteComplete composer.opinion composer.topic.id
+      , API.publishOpinion Error WriteComplete composer.opinion composer.topic.id
       )
 
 

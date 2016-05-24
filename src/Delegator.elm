@@ -40,7 +40,8 @@ type Msg
   | SaveDelegateComplete (List Trustee)
   | InputUpdate String
   | Lookup
-  | LookupComplete (Maybe Trustee)
+  | LookupComplete Trustee
+  | LookupFailed String
   | RequestGoogleContacts
   | SetPath Routes.Route
 
@@ -124,41 +125,39 @@ update message delegator =
 
     Lookup ->
       ( delegator
-      , API.lookupTrustee LookupComplete delegator.input
+      , API.lookupTrustee LookupFailed LookupComplete delegator.input
       )
 
-    LookupComplete maybeTrustee ->
-      case maybeTrustee of
-        Nothing ->
-          ( { delegator
-            | errors =
-              ("Sorry, we couldn't find anyone with the email " ++ delegator.input)
-              :: delegator.errors
-            }
-
-          , Cmd.none )
-        Just trustee ->
-          let
-            isNew =
-              not <| List.any (Trustee.isTrustee trustee) delegator.current
-            (fx, error) =
-              -- if it's a new person, let's save them as a candidate
-              if isNew then
-                ( { trustee | relationship = Relationship.Candidate }
-                  |> Task.succeed
-                  |> Task.perform (\_ -> NoOp) ValidateMove
-                , ""
-                )
-              else
-                ( Cmd.none
-                , trustee.name ++ " is already linked to you :)"
-                )
-          in
-            ( { delegator
-              | input = ""
-              , errors = error :: delegator.errors }
-            , fx
+    LookupComplete trustee ->
+      let
+        isNew =
+          not <| List.any (Trustee.isTrustee trustee) delegator.current
+        (fx, error) =
+          -- if it's a new person, let's save them as a candidate
+          if isNew then
+            ( { trustee | relationship = Relationship.Candidate }
+              |> Task.succeed
+              |> Task.perform (\_ -> NoOp) ValidateMove
+            , ""
             )
+          else
+            ( Cmd.none
+            , trustee.name ++ " is already linked to you :)"
+            )
+      in
+        ( { delegator
+          | input = ""
+          , errors = error :: delegator.errors }
+        , fx
+        )
+
+    LookupFailed err ->
+      ( { delegator
+        | errors =
+          ("Sorry, we couldn't find anyone with the email " ++ delegator.input ++ ":" ++ err)
+          :: delegator.errors
+        }
+      , Cmd.none )
 
     RequestGoogleContacts ->
       ( delegator, Google.requestContacts )

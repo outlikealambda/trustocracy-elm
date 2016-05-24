@@ -40,6 +40,7 @@ type alias Plot =
 
 type Msg
   = FetchComplete Opinion
+  | FetchFailed String
   | SetPath Routes.Route
 
 
@@ -59,7 +60,8 @@ init opinionId opaths =
 
     opinionFx =
       API.fetchOpinionById
-        (FetchComplete << Maybe.withDefault Opinion.empty)
+        FetchFailed
+        FetchComplete
         opinionId
 
     opinion =
@@ -85,6 +87,12 @@ update message plot =
         }
       , Cmd.none
       )
+
+    FetchFailed err ->
+      let
+        msg = Debug.log "lost the plot!" err
+      in
+        ( plot, Cmd.none )
 
     SetPath route ->
       ( plot, Location.setPath <| Routes.encode route )

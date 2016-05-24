@@ -58,7 +58,7 @@ secureEndpoint =
 
 
 loginUser : (String -> a) -> (User -> a) -> (String, String) -> Cmd a
-loginUser errTransform userTransform (name, secret) =
+loginUser onError onSuccess (name, secret) =
   let
     encodedCredentials =
       Base64.encode <| (name ++ ":" ++ secret)
@@ -79,27 +79,11 @@ loginUser errTransform userTransform (name, secret) =
             |> Http.fromJson User.decoder
             |> Task.mapError httpErrorToString
   in
-    Task.perform errTransform userTransform task
+    Task.perform onError onSuccess task
 
 
-httpErrorToString : Http.Error -> String
-httpErrorToString err =
-  case err of
-    Http.Timeout ->
-      "timeout error"
-
-    Http.NetworkError ->
-      "network error"
-
-    Http.UnexpectedPayload msg ->
-      "json parse error: " ++ msg
-
-    Http.BadResponse code msg ->
-      "http response error: " ++ (toString code) ++ " " ++ msg
-
-
-checkForActiveUser : (Maybe User -> a) -> Cmd a
-checkForActiveUser transform =
+checkForActiveUser : (String -> a) -> (User -> a) -> Cmd a
+checkForActiveUser onError onSuccess =
   Http.send Http.defaultSettings
     { verb = "GET"
     , headers = []
@@ -107,8 +91,8 @@ checkForActiveUser transform =
     , body = Http.empty
     }
     |> Http.fromJson User.decoder
-    |> Task.toMaybe
-    |> Task.perform (\_ -> transform Nothing) transform
+    |> Task.mapError httpErrorToString
+    |> Task.perform onError onSuccess
 
 
 {- send signedRequest string as a header
@@ -120,8 +104,8 @@ checkForActiveUser transform =
        - payload (second half)
        - our app secret (stored on server)
 -}
-fetchUserByFacebookAuth : (Maybe User -> a) -> Facebook.AuthResponse -> Cmd a
-fetchUserByFacebookAuth transform fbAuthResponse =
+fetchUserByFacebookAuth : (String -> a) -> (User -> a) -> Facebook.AuthResponse -> Cmd a
+fetchUserByFacebookAuth onError onSuccess fbAuthResponse =
   Http.send Http.defaultSettings
     { verb = "GET"
     , headers =
@@ -132,23 +116,25 @@ fetchUserByFacebookAuth transform fbAuthResponse =
     , body = Http.empty
     }
   |> Http.fromJson User.decoder
-  |> Task.toMaybe
-  |> Task.perform (\_ -> transform Nothing) transform
+  |> Task.mapError httpErrorToString
+  |> Task.perform onError onSuccess
 
 
-fetchUserByGoogleAuth : (Maybe User -> a) -> Google.AuthResponse -> Cmd a
-fetchUserByGoogleAuth transform =
+fetchUserByGoogleAuth : (String -> a) -> (User -> a) -> Google.AuthResponse -> Cmd a
+fetchUserByGoogleAuth onError onSuccess gAuthResponse =
   transmitGoogleAuth (openEndpoint ["gaUser"])
-    >> Task.perform (\_ -> transform Nothing) transform
+    >> Task.perform onError onSuccess
+    <| gAuthResponse
 
 
-updateGoogleContacts : (Maybe User -> a) -> Google.AuthResponse -> Cmd a
-updateGoogleContacts transform =
+updateGoogleContacts : (String -> a) -> (User -> a) -> Google.AuthResponse -> Cmd a
+updateGoogleContacts onError onSuccess gAuthResponse =
   transmitGoogleAuth (secureEndpoint ["gaContacts"])
-    >> Task.perform (\_ -> transform Nothing) transform
+    >> Task.perform onError onSuccess
+    <| gAuthResponse
 
 
-transmitGoogleAuth : Url -> Google.AuthResponse -> Task x (Maybe User)
+transmitGoogleAuth : Url -> Google.AuthResponse -> Task String User
 transmitGoogleAuth url gaResponse =
   Http.send Http.defaultSettings
     { verb = "GET"
@@ -160,7 +146,7 @@ transmitGoogleAuth url gaResponse =
     , body = Http.empty
     }
   |> Http.fromJson User.decoder
-  |> Task.toMaybe
+  |> Task.mapError httpErrorToString
 
 
 --------------
@@ -168,65 +154,66 @@ transmitGoogleAuth url gaResponse =
 --------------
 
 
-fetchConnected : (Maybe (List Path) -> a) -> Topic -> Cmd a
-fetchConnected transform topic =
+fetchConnected : (String -> a) -> (List Path -> a) -> Topic -> Cmd a
+fetchConnected onError onSuccess topic =
   secureEndpoint ["topic/", toString topic.id, "/connected"]
     |> Http.get ("paths" := Decode.list Path.decoder)
-    |> Task.toMaybe
-    |> Task.perform (\_ -> transform Nothing) transform
+    |> Task.mapError httpErrorToString
+    |> Task.perform onError onSuccess
 
 
-fetchOpinionById : (Maybe Opinion -> a) -> Int -> Cmd a
-fetchOpinionById transform opinionId =
+fetchOpinionById : (String -> a) -> (Opinion -> a) -> Int -> Cmd a
+fetchOpinionById onError onSuccess opinionId =
   openEndpoint ["opinion/", toString opinionId]
     |> Http.get Opinion.decoder
-    |> Task.toMaybe
-    |> Task.perform (\_ -> transform Nothing) (transform)
+    |> Task.mapError httpErrorToString
+    |> Task.perform onError onSuccess
 
 
-fetchOpinionsByTopic : (Maybe (List Opinion) -> a) -> Int -> Cmd a
-fetchOpinionsByTopic transform topicId =
+fetchOpinionsByTopic : (String -> a) -> (List Opinion -> a) -> Int -> Cmd a
+fetchOpinionsByTopic onError onSuccess topicId =
   openEndpoint ["topic/", toString topicId, "/opinion"]
     |> Http.get (Decode.list Opinion.decoder)
-    |> Task.toMaybe
-    |> Task.perform (\_ -> transform Nothing) transform
+    |> Task.mapError httpErrorToString
+    |> Task.perform onError onSuccess
 
 
 -- super inefficient; gets all the opinions, and then extracts the id
 -- TODO: new endpoint on server
-fetchIdsByTopic : (Maybe (List Int) -> a) -> Topic -> Cmd a
-fetchIdsByTopic transform topic =
+fetchIdsByTopic : (String -> a) -> (List Int -> a) -> Topic -> Cmd a
+fetchIdsByTopic onError onSuccess topic =
   fetchOpinionsByTopic
-    (transform << Maybe.map (List.map .id))
+    onError
+    (onSuccess << (List.map .id))
     topic.id
 
 
-fetchDraftByTopic : (Maybe Opinion -> a) -> Int -> Cmd a
-fetchDraftByTopic transform topicId =
+fetchDraftByTopic : (String -> a) -> (Opinion -> a) -> Int -> Cmd a
+fetchDraftByTopic onError onComplete topicId =
   secureEndpoint ["topic/", toString topicId, "/opinion"]
     |> Http.get Opinion.decoder
-    |> Task.toMaybe
-    |> Task.perform (\_ -> transform Nothing) transform
+    |> Task.mapError httpErrorToString
+    |> Task.perform onError onComplete
 
 
-saveOpinion : (Maybe Opinion -> a) -> Opinion -> Int -> Cmd a
+saveOpinion : (String -> a) -> (Opinion -> a) -> Opinion -> Int -> Cmd a
 saveOpinion =
   writeOpinion "save"
 
 
-publishOpinion : (Maybe Opinion -> a) -> Opinion -> Int -> Cmd a
+publishOpinion : (String -> a) -> (Opinion -> a) -> Opinion -> Int -> Cmd a
 publishOpinion =
   writeOpinion "publish"
 
 
-writeOpinion : String -> (Maybe Opinion -> a) -> Opinion -> Int -> Cmd a
-writeOpinion writeType transform opinion topicId =
+writeOpinion : String -> (String -> a) -> (Opinion -> a) -> Opinion -> Int -> Cmd a
+writeOpinion writeType onError onSuccess opinion topicId =
   Opinion.encode opinion
     |> Encode.encode 0 -- no pretty print
     |> Http.string
     |> post' Opinion.decoder (writeUrlBuilder topicId writeType)
-    |> Task.toMaybe
-    |> Task.perform (\_ -> transform Nothing) transform
+    |> Task.mapError httpErrorToString
+    |> Task.perform onError onSuccess
 
 
 writeUrlBuilder : Int -> String -> String
@@ -244,20 +231,20 @@ writeUrlBuilder topicId writeType =
 ------------
 
 
-fetchTopic : (Maybe Topic -> a) -> Int -> Cmd a
-fetchTopic transform topicId =
+fetchTopic : (String -> a) -> (Topic -> a) -> Int -> Cmd a
+fetchTopic onError onSuccess topicId =
   openEndpoint ["topic/", toString topicId]
     |> Http.get Topic.decoder
-    |> Task.toMaybe
-    |> Task.perform (\_ -> transform Nothing) transform
+    |> Task.mapError httpErrorToString
+    |> Task.perform onError onSuccess
 
 
-fetchAllTopics : (Maybe (List Topic) -> a) -> Cmd a
-fetchAllTopics transform =
+fetchAllTopics : (String -> a) -> (List Topic -> a) -> Cmd a
+fetchAllTopics onError onComplete =
   openEndpoint ["topic"]
     |> Http.get (Decode.list Topic.decoder)
-    |> Task.toMaybe
-    |> Task.perform (\_ -> transform Nothing) transform
+    |> Task.mapError httpErrorToString
+    |> Task.perform onError onComplete
 
 
 --------------
@@ -275,11 +262,11 @@ setTrusteeTask trustee =
       (secureEndpoint ["delegate"])
 
 
-setTrustee : (Maybe Trustee -> a) -> Trustee -> Cmd a
-setTrustee transform trustee =
+setTrustee : (String -> a) -> (Trustee -> a) -> Trustee -> Cmd a
+setTrustee onError onSuccess trustee =
   setTrusteeTask trustee
-    |> Task.toMaybe
-    |> Task.perform (\_ -> transform Nothing) transform
+    |> Task.mapError httpErrorToString
+    |> Task.perform onError onSuccess
 
 
 setTrustees : (List Trustee -> a) -> List Trustee -> Cmd a
@@ -291,12 +278,12 @@ setTrustees transform trustees =
     |> Task.perform (\_ -> transform []) transform
 
 
-lookupTrustee : (Maybe Trustee -> a) -> String -> Cmd a
-lookupTrustee transform email =
+lookupTrustee : (String -> a) -> (Trustee -> a) -> String -> Cmd a
+lookupTrustee onError onSuccess email =
   Http.url (secureEndpoint ["delegate/lookup"]) [ ("email", email) ]
     |> Http.get Trustee.decoder
-    |> Task.toMaybe
-    |> Task.perform (\_ -> transform Nothing) transform
+    |> Task.mapError httpErrorToString
+    |> Task.perform onError onSuccess
 
 
 -- because post is pretty worthless
@@ -310,3 +297,19 @@ post' decoder url body =
     , body = body
     }
   |> Http.fromJson decoder
+
+
+httpErrorToString : Http.Error -> String
+httpErrorToString err =
+  case err of
+    Http.Timeout ->
+      "timeout error"
+
+    Http.NetworkError ->
+      "network error"
+
+    Http.UnexpectedPayload msg ->
+      "json parse error: " ++ msg
+
+    Http.BadResponse code msg ->
+      "http response error: " ++ (toString code) ++ " " ++ msg
