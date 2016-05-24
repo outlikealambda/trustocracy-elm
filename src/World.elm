@@ -47,44 +47,35 @@ subscriptions _ =
 
 mountRoute : Route -> World -> (World, Cmd Msg)
 mountRoute route world =
-  case route of
+  let
+    fx =
+      case (Debug.log "mounting route" route) of
+        Routes.Home ->
+          API.fetchAllTopics TopicsLoadFailed TopicsLoadComplete
 
-    Routes.Home ->
-      ( world
-      , API.fetchAllTopics TopicsLoadFailed TopicsLoadComplete
-      )
+        Routes.Compose topicId ->
+          -- since User and Topic live inside Session, we handle a topic update
+          -- by updating the Session
+          updateSession <| Session.GoCompose topicId
 
-    Routes.Compose topicId ->
-      ( world
-      -- since User and Topic live inside Session, we handle a topic update
-      -- by updating the Session
-      , updateSession <| Session.GoCompose topicId
-      )
+        Routes.Survey topicId ->
+          updateSession <| Session.GoSurvey topicId
 
-    Routes.Survey topicId ->
-      ( world
-      , updateSession <| Session.GoSurvey topicId
-      )
+        Routes.Read topicId opinionId ->
+          updateSession <| Session.GoRead topicId opinionId
 
-    Routes.Read topicId opinionId ->
-      ( world
-      , updateSession <| Session.GoRead topicId opinionId
-      )
+        -- map to [] if fail, since this will probably be the
+        -- home page and we don't want to continually redirect
+        Routes.Topics ->
+          API.fetchAllTopics TopicsLoadFailed TopicsLoadComplete
 
-    -- map to [] if fail, since this will probably be the
-    -- home page and we don't want to continually redirect
-    Routes.Topics ->
-      ( world
-      , API.fetchAllTopics TopicsLoadFailed TopicsLoadComplete
-      )
+        Routes.UserDelegates ->
+          updateSession <| Session.GoUserDelegates
 
-    Routes.UserDelegates ->
-      ( world
-      , updateSession <| Session.GoUserDelegates
-      )
-
-    Routes.EmptyRoute ->
-      ( world, Cmd.none )
+        Routes.EmptyRoute ->
+          Cmd.none
+  in
+    ( { world | route = route }, fx )
 
 
 init : String -> (World, Cmd Msg)
@@ -93,7 +84,7 @@ init path =
     (initialWorld, initialWorldFx) =
       initialModel
     (world, fx) =
-      mountRoute (Routes.decode path) initialWorld
+      mountRoute (Routes.decode (Debug.log "initial path" path)) initialWorld
   in
     ( world
     , Cmd.batch
@@ -129,13 +120,13 @@ update message world =
         )
 
     SetPath path ->
-      ( world, Location.setPath path )
+      ( world, Location.setPath (Debug.log "SetPath" path) )
 
     PathUpdated path ->
-      mountRoute (Routes.decode path) world
+      mountRoute (Routes.decode (Debug.log "PathUpdated" path)) world
 
     TopicsLoadComplete topics ->
-      ( { world | topics = topics }
+      ( { world | topics = (Debug.log "topics load complete" topics) }
       , Cmd.none )
 
     TopicsLoadFailed err ->
@@ -164,17 +155,17 @@ view : World -> Html Msg
 view world =
   div []
     [ Header.view
-      (\_ -> SNoOp "FIXME")
+      (SetPath << Routes.encode)
       <| Session.navHeader SessionMsg world.session
     , div
       [ class "world" ]
-      ( case world.route of
+      ( case (Debug.log "world view route" world.route) of
 
         Routes.Topics ->
-          [ Topic.View.viewAll (\_ -> SNoOp "FIXME") world.topics ]
+          [ Topic.View.viewAll (SetPath << Routes.encode) world.topics ]
 
         Routes.Home ->
-          [ Topic.View.viewAll (\_ -> SNoOp "FIXME") world.topics ]
+          [ Topic.View.viewAll (SetPath << Routes.encode) (Debug.log "home route topics" world.topics) ]
 
         Routes.Survey _ ->
           [ Session.view SessionMsg world.session ]

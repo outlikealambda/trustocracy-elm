@@ -301,7 +301,7 @@ post' decoder url body =
 
 httpErrorToString : Http.Error -> String
 httpErrorToString err =
-  case err of
+  case (Debug.log "HTTP ERROR!" err) of
     Http.Timeout ->
       "timeout error"
 

@@ -18,7 +18,7 @@ view : (Routes.Route -> msg) -> Topic -> Html msg
 view onRoute topic =
   div
     [ class "topic", clickTo <| onRoute (Routes.Survey topic.id) ]
-    [ text topic.text ]
+    [ text (Debug.log "topic view" topic.text) ]
 
 
 viewAll : (Routes.Route -> msg) -> List Topic -> Html msg
