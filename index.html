@@ -43,7 +43,7 @@
 
     window.onpopstate = event => {
       console.log(document.location);
-      app.ports.pathUpdates.send(document.location.pathname);
+      elmApp.ports.pathUpdates.send(document.location.pathname);
     };
 
     elmApp.ports.trustoLogout.subscribe(() => {
@@ -75,7 +75,7 @@
               // i think this only comes back when we have a scope which needs it
               accessToken: authResponse.access_token || '',
               idToken: authResponse.id_token,
-              expiresAt: authResponse.expires_at,
+              expiresAt: 1, //authResponse.expires_at,
               // similarly, we only get scope back if we send it
               scope: authResponse.scope || ''
             }

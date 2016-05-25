@@ -177,7 +177,7 @@ navButton : Composer -> Html m
 navButton {opinion} =
   let
     actionText =
-      if opinion.id == -1 then
+      if (Debug.log "Composer navButton opinion" opinion).id == -1 then
         [ text "Compose"
         , br [] []
         , text "an"

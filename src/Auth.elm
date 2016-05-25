@@ -132,7 +132,7 @@ update context message auth =
 
     Login credentials ->
       ( auth
-      , case credentials of
+      , case (Debug.log "login with creds" credentials) of
           Google ->
             Google.login
 
@@ -163,7 +163,7 @@ update context message auth =
     GoogleAuth maybeAuthResponse ->
       let
         performGoogleRequest gaAuthResponse =
-          if String.contains "contacts.read" gaAuthResponse.scope then
+          if String.contains "contacts.read" (Debug.log "gaAuthResponse" gaAuthResponse).scope then
             API.updateGoogleContacts InvalidUser ValidUser
               (Debug.log "gaContacts" gaAuthResponse)
           else
@@ -172,10 +172,10 @@ update context message auth =
         fx =
           (Maybe.map
             performGoogleRequest
-            maybeAuthResponse)
+            (Debug.log "maybeAuthResponse" maybeAuthResponse))
           |> Maybe.withDefault Cmd.none
       in
-        ( auth
+        ( (Debug.log "google auth" auth)
         , Cmd.map context.next fx
         )
 
