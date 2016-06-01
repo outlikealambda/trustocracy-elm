@@ -10,9 +10,6 @@
   "author": "OutLikeALambda",
   "homepage": "https://github.com/outlikealambda",
   "devDependencies": {
-    "local-web-server": "^1.1.0"
-  },
-  "dependencies": {
     "local-web-server": "^1.2.5"
   }
 }
