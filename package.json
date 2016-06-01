@@ -5,11 +5,14 @@
   "scripts": {
     "start": "npm run build-elm && npm run start-server",
     "build-elm": "elm make src/Main.elm --output dist/elm.js",
-    "start-server": "./node_modules/local-web-server/bin/cli.js -s index.html"
+    "start-server": "ws -s index.html"
   },
   "author": "OutLikeALambda",
   "homepage": "https://github.com/outlikealambda",
   "devDependencies": {
     "local-web-server": "^1.1.0"
+  },
+  "dependencies": {
+    "local-web-server": "^1.2.5"
   }
 }
