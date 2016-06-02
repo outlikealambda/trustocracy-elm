@@ -75,7 +75,7 @@
               // i think this only comes back when we have a scope which needs it
               accessToken: authResponse.access_token || '',
               idToken: authResponse.id_token,
-              expiresAt: 1, //authResponse.expires_at,
+              expiresAt: authResponse.expiresAt || '0', //not currently used
               // similarly, we only get scope back if we send it
               scope: authResponse.scope || ''
             }

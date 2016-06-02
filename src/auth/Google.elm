@@ -9,7 +9,7 @@ port module Auth.Google exposing
 
 type alias AuthResponse =
   { idToken: String
-  , expiresAt: Int
+  , expiresAt: String
   , accessToken: String
   , scope: String
   }

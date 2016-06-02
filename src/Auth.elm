@@ -164,7 +164,9 @@ update context message auth =
       let
         performGoogleRequest gaAuthResponse =
           if String.contains "contacts.read" (Debug.log "gaAuthResponse" gaAuthResponse).scope then
-            API.updateGoogleContacts InvalidUser ValidUser
+            API.updateGoogleContacts
+              InvalidUser
+              ValidUser
               (Debug.log "gaContacts" gaAuthResponse)
           else
             API.fetchUserByGoogleAuth InvalidUser ValidUser
