@@ -31,9 +31,6 @@ import Topic.Model as Topic exposing (Topic)
 import User exposing (User)
 
 
-import Platform.Cmd exposing (Cmd)
-import String
-import Task
 import Html exposing
   ( Html
   , div
@@ -42,6 +39,9 @@ import Html exposing
   )
 import Html.App
 import Html.Attributes exposing (class)
+import Platform.Cmd exposing (Cmd)
+import String
+import Utils.Cmd as CmdUtils
 
 
 type alias Session =
@@ -66,7 +66,6 @@ type Msg
   | GoUserDelegates
 
   -- private
-  | NoOp
   | Error String
   | SetTopic Topic
   | SetPath Routes.Route
@@ -153,10 +152,6 @@ update action session =
     GoUserDelegates ->
       ( { session | currentView = UserDelegates }, Cmd.none )
 
-    -- PRIVATE
-    NoOp ->
-      ( session, Cmd.none )
-
     Error err ->
       let
         msg = Debug.log "error!" err
@@ -242,9 +237,11 @@ updateViews session =
   case session.activeUser of
     LoggedOut ->
         ( session
-        , Task.succeed (Surveyor.Init session.topic session.activeUser)
-          |> Task.perform (\_ -> NoOp) SurveyorMsg
+        , Surveyor.Init session.topic session.activeUser
+          |> SurveyorMsg
+          |> CmdUtils.init
         )
+
     LoggedIn user ->
       let
         (composerUpdate, composerUpdateFx) =
@@ -255,8 +252,9 @@ updateViews session =
           }
         , Cmd.batch
           [ Cmd.map ComposerMsg composerUpdateFx
-          , Task.succeed (Surveyor.Init session.topic session.activeUser)
-            |> Task.perform (\_ -> NoOp) SurveyorMsg
+          , Surveyor.Init session.topic session.activeUser
+            |> SurveyorMsg
+            |> CmdUtils.init
           ]
         )
 

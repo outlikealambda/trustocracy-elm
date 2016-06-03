@@ -13,7 +13,7 @@ import Html.Attributes as Attribute exposing (class)
 import Html.Events as Event exposing (onClick)
 import Json.Decode as Json
 import String
-import Task exposing (Task)
+import Utils.Cmd as CmdUtils
 
 
 import ActiveUser exposing (ActiveUser (LoggedIn, LoggedOut))
@@ -136,8 +136,8 @@ update message delegator =
           -- if it's a new person, let's save them as a candidate
           if isNew then
             ( { trustee | relationship = Relationship.Candidate }
-              |> Task.succeed
-              |> Task.perform (\_ -> NoOp) ValidateMove
+              |> ValidateMove
+              |> CmdUtils.init
             , ""
             )
           else

@@ -10,7 +10,7 @@ module World exposing
 
 import Html exposing (Html, input, div, node, h1, text)
 import Html.Attributes exposing (class, rel, href, placeholder, value, style)
-import Task
+import Utils.Cmd as CmdUtils
 
 import Common.API as API
 import Header
@@ -147,8 +147,7 @@ update message world =
 
 updateSession : Session.Msg -> Cmd Msg
 updateSession sessionAction =
-  Task.succeed sessionAction
-    |> Task.perform (\_ -> SNoOp "error performing successful task") SessionMsg
+  CmdUtils.init (SessionMsg sessionAction)
 
 
 view : World -> Html Msg
