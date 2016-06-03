@@ -2,9 +2,8 @@
 module Opinion.Surveyor exposing
   ( Surveyor
   , Msg
-    ( Init
-    )
   , empty
+  , init
   , view
   , navButton
   , update
@@ -18,7 +17,7 @@ import Html.Attributes exposing (class)
 import Dict
 
 
-import ActiveUser
+import ActiveUser exposing (ActiveUser)
 import Common.API as API
 import Location
 import Opinion.Plot as Plot exposing (Plot)
@@ -45,7 +44,6 @@ type Msg
   = SetConnected Paths
   | SetUnconnected (List Int)
   | SetPath Routes.Route
-  | Init Topic ActiveUser.ActiveUser
   | PlotMsg Key Plot.Msg
   | Error String
 
@@ -66,33 +64,31 @@ empty =
   }
 
 
+init : Topic -> ActiveUser -> (Surveyor, Cmd Msg)
+init topic activeUser =
+  let
+    cmds =
+      case activeUser of
+        ActiveUser.LoggedOut ->
+          [ API.fetchIdsByTopic
+              Error
+              SetUnconnected
+              topic
+          ]
+
+        ActiveUser.LoggedIn user ->
+          [ API.fetchConnected
+              Error
+              SetConnected
+              topic
+          ]
+  in
+    { empty | topic = topic } ! cmds
+
+
 update : Msg -> Surveyor -> (Surveyor, Cmd Msg)
 update message model =
   case message of
-
-    Init topic activeUser ->
-      let
-        fx =
-          case activeUser of
-            ActiveUser.LoggedOut ->
-              API.fetchIdsByTopic
-                Error
-                SetUnconnected
-                topic
-
-            ActiveUser.LoggedIn _ ->
-              API.fetchConnected
-                Error
-                SetConnected
-                topic
-      in
-        ( { model
-          | topic = topic
-          , buckets = Dict.empty
-          }
-        , fx
-        )
-
     SetConnected opaths ->
       let
         keyGen =
@@ -104,6 +100,10 @@ update message model =
         keyedPlotsFxs =
           List.map (Plot.keyFx keyGen) plotPairs
           |> List.map (\(k, fx) -> Cmd.map (PlotMsg k) fx)
+
+        cmds =
+          API.fetchIdsByTopic Error SetUnconnected model.topic
+            :: keyedPlotsFxs
 
         connectedBuckets =
           List.map fst plotPairs
@@ -117,15 +117,12 @@ update message model =
           |> Maybe.withDefault 0
 
       in
-        ( { model
-          | rawPaths = opaths
-          , buckets = Dict.union connectedBuckets model.buckets
-          , longestPlotPath = longestPlotPath
-          }
-        , API.fetchIdsByTopic Error SetUnconnected model.topic
-          :: keyedPlotsFxs
-          |> Cmd.batch
-        )
+        { model
+        | rawPaths = opaths
+        , buckets = Dict.union connectedBuckets model.buckets
+        , longestPlotPath = longestPlotPath
+        }
+        ! cmds
 
     SetUnconnected ids ->
       let
@@ -153,22 +150,20 @@ update message model =
           |> Dict.fromList
 
       in
-        ( { model
-          | buckets = Dict.union unconnectedBuckets model.buckets
-          , isSurveyed = True
-          }
-        , Cmd.batch keyedPlotsFxs
-        )
+        { model
+        | buckets = Dict.union unconnectedBuckets model.buckets
+        , isSurveyed = True
+        }
+        ! keyedPlotsFxs
 
     SetPath route ->
-      ( model, Location.setPath <| Routes.encode route )
+      model ! [ Location.setPath <| Routes.encode route ]
 
     PlotMsg key subMsg ->
       case Dict.get key model.buckets of
 
         Nothing ->
-          ( model
-          , Cmd.none )
+          model ! []
 
         Just bucket ->
           let
@@ -177,15 +172,14 @@ update message model =
             updatedBuckets =
               Dict.insert key updatedBucket model.buckets
           in
-            ( { model | buckets = updatedBuckets }
-            , Cmd.map (PlotMsg key) fx
-            )
+            { model | buckets = updatedBuckets }
+            ! [ Cmd.map (PlotMsg key) fx ]
 
     Error err ->
       let
         msg = Debug.log "error in Surveyer!" err
       in
-        ( model, Cmd.none )
+        model ! []
 
 focus : Int -> Surveyor -> Surveyor
 focus target surveyor =

@@ -24,7 +24,6 @@ import Utils.List as ListUtils
 
 
 import Html exposing (Html, div, span, text)
-import Html.App
 import Html.Attributes as Attribute exposing (class)
 import Json.Encode as Json
 import Dict
@@ -128,14 +127,16 @@ view {transform, readRouteBuilder} (k, {opinion, paths, expanded}) =
       else
         (collapsedHeader paths, "collapsed")
   in
-    Html.App.map transform <| div
+    div
       [ class <| "opg t-card " ++ expandClass
       , Attribute.property "key" (Json.int k)
       ]
       [ header
       , div
         [ class "t-card-body" ]
-        [ Presenter.view expanded (SetPath << readRouteBuilder) opinion ]
+        [ Presenter.view
+            expanded (transform << SetPath << readRouteBuilder) opinion
+        ]
       ]
 
 

@@ -82,43 +82,44 @@ update action composer =
   case action of
 
     FetchComplete opinion ->
-      ( { composer
-        | opinion = Presenter.prepare <| Presenter.expand opinion
-        }
-      , Cmd.none )
+      { composer
+      | opinion = Presenter.prepare <| Presenter.expand opinion
+      }
+      ! []
 
     WriteComplete opinion ->
       let
         msg = Debug.log "written!" opinion
       in
-        ( composer, Cmd.none )
+        composer ! []
 
     Error err ->
       let
         msg = Debug.log "failed to write!" err
       in
-        ( composer, Cmd.none )
+        composer ! []
 
     SetView composerView ->
-      ( { composer | composerView = composerView }
-      , Cmd.none
-      )
+      { composer | composerView = composerView }
+      ! []
 
     WriterMsg msg ->
-      ( { composer
-        | opinion = Writer.update msg composer.opinion
-        }
-      , Cmd.none )
+      { composer
+      | opinion = Writer.update msg composer.opinion
+      }
+      ! []
 
     Save ->
-      ( composer
-      , API.saveOpinion Error WriteComplete composer.opinion composer.topic.id
-      )
+      composer
+      ! [ API.saveOpinion
+            Error WriteComplete composer.opinion composer.topic.id
+        ]
 
     Publish ->
-      ( composer
-      , API.publishOpinion Error WriteComplete composer.opinion composer.topic.id
-      )
+      composer
+      ! [ API.publishOpinion
+            Error WriteComplete composer.opinion composer.topic.id
+        ]
 
 
 view : Composer -> Html Msg

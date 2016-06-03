@@ -30,7 +30,6 @@ import Routes
 import Topic.Model as Topic exposing (Topic)
 import User exposing (User)
 
-
 import Html exposing
   ( Html
   , div
@@ -41,7 +40,6 @@ import Html.App
 import Html.Attributes exposing (class)
 import Platform.Cmd exposing (Cmd)
 import String
-import Utils.Cmd as CmdUtils
 
 
 type alias Session =
@@ -100,16 +98,15 @@ init =
     (auth, authFx) =
       Auth.init
   in
-    ( { activeUser = LoggedOut
-      , topic = Topic.empty
-      , currentView = Empty
-      , composer = Composer.empty
-      , surveyor = Surveyor.empty
-      , auth = auth
-      , delegator = Delegator.fromActiveUser LoggedOut
-      }
-    , Cmd.map AuthMsg authFx
-    )
+    { activeUser = LoggedOut
+    , topic = Topic.empty
+    , currentView = Empty
+    , composer = Composer.empty
+    , surveyor = Surveyor.empty
+    , auth = auth
+    , delegator = Delegator.fromActiveUser LoggedOut
+    }
+    ! [ Cmd.map AuthMsg authFx ]
 
 
 update : Msg -> Session -> (Session, Cmd Msg)
@@ -117,12 +114,11 @@ update action session =
   case action of
     -- TODO: handle ActiveUser.LoggedOut
     SetActiveUser activeUser ->
-      ( { session
-        | activeUser = activeUser
-        , delegator = Delegator.fromActiveUser activeUser
+      { session
+      | activeUser = activeUser
+      , delegator = Delegator.fromActiveUser activeUser
       }
-      , Cmd.none
-      )
+      ! []
 
     -- GoCompose and GoSurvey are exposed so that World can still control
     -- routing.
@@ -136,8 +132,8 @@ update action session =
         (sessionUpdate, sessionUpdateFx) =
           setSessionTopic session Survey topicId
       in
-        ( { sessionUpdate | surveyor = Surveyor.blur sessionUpdate.surveyor }
-        , sessionUpdateFx )
+        { sessionUpdate | surveyor = Surveyor.blur sessionUpdate.surveyor }
+        ! [ sessionUpdateFx ]
 
     -- we'll focus the Surveyor instead of using a separate reader
     GoRead topicId opinionId ->
@@ -145,18 +141,18 @@ update action session =
         (sessionUpdate, sessionUpdateFx) =
           setSessionTopic session Survey topicId
       in
-        ( { sessionUpdate | surveyor = Surveyor.focus opinionId sessionUpdate.surveyor }
-        , sessionUpdateFx )
+        { sessionUpdate | surveyor = Surveyor.focus opinionId sessionUpdate.surveyor }
+        ! [ sessionUpdateFx ]
 
 
     GoUserDelegates ->
-      ( { session | currentView = UserDelegates }, Cmd.none )
+      { session | currentView = UserDelegates } ! []
 
     Error err ->
       let
         msg = Debug.log "error!" err
       in
-        ( session, Cmd.none )
+        session ! []
 
     -- we only propagate topic, and not user, because
     -- the app shouldn't normally be switching users, and only
@@ -166,25 +162,25 @@ update action session =
       updateViews { session | topic = topic }
 
     SetPath route ->
-      ( session, Location.setPath <| Routes.encode route )
+      session ! [ Location.setPath <| Routes.encode route ]
 
     ComposerMsg composerAction ->
       let
         (update, updateFx) =
           Composer.update composerAction session.composer
       in
-        ( { session | composer = update }
-          , Cmd.map ComposerMsg updateFx
-        )
+        { session | composer = update }
+        ! [ Cmd.map ComposerMsg updateFx ]
 
     SurveyorMsg connectAction ->
       let
         (update, updateFx) =
           Surveyor.update connectAction session.surveyor
       in
-        ( { session | surveyor = update }
-        , Cmd.map SurveyorMsg updateFx
-        )
+        { session
+        | surveyor = update
+        }
+        ! [ Cmd.map SurveyorMsg updateFx ]
 
     AuthMsg authAction ->
       let
@@ -196,67 +192,75 @@ update action session =
             authAction
             session.auth
       in
-        ( { session | auth = update }
-        , updateFx )
+        { session
+        | auth = update
+        }
+        ! [ updateFx ]
 
     DelegatorMsg delegateAction ->
       case session.activeUser of
 
         LoggedOut ->
-          ( session, Cmd.none )
+          session ! []
 
         LoggedIn user ->
           let
             (update, updateFx) =
               Delegator.update delegateAction session.delegator
           in
-            ( { session
-              | delegator = update
-              , activeUser = LoggedIn { user | trustees = update.saved }
+            { session
+            | delegator = update
+            , activeUser =
+                LoggedIn
+                  { user
+                  | trustees = update.saved
+                  }
             }
-            , Cmd.map DelegatorMsg updateFx )
+            ! [ Cmd.map DelegatorMsg updateFx ]
 
 
 setSessionTopic : Session -> SessionView -> TopicId -> (Session, Cmd Msg)
 setSessionTopic session newSessionView topicId =
   let
-    fx =
+    cmds =
       if session.topic.id == topicId then
-        Cmd.none
+        []
       else
-        API.fetchTopic Error SetTopic topicId
+        [ API.fetchTopic Error SetTopic topicId ]
   in
-    ( { session | currentView = newSessionView }
-    , fx
-    )
+    { session
+    | currentView = newSessionView
+    }
+    ! cmds
+
 
 -- if the user is LoggedOut, we don't need to update
 -- compose and survey
 updateViews : Session -> (Session, Cmd Msg)
 updateViews session =
-  case session.activeUser of
-    LoggedOut ->
-        ( session
-        , Surveyor.Init session.topic session.activeUser
-          |> SurveyorMsg
-          |> CmdUtils.init
-        )
-
-    LoggedIn user ->
-      let
-        (composerUpdate, composerUpdateFx) =
-          Composer.init user session.topic
-      in
-        ( { session
-          | composer = composerUpdate
+  let
+    (surveyor, surveyorFx) =
+      Surveyor.init session.topic session.activeUser
+  in
+    case session.activeUser of
+      LoggedOut ->
+          { session
+          | surveyor = surveyor
           }
-        , Cmd.batch
-          [ Cmd.map ComposerMsg composerUpdateFx
-          , Surveyor.Init session.topic session.activeUser
-            |> SurveyorMsg
-            |> CmdUtils.init
-          ]
-        )
+          ! [ Cmd.map SurveyorMsg surveyorFx ]
+
+      LoggedIn user ->
+        let
+          (composer, composerFx) =
+            Composer.init user session.topic
+        in
+          { session
+          | composer = composer
+          , surveyor = surveyor
+          }
+          ! [ Cmd.map ComposerMsg composerFx
+            , Cmd.map SurveyorMsg surveyorFx
+            ]
 
 
 view : (Msg -> msg) -> Session -> Html msg
