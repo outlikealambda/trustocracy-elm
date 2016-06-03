@@ -2,9 +2,8 @@
 module Opinion.Surveyor exposing
   ( Surveyor
   , Msg
-    ( Init
-    )
   , empty
+  , init
   , view
   , navButton
   , update
@@ -18,13 +17,14 @@ import Html.Attributes exposing (class)
 import Dict
 
 
-import ActiveUser
+import ActiveUser exposing (ActiveUser)
 import Common.API as API
 import Location
 import Opinion.Plot as Plot exposing (Plot)
 import Opinion.Path as Path
 import Routes
 import Topic.Model as Topic exposing (Topic)
+import Topic.Delegation exposing (Delegation)
 
 
 type alias Key = Int
@@ -37,15 +37,16 @@ type alias Surveyor =
   , longestPlotPath : Int
   , isSurveyed : Bool
   , zoom : Zoom
-  , topic : Topic
+  , delegation : Maybe Delegation
   }
 
 
 type Msg
   = SetConnected Paths
   | SetUnconnected (List Int)
+  | RequestToDelegate Delegation
+  | SetDelegation Delegation
   | SetPath Routes.Route
-  | Init Topic ActiveUser.ActiveUser
   | PlotMsg Key Plot.Msg
   | Error String
 
@@ -62,37 +63,40 @@ empty =
   , longestPlotPath = 0
   , isSurveyed = False
   , zoom = Blur
-  , topic = Topic.empty
+  , delegation = Nothing
   }
 
 
-update : Msg -> Surveyor -> (Surveyor, Cmd Msg)
-update message model =
+init : Topic -> ActiveUser -> (Surveyor, Cmd Msg)
+init topic activeUser =
+  let
+    cmds =
+      case activeUser of
+        ActiveUser.LoggedOut ->
+          [ API.fetchIdsByTopic
+              Error
+              SetUnconnected
+              topic
+          ]
+
+        ActiveUser.LoggedIn user ->
+          [ API.fetchConnected
+              Error
+              SetConnected
+              topic
+          , API.fetchDelegation
+              Error
+              SetDelegation
+              user
+              topic
+          ]
+  in
+    empty ! cmds
+
+
+update : Topic -> ActiveUser -> Msg -> Surveyor -> (Surveyor, Cmd Msg)
+update topic activeUser message model =
   case message of
-
-    Init topic activeUser ->
-      let
-        fx =
-          case activeUser of
-            ActiveUser.LoggedOut ->
-              API.fetchIdsByTopic
-                Error
-                SetUnconnected
-                topic
-
-            ActiveUser.LoggedIn _ ->
-              API.fetchConnected
-                Error
-                SetConnected
-                topic
-      in
-        ( { model
-          | topic = topic
-          , buckets = Dict.empty
-          }
-        , fx
-        )
-
     SetConnected opaths ->
       let
         keyGen =
@@ -104,6 +108,10 @@ update message model =
         keyedPlotsFxs =
           List.map (Plot.keyFx keyGen) plotPairs
           |> List.map (\(k, fx) -> Cmd.map (PlotMsg k) fx)
+
+        cmds =
+          API.fetchIdsByTopic Error SetUnconnected topic
+            :: keyedPlotsFxs
 
         connectedBuckets =
           List.map fst plotPairs
@@ -117,15 +125,12 @@ update message model =
           |> Maybe.withDefault 0
 
       in
-        ( { model
-          | rawPaths = opaths
-          , buckets = Dict.union connectedBuckets model.buckets
-          , longestPlotPath = longestPlotPath
-          }
-        , API.fetchIdsByTopic Error SetUnconnected model.topic
-          :: keyedPlotsFxs
-          |> Cmd.batch
-        )
+        { model
+        | rawPaths = opaths
+        , buckets = Dict.union connectedBuckets model.buckets
+        , longestPlotPath = longestPlotPath
+        }
+        ! cmds
 
     SetUnconnected ids ->
       let
@@ -153,22 +158,26 @@ update message model =
           |> Dict.fromList
 
       in
-        ( { model
-          | buckets = Dict.union unconnectedBuckets model.buckets
-          , isSurveyed = True
-          }
-        , Cmd.batch keyedPlotsFxs
-        )
+        { model
+        | buckets = Dict.union unconnectedBuckets model.buckets
+        , isSurveyed = True
+        }
+        ! keyedPlotsFxs
+
+    RequestToDelegate delegation ->
+      model ! [ API.assignDelegation Error SetDelegation delegation ]
+
+    SetDelegation delegation ->
+      { model | delegation = Just delegation } ! []
 
     SetPath route ->
-      ( model, Location.setPath <| Routes.encode route )
+      model ! [ Location.setPath <| Routes.encode route ]
 
     PlotMsg key subMsg ->
       case Dict.get key model.buckets of
 
         Nothing ->
-          ( model
-          , Cmd.none )
+          model ! []
 
         Just bucket ->
           let
@@ -177,15 +186,14 @@ update message model =
             updatedBuckets =
               Dict.insert key updatedBucket model.buckets
           in
-            ( { model | buckets = updatedBuckets }
-            , Cmd.map (PlotMsg key) fx
-            )
+            { model | buckets = updatedBuckets }
+            ! [ Cmd.map (PlotMsg key) fx ]
 
     Error err ->
       let
         msg = Debug.log "error in Surveyer!" err
       in
-        ( model, Cmd.none )
+        model ! []
 
 focus : Int -> Surveyor -> Surveyor
 focus target surveyor =
@@ -201,6 +209,8 @@ type alias ViewContext msg =
   { transform : Msg -> msg
   , readRouteBuilder : Int -> Routes.Route
   , showAllRoute : Routes.Route
+  , topic : Topic
+  , activeUser : ActiveUser
   }
 
 
@@ -238,7 +248,7 @@ showAll context =
 
 
 viewAllGrouped : ViewContext msg -> Int -> List (Int, Plot) -> List (Html msg)
-viewAllGrouped context longestPlotPath plots=
+viewAllGrouped context longestPlotPath plots =
   let
     sectionConstructors =
       List.map (viewPlotSection context) [0..longestPlotPath]
@@ -278,9 +288,18 @@ viewPlotSection context pathLength keyPlots =
 
 
 viewPlot : ViewContext msg -> (Key, Plot) -> Html msg
-viewPlot {transform, readRouteBuilder} (key, opg) =
+viewPlot {activeUser, topic, transform, readRouteBuilder} (key, opg) =
   Plot.view
     { transform = transform << PlotMsg key
+    , assignDelegate =
+        transform <<
+          case activeUser of
+            ActiveUser.LoggedOut ->
+              (\_ -> Error "Cannot assign when logged out")
+
+            ActiveUser.LoggedIn user ->
+              RequestToDelegate << (Delegation user topic)
+
     , readRouteBuilder = readRouteBuilder
     }
     (key, opg)

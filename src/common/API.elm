@@ -12,6 +12,8 @@ module Common.API exposing
   , publishOpinion
   , fetchTopic
   , fetchAllTopics
+  , fetchDelegation
+  , assignDelegation
   , setTrustee
   , setTrustees
   , lookupTrustee
@@ -32,6 +34,7 @@ import Opinion.Path as Path exposing (Path)
 import Opinion.Opinion as Opinion exposing (Opinion)
 import User exposing (User)
 import Topic.Model as Topic exposing (Topic)
+import Topic.Delegation as Delegation exposing (Delegation)
 import Trustee exposing (Trustee)
 
 
@@ -245,6 +248,30 @@ fetchAllTopics onError onComplete =
     |> Http.get (Decode.list Topic.decoder)
     |> Task.mapError httpErrorToString
     |> Task.perform onError onComplete
+
+
+-- TODO: build out these endpoints
+fetchDelegation : (String -> a) -> (Delegation -> a) -> User -> Topic -> Cmd a
+fetchDelegation onError onComplete user topic =
+  Http.url (secureEndpoint ["delegate/topic"]) [ ("topic", toString topic.id) ]
+    |> Http.get Trustee.decoder
+    |> Task.mapError httpErrorToString
+    |> Task.perform onError (onComplete << (Delegation user topic))
+
+
+assignDelegation : (String -> a) -> (Delegation -> a) -> Delegation -> Cmd a
+assignDelegation onError onComplete { from, for, to } =
+  let
+    url =
+      Http.url (secureEndpoint ["delegate/topic"])
+        [ ( "topic", toString for.id )
+        , ( "delegate", toString to.id )
+        , ( "user", toString from.id )
+        ]
+  in
+    Http.post Delegation.decoder url Http.empty
+      |> Task.mapError httpErrorToString
+      |> Task.perform onError onComplete
 
 
 --------------

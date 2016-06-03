@@ -11,6 +11,7 @@ module Opinion.Presenter exposing
 
 import Html exposing (Html, div, text, p, span)
 import Html.Attributes as Attribute exposing (class)
+import Html.Events exposing (onClick)
 import Markdown
 import String
 
@@ -72,8 +73,8 @@ viewCollapsed buildRoute {id, snippet, opiner, influence, fetched} =
       [ Html.text "Read more..." ]
     ]
 
-view : Bool -> (Int -> msg) -> Presenter a -> Html msg
-view expanded routeBuilder presenter =
+view : Bool -> (Trustee -> msg) -> (Int -> msg) -> Presenter a -> Html msg
+view expanded delegate routeBuilder presenter =
   div
     [ Attribute.classList
       [ ("opinion", True)
@@ -82,7 +83,7 @@ view expanded routeBuilder presenter =
       , ("collapsed", not expanded)
       ]
     ]
-    [ viewOpiner presenter.opiner presenter.influence
+    [ viewOpiner delegate presenter.opiner presenter.influence
     , viewCollapsed routeBuilder presenter
     , viewExpanded presenter ]
 
@@ -105,13 +106,17 @@ viewSnippet snippet =
     [ p [] [ text snippet ]
     ]
 
-viewOpiner : Trustee -> Int -> Html msg
-viewOpiner {name} influence =
+viewOpiner : (Trustee -> msg) -> Trustee -> Int -> Html msg
+viewOpiner delegate trustee influence =
   div
     [ class "opiner cf" ]
     [ div
       [ class "opiner-name" ]
-      [ text <| name ]
+      [ text trustee.name
+      , Html.button
+        [ onClick <| delegate trustee ]
+        [ text "Delegate!" ]
+      ]
     , div
       [ class "numbered-badge influence" ]
       [ span

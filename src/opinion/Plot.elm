@@ -20,11 +20,11 @@ import Opinion.Opinion as Opinion exposing (Opinion)
 import Opinion.Presenter as Presenter
 import Opinion.Path as Path exposing (Path)
 import Routes
+import Trustee exposing (Trustee)
 import Utils.List as ListUtils
 
 
 import Html exposing (Html, div, span, text)
-import Html.App
 import Html.Attributes as Attribute exposing (class)
 import Json.Encode as Json
 import Dict
@@ -100,6 +100,7 @@ update message plot =
 
 type alias ViewContext msg =
   { transform : Msg -> msg
+  , assignDelegate : Trustee -> msg
   , readRouteBuilder : Int -> Routes.Route
   }
 
@@ -120,7 +121,7 @@ setExpand exp plot =
 
 
 view : ViewContext msg -> (Int, Plot) -> Html msg
-view {transform, readRouteBuilder} (k, {opinion, paths, expanded}) =
+view {transform, assignDelegate, readRouteBuilder} (k, {opinion, paths, expanded}) =
   let
     (header, expandClass) =
       if expanded then
@@ -128,14 +129,19 @@ view {transform, readRouteBuilder} (k, {opinion, paths, expanded}) =
       else
         (collapsedHeader paths, "collapsed")
   in
-    Html.App.map transform <| div
+    div
       [ class <| "opg t-card " ++ expandClass
       , Attribute.property "key" (Json.int k)
       ]
       [ header
       , div
         [ class "t-card-body" ]
-        [ Presenter.view expanded (SetPath << readRouteBuilder) opinion ]
+        [ Presenter.view
+            expanded
+            assignDelegate
+            (transform << SetPath << readRouteBuilder)
+            opinion
+        ]
       ]
 
 
