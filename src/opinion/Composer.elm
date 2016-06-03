@@ -112,13 +112,13 @@ update action composer =
     Save ->
       composer
       ! [ API.saveOpinion
-          Error WriteComplete composer.opinion composer.topic.id
+            Error WriteComplete composer.opinion composer.topic.id
         ]
 
     Publish ->
       composer
       ! [ API.publishOpinion
-          Error WriteComplete composer.opinion composer.topic.id
+            Error WriteComplete composer.opinion composer.topic.id
         ]
 
 

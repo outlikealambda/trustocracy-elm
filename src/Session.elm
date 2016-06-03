@@ -169,9 +169,7 @@ update action session =
         (update, updateFx) =
           Composer.update composerAction session.composer
       in
-        { session
-        | composer = update
-        }
+        { session | composer = update }
         ! [ Cmd.map ComposerMsg updateFx ]
 
     SurveyorMsg connectAction ->
@@ -213,18 +211,16 @@ update action session =
           let
             (update, updateFx) =
               Delegator.update delegateAction session.delegator
-
-            nextSession =
-              { session
-              | delegator = update
-              , activeUser =
-                  LoggedIn
-                    { user
-                    | trustees = update.saved
-                    }
-              }
           in
-            nextSession ! [ Cmd.map DelegatorMsg updateFx ]
+            { session
+            | delegator = update
+            , activeUser =
+                LoggedIn
+                  { user
+                  | trustees = update.saved
+                  }
+            }
+            ! [ Cmd.map DelegatorMsg updateFx ]
 
 
 setSessionTopic : Session -> SessionView -> TopicId -> (Session, Cmd Msg)
@@ -240,6 +236,7 @@ setSessionTopic session newSessionView topicId =
     | currentView = newSessionView
     }
     ! cmds
+
 
 -- if the user is LoggedOut, we don't need to update
 -- compose and survey
