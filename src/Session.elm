@@ -112,13 +112,12 @@ init =
 update : Msg -> Session -> (Session, Cmd Msg)
 update action session =
   case action of
-    -- TODO: handle ActiveUser.LoggedOut
     SetActiveUser activeUser ->
-      { session
-      | activeUser = activeUser
-      , delegator = Delegator.fromActiveUser activeUser
-      }
-      ! []
+      updateViews
+        { session
+        | activeUser = activeUser
+        , delegator = Delegator.fromActiveUser activeUser
+        }
 
     -- GoCompose and GoSurvey are exposed so that World can still control
     -- routing.
@@ -150,7 +149,7 @@ update action session =
 
     Error err ->
       let
-        msg = Debug.log "error!" err
+        msg = Debug.log "session error!" err
       in
         session ! []
 
