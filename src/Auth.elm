@@ -14,7 +14,7 @@ import Html.App
 import Html.Attributes as Attribute exposing (placeholder, value, class)
 import Html.Events exposing (on, targetValue, onClick)
 import String
-import Task exposing (Task)
+import Utils.Cmd as CmdUtils
 
 
 import Common.API as API
@@ -142,10 +142,9 @@ update context message auth =
 
     Logout ->
       ( { auth
-        | input = Empty
+        | input = Debug.log "Logout action" Empty
         }
-      , clearUser
-        |> (Cmd.map context.setUser)
+      , Cmd.map context.setUser clearUser
       )
 
     FacebookAuth maybeAuthResponse ->
@@ -184,21 +183,18 @@ update context message auth =
 
 clearUser : Cmd ActiveUser
 clearUser =
-  Cmd.map
-    (\_ -> ActiveUser.LoggedOut)
-    (Cmd.batch
-      [ Cookie.logout
-      , Facebook.logout
-      , Google.logout
-      ])
+  Cmd.batch
+    [ Cookie.logout
+    , Facebook.logout
+    , Google.logout
+    , CmdUtils.init ActiveUser.LoggedOut
+    ]
 
 
 saveUser : (ActiveUser -> a) -> User -> Cmd a
 saveUser setUser user =
-  Task.perform
-    (\_ -> setUser ActiveUser.LoggedOut)  -- never hit
-    setUser
-    (Task.succeed (ActiveUser.LoggedIn user))
+  CmdUtils.init <| setUser (ActiveUser.LoggedIn user)
+
 
 
 type alias ViewContext msg =

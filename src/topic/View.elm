@@ -18,7 +18,7 @@ view : (Routes.Route -> msg) -> Topic -> Html msg
 view onRoute topic =
   div
     [ class "topic", clickTo <| onRoute (Routes.Survey topic.id) ]
-    [ text (Debug.log "topic view" topic.text) ]
+    [ text topic.text ]
 
 
 viewAll : (Routes.Route -> msg) -> List Topic -> Html msg
@@ -33,4 +33,3 @@ clickTo msg =
     "click"
     { stopPropagation = True, preventDefault = True }
     (Json.map (\_ -> msg) Json.value)
-    --(\_ -> Signal.message TransitRouter.pushPathAddress path)
