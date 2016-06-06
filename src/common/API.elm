@@ -168,7 +168,7 @@ fetchConnected onError onSuccess topic =
 fetchOpinionById : (String -> a) -> (Opinion -> a) -> Int -> Cmd a
 fetchOpinionById onError onSuccess opinionId =
   openEndpoint ["opinion/", toString opinionId]
-    |> Http.get Opinion.decoder
+    |> Http.get Opinion.decoderWithAuthor
     |> Task.mapError httpErrorToString
     |> Task.perform onError onSuccess
 
@@ -176,7 +176,7 @@ fetchOpinionById onError onSuccess opinionId =
 fetchOpinionsByTopic : (String -> a) -> (List Opinion -> a) -> Int -> Cmd a
 fetchOpinionsByTopic onError onSuccess topicId =
   openEndpoint ["topic/", toString topicId, "/opinion"]
-    |> Http.get (Decode.list Opinion.decoder)
+    |> Http.get (Decode.list Opinion.decoderWithAuthor)
     |> Task.mapError httpErrorToString
     |> Task.perform onError onSuccess
 
@@ -194,7 +194,7 @@ fetchIdsByTopic onError onSuccess topic =
 fetchDraftByTopic : (String -> a) -> (Opinion -> a) -> Int -> Cmd a
 fetchDraftByTopic onError onComplete topicId =
   secureEndpoint ["topic/", toString topicId, "/opinion"]
-    |> Http.get Opinion.decoder
+    |> Http.get Opinion.decoderWithoutAuthor
     |> Task.mapError httpErrorToString
     |> Task.perform onError onComplete
 
@@ -214,7 +214,7 @@ writeOpinion writeType onError onSuccess opinion topicId =
   Opinion.encode opinion
     |> Encode.encode 0 -- no pretty print
     |> Http.string
-    |> post' Opinion.decoder (writeUrlBuilder topicId writeType)
+    |> post' Opinion.decoderWithoutAuthor (writeUrlBuilder topicId writeType)
     |> Task.mapError httpErrorToString
     |> Task.perform onError onSuccess
 

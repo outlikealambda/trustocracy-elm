@@ -33,8 +33,9 @@ type alias Composer =
 
 type Msg
   = FetchComplete Opinion
+  | FetchError String
   | WriteComplete Opinion
-  | Error String
+  | WriteError String
   | Save
   | Publish
   | WriterMsg Writer.Msg
@@ -71,7 +72,7 @@ init user topic =
   in
     ( { empty | topic = topic }
     , API.fetchDraftByTopic
-      Error
+      FetchError
       FetchComplete
       topic.id
     )
@@ -82,10 +83,13 @@ update action composer =
   case action of
 
     FetchComplete opinion ->
-      { composer
-      | opinion = Presenter.prepare <| Presenter.expand opinion
-      }
-      ! []
+      { composer | opinion = prepOpinion opinion } ! []
+
+    FetchError err ->
+      let
+        msg = Debug.log "failed to fetch composed opinion" err
+      in
+        composer ! []
 
     WriteComplete opinion ->
       let
@@ -93,7 +97,7 @@ update action composer =
       in
         composer ! []
 
-    Error err ->
+    WriteError err ->
       let
         msg = Debug.log "failed to write!" err
       in
@@ -112,14 +116,20 @@ update action composer =
     Save ->
       composer
       ! [ API.saveOpinion
-            Error WriteComplete composer.opinion composer.topic.id
+          WriteError WriteComplete composer.opinion composer.topic.id
         ]
 
     Publish ->
       composer
       ! [ API.publishOpinion
-            Error WriteComplete composer.opinion composer.topic.id
+          WriteError WriteComplete composer.opinion composer.topic.id
         ]
+
+prepOpinion : Opinion -> Opinion
+prepOpinion opinion =
+  { opinion | fetched = True }
+  |> Presenter.prepare
+  |> Presenter.expand
 
 
 view : Composer -> Html Msg

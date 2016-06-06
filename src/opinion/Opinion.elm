@@ -1,7 +1,8 @@
 module Opinion.Opinion exposing
   ( Opinion
   , empty
-  , decoder
+  , decoderWithAuthor
+  , decoderWithoutAuthor
   , encode
   )
 
@@ -43,13 +44,21 @@ empty =
   }
 
 
-decoder : Decode.Decoder Opinion
-decoder =
+decoderWithAuthor : Decode.Decoder Opinion
+decoderWithAuthor = decoder ("opiner" := Trustee.decoder)
+
+
+decoderWithoutAuthor : Decode.Decoder Opinion
+decoderWithoutAuthor = decoder <| Decode.succeed Trustee.empty
+
+
+decoder : Decode.Decoder Trustee -> Decode.Decoder Opinion
+decoder trusteeDecoder =
   Decode.object5 fromApi
     ( "id" := Decode.int )
     ( "text" := Decode.string )
     ( "influence" := Decode.int )
-    ( "opiner" := Trustee.decoder )
+    trusteeDecoder
     ( Decode.oneOf
       [ "qualifications" := Qualifications.decoder
       , Decode.succeed Qualifications.empty
