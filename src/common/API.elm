@@ -266,7 +266,6 @@ assignDelegation onError onComplete { from, for, to } =
       Http.url (secureEndpoint ["delegate/topic"])
         [ ( "topic", toString for.id )
         , ( "delegate", toString to.id )
-        , ( "user", toString from.id )
         ]
   in
     Http.post Delegation.decoder url Http.empty
