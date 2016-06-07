@@ -259,8 +259,9 @@ viewForm auth =
     div
       [ class toggleClass ]
       [ div []
-        [ h2 [] [ text <| "Login" ]
-        , text <| "Eventually this will be a login; for now just input the id of the user you'd like to impersonate"
+        [ h2 []
+          [ text <| "Login" ]
+        , text <| "Eventually this will be a login; for now just input the id of the user you'd like to impersonate and press enter/login"
         , div
           [ Form.onEnter (\_ -> LoadUser) ]
           [ Html.App.map ((flip UpdateInput) secret) <| input
@@ -276,21 +277,32 @@ viewForm auth =
             , on "input" targetValue
             ]
             []
+          , div []
+            [ button
+              [ class "confirm-login"
+              , onClick (LoadUser)
+              ]
+              [ text "Login" ]
+            , button
+              [ class "cancel-login"
+              , onClick (SetVisible False)
+              ]
+              [ text "Previous Page" ]
+            ]
           ]
+        ]
+      , div []
+        [ h2 []
+          [ text "OR" ]
         , button
           [ class "fb-login"
           , onClick <| Login Facebook
           ]
-          [ text "FB Login" ]
+          [ text "Login with Facebook" ]
         , button
           [ class "ga-login"
           , onClick <| Login Google
           ]
-          [ text "GA Login" ]
-        , button
-          [ class "cancel-login"
-          , onClick (SetVisible False)
-          ]
-          [ text "Cancel" ]
-        ]
+          [ text "Login with Google" ]
       ]
+    ]
