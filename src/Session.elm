@@ -23,11 +23,11 @@ import ActiveUser exposing
 import Auth exposing (Auth)
 import Common.API as API
 import Delegator exposing (Delegator)
+import Model.Topic as Topic exposing (Topic)
 import Opinion.Surveyor as Surveyor exposing (Surveyor)
 import Opinion.Composer as Composer exposing (Composer)
 import Location
 import Routes
-import Topic.Model as Topic exposing (Topic)
 import User exposing (User)
 
 import Html exposing

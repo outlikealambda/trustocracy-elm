@@ -15,9 +15,9 @@ import Utils.Cmd as CmdUtils
 import Common.API as API
 import Header
 import Location
+import Model.Topic as Topic exposing (Topic)
 import Routes exposing (Route)
 import Session exposing (Session)
-import Topic.Model exposing (Topic)
 import Topic.View
 
 

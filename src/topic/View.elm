@@ -10,7 +10,7 @@ import Html.Events exposing (onWithOptions)
 import Json.Decode as Json
 
 
-import Topic.Model exposing (Topic)
+import Model.Topic exposing (Topic)
 import Routes
 
 

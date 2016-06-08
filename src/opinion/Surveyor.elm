@@ -23,7 +23,7 @@ import Location
 import Model.Path as Path
 import Opinion.Plot as Plot exposing (Plot)
 import Routes
-import Topic.Model as Topic exposing (Topic)
+import Model.Topic as Topic exposing (Topic)
 
 
 type alias Key = Int

@@ -30,9 +30,9 @@ import Auth.Facebook as Facebook
 import Auth.Google as Google
 import Model.Path as Path exposing (Path)
 import Model.Opinion as Opinion exposing (Opinion)
+import Model.Topic as Topic exposing (Topic)
 import Model.Trustee as Trustee exposing (Trustee)
 import User exposing (User)
-import Topic.Model as Topic exposing (Topic)
 
 
 type alias Url = String

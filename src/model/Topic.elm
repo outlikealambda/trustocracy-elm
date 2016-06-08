@@ -1,4 +1,4 @@
-module Topic.Model exposing
+module Model.Topic exposing
   ( Topic
   , empty
   , decoder

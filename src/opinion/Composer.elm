@@ -11,10 +11,10 @@ module Opinion.Composer exposing
 
 import Common.API as API
 import Model.Opinion as Opinion exposing (Opinion)
+import Model.Topic as Topic exposing (Topic)
 import Model.Trustee as Trustee
 import Opinion.Writer as Writer
 import Opinion.Presenter as Presenter
-import Topic.Model as Topic exposing (Topic)
 import User exposing (User)
 
 import Html exposing (Html, div, text, br)
