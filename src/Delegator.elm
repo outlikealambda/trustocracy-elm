@@ -19,11 +19,11 @@ import Utils.Cmd as CmdUtils
 import ActiveUser exposing (ActiveUser (LoggedIn, LoggedOut))
 import Common.API as API
 import Common.Form as Form
-import Common.Relationship as Relationship exposing (Relationship)
+import Model.Relationship as Relationship exposing (Relationship)
 import Location
 import Auth.Google as Google
 import Routes
-import Trustee exposing (Trustee)
+import Model.Trustee as Trustee exposing (Trustee)
 
 
 type alias Delegator =

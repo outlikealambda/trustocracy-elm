@@ -16,9 +16,9 @@ module Opinion.Plot exposing
 
 import Common.API as API
 import Location
-import Opinion.Opinion as Opinion exposing (Opinion)
+import Model.Opinion as Opinion exposing (Opinion)
+import Model.Path as Path exposing (Path)
 import Opinion.Presenter as Presenter
-import Opinion.Path as Path exposing (Path)
 import Routes
 import Utils.List as ListUtils
 

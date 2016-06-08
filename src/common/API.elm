@@ -28,11 +28,11 @@ import Task exposing (Task)
 
 import Auth.Facebook as Facebook
 import Auth.Google as Google
-import Opinion.Path as Path exposing (Path)
-import Opinion.Opinion as Opinion exposing (Opinion)
+import Model.Path as Path exposing (Path)
+import Model.Opinion as Opinion exposing (Opinion)
+import Model.Trustee as Trustee exposing (Trustee)
 import User exposing (User)
 import Topic.Model as Topic exposing (Topic)
-import Trustee exposing (Trustee)
 
 
 type alias Url = String

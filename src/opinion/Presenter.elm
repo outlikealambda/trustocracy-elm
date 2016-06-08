@@ -15,8 +15,8 @@ import Markdown
 import String
 
 
-import Trustee exposing (Trustee)
-import Qualifications exposing (Qualifications)
+import Model.Qualifications as Qualifications exposing (Qualifications)
+import Model.Trustee exposing (Trustee)
 import Routes
 
 

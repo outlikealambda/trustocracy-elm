@@ -1,4 +1,4 @@
-module Common.Relationship exposing
+module Model.Relationship exposing
   ( Relationship
     ( Bff
     , Trusted

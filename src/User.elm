@@ -8,7 +8,9 @@ module User exposing
 
 import Json.Decode as Decode exposing ((:=))
 import Json.Encode as Encode
-import Trustee exposing (Trustee)
+
+
+import Model.Trustee as Trustee exposing (Trustee)
 
 
 type alias User =

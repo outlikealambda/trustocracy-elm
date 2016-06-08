@@ -20,8 +20,8 @@ import Dict
 import ActiveUser exposing (ActiveUser)
 import Common.API as API
 import Location
+import Model.Path as Path
 import Opinion.Plot as Plot exposing (Plot)
-import Opinion.Path as Path
 import Routes
 import Topic.Model as Topic exposing (Topic)
 

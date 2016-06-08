@@ -1,4 +1,4 @@
-module Qualifications exposing
+module Model.Qualifications exposing
   ( Qualifications
   , Msg
   , empty

@@ -12,7 +12,7 @@ import Html.Attributes exposing (class, placeholder, value)
 import Html.Events exposing (on, targetValue)
 
 
-import Qualifications exposing (Qualifications)
+import Model.Qualifications as Qualifications exposing (Qualifications)
 
 
 type alias Writer a =

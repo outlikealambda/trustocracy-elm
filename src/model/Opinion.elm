@@ -1,4 +1,4 @@
-module Opinion.Opinion exposing
+module Model.Opinion exposing
   ( Opinion
   , empty
   , decoderWithAuthor
@@ -7,8 +7,8 @@ module Opinion.Opinion exposing
   )
 
 
-import Trustee exposing (Trustee)
-import Qualifications as Qualifications exposing (Qualifications)
+import Model.Qualifications as Qualifications exposing (Qualifications)
+import Model.Trustee as Trustee exposing (Trustee)
 
 
 import Json.Decode as Decode exposing ((:=))

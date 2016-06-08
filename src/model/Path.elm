@@ -1,4 +1,4 @@
-module Opinion.Path exposing
+module Model.Path exposing
   ( Path
   , viewPaths
   , decoder
@@ -8,8 +8,8 @@ module Opinion.Path exposing
   )
 
 
-import Common.Relationship as Relationship exposing (Relationship)
-import Trustee exposing (Trustee)
+import Model.Relationship as Relationship exposing (Relationship)
+import Model.Trustee as Trustee exposing (Trustee)
 
 
 import Json.Decode as Json exposing ((:=))

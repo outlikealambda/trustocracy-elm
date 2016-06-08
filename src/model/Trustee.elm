@@ -1,4 +1,4 @@
-module Trustee exposing
+module Model.Trustee exposing
   ( Trustee
   , empty
   , decoder
@@ -13,7 +13,7 @@ module Trustee exposing
 
 import Json.Decode as Decode exposing ((:=))
 import Json.Encode as Encode
-import Common.Relationship as Relationship exposing (Relationship)
+import Model.Relationship as Relationship exposing (Relationship)
 
 
 type alias Trustee =
