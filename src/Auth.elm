@@ -258,7 +258,7 @@ viewForm auth =
   in
     div
       [ class toggleClass ]
-      [ div []
+      [ div [class "user-name"]
         [ h2 []
           [ text <| "Login" ]
         , text <| "Eventually this will be a login; for now just input the id of the user you'd like to impersonate and press enter/login"
@@ -291,18 +291,18 @@ viewForm auth =
             ]
           ]
         ]
-      , div []
+      , div [ class "other-login" ]
         [ h2 []
           [ text "OR" ]
         , button
           [ class "fb-login"
           , onClick <| Login Facebook
           ]
-          [ text "Login with Facebook" ]
+          [ text "Sign in with Facebook" ]
         , button
           [ class "ga-login"
           , onClick <| Login Google
           ]
-          [ text "Login with Google" ]
+          [ text "Sign in with Google" ]
       ]
     ]

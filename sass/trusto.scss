@@ -242,7 +242,40 @@ textarea.write {
     cursor: pointer;
   }
 }
-
+.user-name{
+  margin-bottom: 5px;
+}
+.other-login{
+  margin-top: -0px;
+}
+.ga-login{
+  font-weight: 0;
+  cursor: pointer;
+  background: url('/images/googleLogo.png') white 3px 4px no-repeat;
+  background-size: 23px 23px;
+  font-size: 14px;
+  font-weight: bold;
+  font-family: 'Roboto', sans-serif;
+  padding: 4px 4px 4px 32px;
+}
+.fb-login{
+  margin-right: 10px;
+  cursor: pointer;
+  background: url('/images/facebookLogo.png') #3b5998 3px 4px no-repeat;
+  background-size: 23px 23px;
+  color: white;
+  font-size: 14px;
+  font-weight: bold;
+  font-family: 'Tahoma' sans-serif;
+  padding: 4px 6px 6px 32px;
+}
+.confirm-login{
+  margin-top: 5px;
+}
+.cancel-login{
+  margin-top: 5px;
+  margin-left: 5px;
+}
 .login-form {
   position: fixed;
   top: -1500px;
