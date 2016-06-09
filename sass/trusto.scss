@@ -276,6 +276,9 @@ textarea.write {
   margin-top: 5px;
   margin-left: 5px;
 }
+.login a, .logout a{
+  cursor: pointer;
+}
 .login-form {
   position: fixed;
   top: -1500px;
