@@ -1,14 +1,12 @@
 module Model.Opinion exposing
   ( Opinion
   , empty
-  , decoderWithAuthor
-  , decoderWithoutAuthor
+  , decoder
   , encode
   )
 
 
 import Model.Qualifications as Qualifications exposing (Qualifications)
-import Model.Trustee as Trustee exposing (Trustee)
 
 
 import Json.Decode as Decode exposing ((:=))
@@ -21,7 +19,6 @@ type alias Opinion =
   { id : Int
   , text : String
   , influence : Int
-  , opiner : Trustee
   , qualifications : Qualifications
 
   -- derived
@@ -36,7 +33,6 @@ empty =
   { id = -1
   , text = ""
   , influence = -1
-  , opiner = Trustee.empty
   , qualifications = Qualifications.empty
   , snippet = ""
   , expanded = False
@@ -44,21 +40,12 @@ empty =
   }
 
 
-decoderWithAuthor : Decode.Decoder Opinion
-decoderWithAuthor = decoder ("opiner" := Trustee.decoder)
-
-
-decoderWithoutAuthor : Decode.Decoder Opinion
-decoderWithoutAuthor = decoder <| Decode.succeed Trustee.empty
-
-
-decoder : Decode.Decoder Trustee -> Decode.Decoder Opinion
-decoder trusteeDecoder =
-  Decode.object5 fromApi
+decoder : Decode.Decoder Opinion
+decoder =
+  Decode.object4 fromApi
     ( "id" := Decode.int )
     ( "text" := Decode.string )
     ( "influence" := Decode.int )
-    trusteeDecoder
     ( Decode.oneOf
       [ "qualifications" := Qualifications.decoder
       , Decode.succeed Qualifications.empty
@@ -72,18 +59,16 @@ encode opinion =
     [ ("id", Encode.int opinion.id)
     , ("text", Encode.string opinion.text)
     , ("influence", Encode.int opinion.influence)
-    , ("opiner", Trustee.encoder opinion.opiner)
     , ("qualifications", Qualifications.encode opinion.qualifications)
     ]
 
 
-fromApi : Int -> String -> Int -> Trustee -> Qualifications -> Opinion
-fromApi id text influence opiner qualifications =
+fromApi : Int -> String -> Int -> Qualifications -> Opinion
+fromApi id text influence qualifications =
   { empty
   | id = id
   , text = text
   , influence = influence
-  , opiner = opiner
   , qualifications = qualifications
   , fetched = True
   }

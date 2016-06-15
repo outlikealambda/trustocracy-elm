@@ -1,5 +1,6 @@
 module Utils.Dict exposing
   ( createListBuckets
+  , updateWithCmd
   )
 
 
@@ -29,3 +30,20 @@ bucketListItem key v dict =
 
 safeGetList : comparable -> Dict comparable (List a) -> List a
 safeGetList key dict = Maybe.withDefault [] (Dict.get key dict)
+
+
+updateWithCmd : Int -> (a -> (a, Cmd b)) -> Dict Int a -> (Dict Int a, Cmd b)
+updateWithCmd key updater dict =
+  let
+    maybeGet =
+      Dict.get key dict
+  in
+    case maybeGet of
+      Nothing ->
+        dict ! []
+      Just a ->
+        let
+          (updateValue, updateFx) =
+            updater a
+        in
+          Dict.insert key updateValue dict ! [ updateFx ]

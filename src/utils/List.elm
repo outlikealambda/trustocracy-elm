@@ -1,6 +1,7 @@
 module Utils.List exposing
   ( groupBy
-  ) 
+  , singleton
+  )
 
 
 -- not the standard function groupBy, this groups _all_ elements
@@ -41,3 +42,7 @@ insertOrAppend pair keyedItems =
         first::rest -> snd first
   in
     ( fst pair, snd pair :: appendTo ) :: unmatched
+
+
+singleton : a -> List a
+singleton = flip (::) []

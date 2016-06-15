@@ -2,8 +2,6 @@ module Model.Path exposing
   ( Path
   , viewPaths
   , decoder
-  , getOpinerName
-  , getOpinionId
   , getLength
   )
 
@@ -18,21 +16,17 @@ import Html.Attributes exposing (class)
 
 
 type alias Path =
-  { friend: Trustee
-  , path: List Relationship
-  , opiner: Trustee
-  , opinionId: Int
-  , score: Int
+  { trustee : Trustee
+  , hops : List Relationship
+  , score : Int
   }
 
 
 decoder : Json.Decoder Path
 decoder =
-  Json.object5 Path
-    ("friend" := Trustee.decoder)
-    ("path" := Json.list Relationship.decoder)
-    ("opiner" := Trustee.decoder)
-    ("opinion" := Json.int)
+  Json.object3 Path
+    ("trustee" := Trustee.decoder)
+    ("hops" := Json.list Relationship.decoder)
     ("score" := Json.int)
 
 
@@ -52,41 +46,32 @@ viewPaths paths =
 
 
 viewHeader : Path -> Int -> Html msg
-viewHeader {friend, path} count =
+viewHeader {trustee, hops} count =
    div
     [ class "opg-header op single-line cf" ]
     [ div
       [ class "single-line path" ]
-      [ Relationship.view friend.relationship ]
-    , div [class "op-text friend"] [ text friend.name ]
-    , div [class "single-line path"] (List.map Relationship.view path)
+      [ Relationship.view trustee.relationship ]
+    , div [class "op-text friend"] [ text trustee.name ]
+    , div [class "single-line path"] (List.map Relationship.view hops)
     ]
 
 
 viewAbbreviated : Path -> Html msg
-viewAbbreviated {friend, path} =
+viewAbbreviated {trustee, hops} =
   let relationships =
-    List.map Relationship.view path
+    List.map Relationship.view hops
   in
     div [class "op single-line cf"]
       [ div
         [ class "single-line path" ]
-        [ Relationship.view friend.relationship ]
-      , div [class "op-text friend"] [text friend.name]
+        [ Relationship.view trustee.relationship ]
+      , div [class "op-text friend"] [text trustee.name]
       , div [class "single-line path"] relationships
       ]
 
 
-getOpinerName : Path -> String
-getOpinerName = .opiner >> .name
-
-
-getOpinionId : List Path -> Int
-getOpinionId paths =
-  case List.head paths of
-    Nothing -> -1
-    Just {opinionId} -> opinionId
 
 
 getLength : Path -> Int
-getLength = List.length << .path
+getLength = List.length << .hops

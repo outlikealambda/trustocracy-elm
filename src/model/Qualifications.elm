@@ -1,6 +1,8 @@
 module Model.Qualifications exposing
   ( Qualifications
+  , Qualification
   , Msg
+    (..)
   , empty
   , update
   , decoder
