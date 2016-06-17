@@ -13,6 +13,7 @@ import Html.Events exposing (on, targetValue)
 
 
 import Model.Qualifications as Qualifications exposing (Qualifications)
+import View.Qualifications as QualificationsView
 
 
 type alias Writer a =
@@ -78,5 +79,5 @@ viewQualificationsInput qualifications =
     , div
       [ class "section-sub-header" ]
       [ Html.text "for general qualifications, edit your profile" ]
-    , Qualifications.viewForm qualifications
+    , QualificationsView.viewForm qualifications
     ]

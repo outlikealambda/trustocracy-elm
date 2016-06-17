@@ -12,21 +12,17 @@ module Opinion.Composer exposing
 import Common.API as API
 import Model.Opinion as Opinion exposing (Opinion)
 import Model.Topic as Topic exposing (Topic)
-import Model.Trustee as Trustee
 import Opinion.Writer as Writer
-import Opinion.Presenter as Presenter
-import User exposing (User)
+import View.Opinion as OpinionView
 
-import Html exposing (Html, div, text, br)
+import Html exposing (Html)
 import Html.App
-import Html.Attributes exposing (class, placeholder, value)
-import Html.Events exposing (on, onClick)
-import Json.Decode as Decoder
+import Html.Attributes exposing (class)
+import Html.Events as Events
 
 
 type alias Composer =
   { opinion : Opinion
-  , topic : Topic
   , composerView : ComposerView
   }
 
@@ -50,7 +46,6 @@ type ComposerView
 empty : Composer
 empty =
   { opinion = Opinion.empty
-  , topic = Topic.empty
   , composerView = Write
   }
 
@@ -59,18 +54,17 @@ empty =
 -- if there isn't an existing one.  But this means we need to import User and
 -- Trustee, and removes the Maybe response logic from the Action handler...
 -- TODO: create a new Opinion on the server side if the opinion doesn't exist?
-init : User -> Topic -> (Composer, Cmd Msg)
-init user topic =
+init : Topic -> (Composer, Cmd Msg)
+init topic =
   let
     emptyOpinion =
       Opinion.empty
     default =
       { emptyOpinion
-      | opiner = Trustee.fromSelf user.name user.id
-      , fetched = True
+      | fetched = True
       }
   in
-    ( { empty | topic = topic }
+    ( empty
     , API.fetchDraftByTopic
       FetchError
       FetchComplete
@@ -78,12 +72,12 @@ init user topic =
     )
 
 
-update : Msg -> Composer -> (Composer, Cmd Msg)
-update action composer =
+update : Msg -> Topic -> Composer -> (Composer, Cmd Msg)
+update action topic composer =
   case action of
 
     FetchComplete opinion ->
-      { composer | opinion = prepOpinion opinion } ! []
+      { composer | opinion = opinion } ! []
 
     FetchError err ->
       let
@@ -116,21 +110,14 @@ update action composer =
     Save ->
       composer
       ! [ API.saveOpinion
-          WriteError WriteComplete composer.opinion composer.topic.id
+          WriteError WriteComplete composer.opinion topic.id
         ]
 
     Publish ->
       composer
       ! [ API.publishOpinion
-          WriteError WriteComplete composer.opinion composer.topic.id
+          WriteError WriteComplete composer.opinion topic.id
         ]
-
-prepOpinion : Opinion -> Opinion
-prepOpinion opinion =
-  { opinion | fetched = True }
-  |> Presenter.prepare
-  |> Presenter.expand
-
 
 view : Composer -> Html Msg
 view {opinion, composerView} =
@@ -139,11 +126,11 @@ view {opinion, composerView} =
       Write ->
         Html.App.map WriterMsg (Writer.view opinion)
       Preview ->
-        div
+        Html.div
           [ class "preview" ]
-          [ Presenter.viewExpanded opinion ]
+          [ OpinionView.view True opinion ]
   in
-    div
+    Html.div
       [ class "composer" ]
       [ composerNav composerView
       , content
@@ -160,28 +147,28 @@ composerNav composerView =
         Preview ->
           ("write-nav", "preview-nav active")
   in
-    div
+    Html.div
       [ class "composer-nav cf" ]
-      [ Html.App.map SetView <| div
+      [ Html.div
         [ class writeClasses
-        , onClick Write
+        , Events.onClick <| SetView Write
         ]
-        [ text "Write" ]
-      , Html.App.map SetView <| div
+        [ Html.text "Write" ]
+      , Html.div
         [ class previewClasses
-        , onClick Preview
+        , Events.onClick <| SetView Preview
         ]
-        [ text "Preview" ]
-      , div
+        [ Html.text "Preview" ]
+      , Html.div
         [ class "publish-opinion"
-        , on "click" (Decoder.map (\_ -> Publish) Decoder.value)
+        , Events.onClick Publish
         ]
-        [ text "Publish" ]
-      , div
+        [ Html.text "Publish" ]
+      , Html.div
         [ class "save-opinion"
-        , on "click" (Decoder.map (\_ -> Debug.log "clicked" Save) Decoder.value)
+        , Events.onClick Save
         ]
-        [ text "Save" ]
+        [ Html.text "Save" ]
       ]
 
 navButton : Composer -> Html m
@@ -189,23 +176,23 @@ navButton {opinion} =
   let
     actionText =
       if (Debug.log "Composer navButton opinion" opinion).id == -1 then
-        [ text "Compose"
-        , br [] []
-        , text "an"
-        , br [] []
-        , text "Opinion"
+        [ Html.text "Compose"
+        , Html.br [] []
+        , Html.text "an"
+        , Html.br [] []
+        , Html.text "Opinion"
         ]
       else
-        [ text "Edit"
-        , br [] []
-        , text "your"
-        , br [] []
-        , text "Opinion"
+        [ Html.text "Edit"
+        , Html.br [] []
+        , Html.text "your"
+        , Html.br [] []
+        , Html.text "Opinion"
         ]
   in
     if opinion.fetched then
-      div
+      Html.div
         [ class "compose fetched" ]
         actionText
     else
-      div [] []
+      Html.div [] []

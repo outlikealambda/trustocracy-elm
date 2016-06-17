@@ -5,8 +5,6 @@ module Session exposing
   , Msg
     ( GoCompose
     , GoExplore
-    -- , GoSurvey
-    , GoRead
     , GoUserDelegates
     )
   , update
@@ -30,22 +28,16 @@ import Model.Explorer as Explorer exposing (Explorer)
 import Update.Explorer as ExplorerUpdate
 import View.Explorer as ExplorerView
 
--- import Opinion.Surveyor as Surveyor exposing (Surveyor)
 import Opinion.Composer as Composer exposing (Composer)
 import Location
 import Routes
 import User exposing (User)
 
-import Html exposing
-  ( Html
-  , div
-  , h1
-  , text
-  )
+import Html exposing (Html)
 import Html.App
-import Html.Attributes exposing (class)
+import Html.Attributes as Attributes exposing (class)
+import Html.Events as Events
 import Platform.Cmd exposing (Cmd)
-import String
 
 
 type alias Session =
@@ -54,7 +46,6 @@ type alias Session =
   , currentView : SessionView
   , composer : Composer
   , explorer : Explorer
-  -- , surveyor : Surveyor
   , auth : Auth
   , delegator : Delegator
   }
@@ -67,8 +58,6 @@ type Msg
   -- exposed
   = GoCompose TopicId
   | GoExplore TopicId
-  -- | GoSurvey TopicId
-  | GoRead TopicId OpinionId
   | GoUserDelegates
 
   -- private
@@ -81,17 +70,14 @@ type Msg
 
   -- child modules
   | ComposerMsg Composer.Msg
-  -- | SurveyorMsg Surveyor.Msg
   | DelegatorMsg Delegator.Msg
   | ExplorerMsg ExplorerUpdate.Msg
   | AuthMsg Auth.Msg
 
 
 -- the current view
--- we could reuse Routes.Route here, but it feels a little awkward
 type SessionView
   = Compose
-  -- | Survey
   | UserDelegates
   | Explore
   | Empty
@@ -113,7 +99,6 @@ init =
     , currentView = Empty
     , composer = Composer.empty
     , explorer = Explorer.empty
-    -- , surveyor = Surveyor.empty
     , auth = auth
     , delegator = Delegator.fromActiveUser LoggedOut
     }
@@ -130,34 +115,11 @@ update action session =
         , delegator = Delegator.fromActiveUser activeUser
         }
 
-    -- GoCompose and GoSurvey are exposed so that World can still control
-    -- routing.
-    -- Another approach might be to write an updateFromPath method for each
-    -- component, and to pass through a path object whenever the url changes
     GoCompose topicId ->
       setSessionTopic session Compose topicId
 
     GoExplore topicId ->
       setSessionTopic session Explore topicId
-
-    -- GoSurvey topicId ->
-    --   let
-    --     (sessionUpdate, sessionUpdateFx) =
-    --       setSessionTopic session Survey topicId
-    --   in
-    --     { sessionUpdate | surveyor = Surveyor.blur sessionUpdate.surveyor }
-    --     ! [ sessionUpdateFx ]
-
-    -- we'll focus the Surveyor instead of using a separate reader
-    GoRead topicId opinionId ->
-      setSessionTopic session Explore topicId
-      -- let
-      --   (sessionUpdate, sessionUpdateFx) =
-      --     setSessionTopic session Survey topicId
-      -- in
-      --   { sessionUpdate | surveyor = Surveyor.focus opinionId sessionUpdate.surveyor }
-      --   ! [ sessionUpdateFx ]
-
 
     GoUserDelegates ->
       { session | currentView = UserDelegates } ! []
@@ -181,7 +143,7 @@ update action session =
     ComposerMsg composerAction ->
       let
         (update, updateFx) =
-          Composer.update composerAction session.composer
+          Composer.update composerAction session.topic session.composer
       in
         { session | composer = update }
         ! [ Cmd.map ComposerMsg updateFx ]
@@ -193,17 +155,6 @@ update action session =
       in
         { session | explorer = update }
         ! [ Cmd.map ExplorerMsg updateFx ]
-
-
-    -- SurveyorMsg connectAction ->
-    --   let
-    --     (update, updateFx) =
-    --       Surveyor.update connectAction session.surveyor
-    --   in
-    --     { session
-    --     | surveyor = update
-    --     }
-    --     ! [ Cmd.map SurveyorMsg updateFx ]
 
     AuthMsg authAction ->
       let
@@ -261,33 +212,26 @@ setSessionTopic session newSessionView topicId =
 -- compose and survey
 updateViews : Session -> (Session, Cmd Msg)
 updateViews session =
-  -- let
-  --   (surveyor, surveyorFx) =
-  --     Surveyor.init session.topic session.activeUser
-  -- in
-    case session.activeUser of
-      LoggedOut ->
-        session ! []
-          -- | surveyor = surveyor
-          -- }
-          -- ! [ Cmd.map SurveyorMsg surveyorFx ]
+  case session.activeUser of
+    LoggedOut ->
+      session ! []
 
-      LoggedIn user ->
-        let
-          (composer, composerFx) =
-            Composer.init user session.topic
-          (explorer, explorerFx) =
-            ExplorerUpdate.init (Debug.log "explore topic id" session.topic.id) Nothing
-        in
-          { session
+    LoggedIn user ->
+      let
+        (composer, composerFx) =
+          Composer.init session.topic
+        (explorer, explorerFx) =
+          ExplorerUpdate.init (Debug.log "explore topic id" session.topic.id) Nothing
+      in
+        ( { session
           | composer = composer
-          -- , surveyor = surveyor
           , explorer = explorer
           }
-          ! [ Cmd.map ComposerMsg composerFx
-            -- , Cmd.map SurveyorMsg surveyorFx
-            , Cmd.map ExplorerMsg explorerFx
-            ]
+        , Cmd.batch
+          [ Cmd.map ComposerMsg composerFx
+          , Cmd.map ExplorerMsg explorerFx
+          ]
+        )
 
 
 view : (Msg -> msg) -> Session -> Html msg
@@ -301,79 +245,82 @@ view transform session =
         LoggedOut ->
           inactiveSessionContent session
   in
-    Html.App.map transform <| div [ class "session" ] sessionContent
+    Html.App.map transform <| Html.div [ class "session" ] sessionContent
 
 
 -- used to help create the nav links
 type alias SessionLinker a =
-  { routeView : SessionView
-  , buildRoute : Int -> Routes.Route
-  , makeHtml : a -> Html Msg
+  { componentView : SessionView
+  , sessionMsg : (Session -> Msg)
+  , html : a -> Html Msg
   , getter : Session -> a
   }
 
 
 -- builds a link, setting it to active if it matches the current view
-buildSubNavLink : SessionLinker a -> Session -> Html Msg
-buildSubNavLink {routeView, buildRoute, makeHtml, getter} session =
+buildComponentNav : SessionLinker a -> Session -> Html Msg
+buildComponentNav {componentView, sessionMsg, html, getter} session =
   let
     classes =
       -- we need to examine the current view to determine whether this
       -- link is active or not
       -- this is the primary reason for this class; it is awkward to write 3
       -- if statements in sessionHeader
-      if routeView == session.currentView then
-        [ "session-link", "active"]
-      else
-        [ "session-link" ]
+      [ ("session-link", True)
+      , ("active", componentView == session.currentView)
+      ]
   in
-    div
-      [ class <| String.join " " classes
-      , Routes.goToRoute <| SetPath <| buildRoute session.topic.id ]
-      [ makeHtml <| getter session
+    Html.div
+      [ Attributes.classList classes
+      , Events.onClick <| sessionMsg session
+      ]
+      [ html <| getter session
       ]
 
 
 composeLinker : Session -> Html Msg
-composeLinker = buildSubNavLink
-  { routeView = Compose
-  , buildRoute = Routes.Compose
-  , makeHtml = Composer.navButton
+composeLinker = buildComponentNav
+  { componentView = Compose
+  , sessionMsg = GoCompose << .id << .topic
+  , html = Composer.navButton
   , getter = .composer
   }
 
 
--- connectLinker : Session -> Html Msg
--- connectLinker = buildSubNavLink
---   { routeView = Survey
---   , buildRoute = Routes.Survey
---   , makeHtml = Surveyor.navButton
---   , getter = .surveyor
---   }
---
+exploreLinker : Session -> Html Msg
+exploreLinker = buildComponentNav
+  { componentView = Explore
+  , sessionMsg = GoExplore << .id << .topic
+  , html = ExplorerView.navButton
+  , getter = .explorer
+  }
+
 
 activeSubNav : Session -> Html Msg
 activeSubNav session =
-  div
+  Html.div
     [ class "session-overview" ]
-    [ h1 [ class "topic-title" ] [ text session.topic.text ]
-    , div
+    [ Html.h1
+      [ class "topic-title" ]
+      [ Html.text session.topic.text ]
+    , Html.div
       [ class "session-links" ]
-      -- [ connectLinker session
-      [ composeLinker session
+      [ exploreLinker session
+      , composeLinker session
       ]
     ]
 
 
 inactiveSubNav : Session -> Html Msg
 inactiveSubNav session =
-  div
+  Html.div
     [ class "session-overview" ]
-    [ h1 [ class "topic-title" ] [ text session.topic.text ]
-    , div
+    [ Html.h1
+      [ class "topic-title" ]
+      [ Html.text session.topic.text ]
+    , Html.div
       [ class "session-links" ]
-      -- [ connectLinker session ]
-      [ ]
+      [ exploreLinker session ]
     ]
 
 
@@ -381,61 +328,40 @@ activeSessionContent : User -> Session -> List (Html Msg)
 activeSessionContent user session =
   case session.currentView of
 
-    -- Survey ->
-    --   [ activeSubNav session
-    --   , div
-    --     [ class "content" ]
-    --     [ Surveyor.view
-    --       { transform = SurveyorMsg
-    --       , readRouteBuilder = Routes.Read session.topic.id
-    --       , showAllRoute = Routes.Survey session.topic.id
-    --       }
-    --       session.surveyor
-    --     ]
-    --   ]
-
     Compose ->
       [ activeSubNav session
-      , div
+      , Html.div
         [ class "content" ]
         [ Html.App.map ComposerMsg (Composer.view session.composer) ]
       ]
 
     Explore ->
-      [ ExplorerView.view ExplorerMsg session.explorer ]
+      [ activeSubNav session
+      , ExplorerView.view ExplorerMsg session.explorer
+      ]
 
     UserDelegates ->
-      [ div
+      [ Html.div
         [ class "content" ]
         [ Html.App.map DelegatorMsg (Delegator.view user.emails session.delegator) ]
       ]
 
     Empty ->
-      [ div [] [ text "whoops, why we here?" ] ]
+      [ Html.div
+        []
+        [ Html.text "whoops, why we here?" ] ]
 
 
 -- an inactiveSession should only route to browse
 inactiveSessionContent : Session -> List (Html Msg)
 inactiveSessionContent session =
   case session.currentView of
-    -- Survey ->
-    --   [ inactiveSubNav session
-    --   , div
-    --     [ class "content" ]
-    --     [ Surveyor.view
-    --       { transform = SurveyorMsg
-    --       , readRouteBuilder = Routes.Read session.topic.id
-    --       , showAllRoute = Routes.Survey session.topic.id
-    --       }
-    --       session.surveyor
-    --     ]
-    --   ]
 
     _ ->
       [ inactiveSubNav session
-      , div
+      , Html.div
         [ class "content" ]
-        [ text "Sorry, you must be logged in to see this content" ]
+        [ Html.text "Sorry, you must be logged in to see this content" ]
       ]
 
 

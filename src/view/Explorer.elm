@@ -1,5 +1,7 @@
 module View.Explorer exposing
-  ( view )
+  ( view
+  , navButton
+  )
 
 
 import Model.Explorer exposing (Explorer)
@@ -9,6 +11,7 @@ import View.Connection as ConnectionView
 
 import Dict
 import Html exposing (Html)
+import Html.Attributes exposing (class)
 
 
 view : (Update.Msg -> msg) -> Explorer -> Html msg
@@ -25,3 +28,13 @@ view transform { connections } =
       ( Dict.values connections
         |> List.map (ConnectionView.view context)
       )
+
+navButton : Explorer -> Html msg
+navButton {connections} =
+
+  let
+    count = Dict.size connections
+  in
+    Html.div
+      [ class "connect fetched" ]
+      [ Html.text <| (toString count) ++ " Opinions" ]

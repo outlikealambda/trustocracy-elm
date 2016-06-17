@@ -167,7 +167,7 @@ fetchConnected onError onSuccess topic =
 
 fetchConnectedV2 : (String -> a) -> (List Connection -> a) -> TopicId -> Cmd a
 fetchConnectedV2 onError onSuccess tid =
-  openEndpoint ["topic/", toString tid, "/connected/v2"]
+  secureEndpoint ["topic/", toString tid, "/connected/v2"]
     |> Http.get (Decode.list Connection.decoder)
     |> Task.mapError httpErrorToString
     |> Task.perform onError onSuccess

@@ -35,7 +35,7 @@ view context {author, opinion, paths, status} =
 
     Expandable.Expanded ->
       Html.div
-        [ class "connection" ]
+        [ class "connection cf" ]
         [ Html.div
           [ class "paths" ]
           ( List.map PathView.view paths )
@@ -46,7 +46,7 @@ view context {author, opinion, paths, status} =
 
     Expandable.Collapsed ->
       Html.div
-        [ class "connection" ]
+        [ class "connection cf" ]
         [ Html.div
           [ class "paths" ]
           ( List.head (Debug.log "all paths" paths)

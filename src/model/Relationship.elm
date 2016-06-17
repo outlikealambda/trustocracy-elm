@@ -12,13 +12,15 @@ module Model.Relationship exposing
   , encoder
   , toString
   , toReadable
+  , toClass
   )
 
 
-import Html exposing (Html, div, span)
-import Html.Attributes exposing (class)
+import Html exposing (Html)
+import Html.Attributes as Attributes exposing (class)
 import Json.Decode as Decode
 import Json.Encode as Encode
+import String
 
 
 type Relationship
@@ -32,7 +34,13 @@ type Relationship
 
 view : Relationship -> Html msg
 view relationship =
-  span [class (getCircleType relationship)] []
+  Html.div
+    [ Attributes.classList
+      [ ("relationship", True)
+      , (toClass relationship, True)
+      ]
+    ]
+    []
 
 
 getCircleType : Relationship -> String
@@ -97,3 +105,6 @@ toReadable r =
       "Self"
     None ->
       "None"
+
+toClass : Relationship -> String
+toClass = String.toLower << toReadable
