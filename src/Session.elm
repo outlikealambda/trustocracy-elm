@@ -447,4 +447,4 @@ navHeader transform {auth, activeUser} =
       , activeUser = activeUser
       }
       auth)
-    (Delegator.navHeader (transform << DelegatorMsg) activeUser)
+    (Delegator.navHeader (transform GoUserDelegates) activeUser)

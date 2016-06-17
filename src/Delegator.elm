@@ -476,8 +476,8 @@ relationshipClass r =
       "unknown"
 
 
-navHeader : (Msg -> msg) -> ActiveUser -> List (Html msg)
-navHeader transform activeUser =
+navHeader : msg -> ActiveUser -> List (Html msg)
+navHeader msg activeUser =
   case activeUser of
     LoggedOut ->
       []
@@ -486,7 +486,7 @@ navHeader transform activeUser =
       [ div
         [class "home" ]
         [ a
-          (Routes.clickTo (transform << SetPath) Routes.UserDelegates)
+          [ Event.onClick msg ]
           [ text <| "You trust " ++ (toString <| List.length user.trustees) ++ " people" ]
         ]
       ]

@@ -114,7 +114,7 @@ updateSession sessionAction =
 view : World -> Html Msg
 view world =
   div []
-    [ Session.navHeader SessionMsg world.session
+    [ Session.navHeader GoSession world.session
       |> Header.view GoHome
     , div
       [ class "world" ]
