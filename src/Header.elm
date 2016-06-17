@@ -3,25 +3,25 @@ module Header exposing
   )
 
 
-import Html exposing (Html, Attribute, div, text, a)
-import Html.Attributes exposing (class, href)
+import Html exposing (Html)
+import Html.Attributes exposing (class )
+import Html.Events as Events
 
-import Routes
 
 
-view : (Routes.Route -> m) -> List (Html m) -> Html m
-view onRoute sessionElements =
+view : msg -> List (Html msg) -> Html msg
+view msg sessionElements =
   let
     home =
-      [ div
+      [ Html.div
         [ class "home" ]
-        [ a
-          (Routes.clickTo onRoute Routes.Home)
-          [ text "Home" ]
+        [ Html.a
+          [ Events.onClick msg ]
+          [ Html.text "Home" ]
         ]
       ]
 
   in
-    div [ class "header" ]
+    Html.div [ class "header" ]
       <| home
       ++ sessionElements
