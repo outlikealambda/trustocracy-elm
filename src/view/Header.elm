@@ -1,4 +1,4 @@
-module Header exposing
+module View.Header exposing
   ( view
   )
 
@@ -6,7 +6,6 @@ module Header exposing
 import Html exposing (Html)
 import Html.Attributes exposing (class )
 import Html.Events as Events
-
 
 
 view : msg -> List (Html msg) -> Html msg

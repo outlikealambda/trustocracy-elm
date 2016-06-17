@@ -1,4 +1,4 @@
-module Topic.View exposing
+module View.Topic exposing
   ( view
   , viewAll
   )

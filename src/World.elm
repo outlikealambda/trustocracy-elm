@@ -8,10 +8,10 @@ module World exposing
   )
 
 import Common.API as API
-import Header
 import Model.Topic as Topic exposing (Topic)
 import Session exposing (Session)
-import Topic.View
+import View.Header as HeaderView
+import View.Topic as TopicView
 import Utils.Cmd as CmdUtils
 
 
@@ -115,12 +115,12 @@ view : World -> Html Msg
 view world =
   div []
     [ Session.navHeader GoSession world.session
-      |> Header.view GoHome
+      |> HeaderView.view GoHome
     , div
       [ class "world" ]
       ( case (Debug.log "world view " world.currentView) of
         TopicsView ->
-          [ Topic.View.viewAll (GoSession << Session.GoExplore) world.topics ]
+          [ TopicView.viewAll (GoSession << Session.GoExplore) world.topics ]
 
         SessionView ->
           [ Session.view SessionMsg world.session ]
