@@ -4,7 +4,8 @@ module Session exposing
   , init
   , Msg
     ( GoCompose
-    , GoSurvey
+    , GoExplore
+    -- , GoSurvey
     , GoRead
     , GoUserDelegates
     )
@@ -24,7 +25,12 @@ import Auth exposing (Auth)
 import Common.API as API
 import Delegator exposing (Delegator)
 import Model.Topic as Topic exposing (Topic)
-import Opinion.Surveyor as Surveyor exposing (Surveyor)
+
+import Model.Explorer as Explorer exposing (Explorer)
+import Update.Explorer as ExplorerUpdate
+import View.Explorer as ExplorerView
+
+-- import Opinion.Surveyor as Surveyor exposing (Surveyor)
 import Opinion.Composer as Composer exposing (Composer)
 import Location
 import Routes
@@ -47,7 +53,8 @@ type alias Session =
   , topic : Topic
   , currentView : SessionView
   , composer : Composer
-  , surveyor : Surveyor
+  , explorer : Explorer
+  -- , surveyor : Surveyor
   , auth : Auth
   , delegator : Delegator
   }
@@ -59,7 +66,8 @@ type alias OpinionId = Int
 type Msg
   -- exposed
   = GoCompose TopicId
-  | GoSurvey TopicId
+  | GoExplore TopicId
+  -- | GoSurvey TopicId
   | GoRead TopicId OpinionId
   | GoUserDelegates
 
@@ -73,8 +81,9 @@ type Msg
 
   -- child modules
   | ComposerMsg Composer.Msg
-  | SurveyorMsg Surveyor.Msg
+  -- | SurveyorMsg Surveyor.Msg
   | DelegatorMsg Delegator.Msg
+  | ExplorerMsg ExplorerUpdate.Msg
   | AuthMsg Auth.Msg
 
 
@@ -82,8 +91,9 @@ type Msg
 -- we could reuse Routes.Route here, but it feels a little awkward
 type SessionView
   = Compose
-  | Survey
+  -- | Survey
   | UserDelegates
+  | Explore
   | Empty
 
 
@@ -102,7 +112,8 @@ init =
     , topic = Topic.empty
     , currentView = Empty
     , composer = Composer.empty
-    , surveyor = Surveyor.empty
+    , explorer = Explorer.empty
+    -- , surveyor = Surveyor.empty
     , auth = auth
     , delegator = Delegator.fromActiveUser LoggedOut
     }
@@ -126,22 +137,26 @@ update action session =
     GoCompose topicId ->
       setSessionTopic session Compose topicId
 
-    GoSurvey topicId ->
-      let
-        (sessionUpdate, sessionUpdateFx) =
-          setSessionTopic session Survey topicId
-      in
-        { sessionUpdate | surveyor = Surveyor.blur sessionUpdate.surveyor }
-        ! [ sessionUpdateFx ]
+    GoExplore topicId ->
+      setSessionTopic session Explore topicId
+
+    -- GoSurvey topicId ->
+    --   let
+    --     (sessionUpdate, sessionUpdateFx) =
+    --       setSessionTopic session Survey topicId
+    --   in
+    --     { sessionUpdate | surveyor = Surveyor.blur sessionUpdate.surveyor }
+    --     ! [ sessionUpdateFx ]
 
     -- we'll focus the Surveyor instead of using a separate reader
     GoRead topicId opinionId ->
-      let
-        (sessionUpdate, sessionUpdateFx) =
-          setSessionTopic session Survey topicId
-      in
-        { sessionUpdate | surveyor = Surveyor.focus opinionId sessionUpdate.surveyor }
-        ! [ sessionUpdateFx ]
+      setSessionTopic session Explore topicId
+      -- let
+      --   (sessionUpdate, sessionUpdateFx) =
+      --     setSessionTopic session Survey topicId
+      -- in
+      --   { sessionUpdate | surveyor = Surveyor.focus opinionId sessionUpdate.surveyor }
+      --   ! [ sessionUpdateFx ]
 
 
     GoUserDelegates ->
@@ -158,7 +173,7 @@ update action session =
     -- does so in the current dev environment?
     -- TODO: reload views on user change/logout
     SetTopic topic ->
-      updateViews { session | topic = topic }
+      updateViews { session | topic = Debug.log "new session topic" topic }
 
     SetPath route ->
       session ! [ Location.setPath <| Routes.encode route ]
@@ -171,15 +186,24 @@ update action session =
         { session | composer = update }
         ! [ Cmd.map ComposerMsg updateFx ]
 
-    SurveyorMsg connectAction ->
+    ExplorerMsg msg ->
       let
         (update, updateFx) =
-          Surveyor.update connectAction session.surveyor
+          ExplorerUpdate.update msg session.explorer
       in
-        { session
-        | surveyor = update
-        }
-        ! [ Cmd.map SurveyorMsg updateFx ]
+        { session | explorer = update }
+        ! [ Cmd.map ExplorerMsg updateFx ]
+
+
+    -- SurveyorMsg connectAction ->
+    --   let
+    --     (update, updateFx) =
+    --       Surveyor.update connectAction session.surveyor
+    --   in
+    --     { session
+    --     | surveyor = update
+    --     }
+    --     ! [ Cmd.map SurveyorMsg updateFx ]
 
     AuthMsg authAction ->
       let
@@ -237,28 +261,32 @@ setSessionTopic session newSessionView topicId =
 -- compose and survey
 updateViews : Session -> (Session, Cmd Msg)
 updateViews session =
-  let
-    (surveyor, surveyorFx) =
-      Surveyor.init session.topic session.activeUser
-  in
+  -- let
+  --   (surveyor, surveyorFx) =
+  --     Surveyor.init session.topic session.activeUser
+  -- in
     case session.activeUser of
       LoggedOut ->
-          { session
-          | surveyor = surveyor
-          }
-          ! [ Cmd.map SurveyorMsg surveyorFx ]
+        session ! []
+          -- | surveyor = surveyor
+          -- }
+          -- ! [ Cmd.map SurveyorMsg surveyorFx ]
 
       LoggedIn user ->
         let
           (composer, composerFx) =
             Composer.init user session.topic
+          (explorer, explorerFx) =
+            ExplorerUpdate.init (Debug.log "explore topic id" session.topic.id) Nothing
         in
           { session
           | composer = composer
-          , surveyor = surveyor
+          -- , surveyor = surveyor
+          , explorer = explorer
           }
           ! [ Cmd.map ComposerMsg composerFx
-            , Cmd.map SurveyorMsg surveyorFx
+            -- , Cmd.map SurveyorMsg surveyorFx
+            , Cmd.map ExplorerMsg explorerFx
             ]
 
 
@@ -315,14 +343,14 @@ composeLinker = buildSubNavLink
   }
 
 
-connectLinker : Session -> Html Msg
-connectLinker = buildSubNavLink
-  { routeView = Survey
-  , buildRoute = Routes.Survey
-  , makeHtml = Surveyor.navButton
-  , getter = .surveyor
-  }
-
+-- connectLinker : Session -> Html Msg
+-- connectLinker = buildSubNavLink
+--   { routeView = Survey
+--   , buildRoute = Routes.Survey
+--   , makeHtml = Surveyor.navButton
+--   , getter = .surveyor
+--   }
+--
 
 activeSubNav : Session -> Html Msg
 activeSubNav session =
@@ -331,8 +359,8 @@ activeSubNav session =
     [ h1 [ class "topic-title" ] [ text session.topic.text ]
     , div
       [ class "session-links" ]
-      [ connectLinker session
-      , composeLinker session
+      -- [ connectLinker session
+      [ composeLinker session
       ]
     ]
 
@@ -344,8 +372,8 @@ inactiveSubNav session =
     [ h1 [ class "topic-title" ] [ text session.topic.text ]
     , div
       [ class "session-links" ]
-      [ connectLinker session
-      ]
+      -- [ connectLinker session ]
+      [ ]
     ]
 
 
@@ -353,18 +381,18 @@ activeSessionContent : User -> Session -> List (Html Msg)
 activeSessionContent user session =
   case session.currentView of
 
-    Survey ->
-      [ activeSubNav session
-      , div
-        [ class "content" ]
-        [ Surveyor.view
-          { transform = SurveyorMsg
-          , readRouteBuilder = Routes.Read session.topic.id
-          , showAllRoute = Routes.Survey session.topic.id
-          }
-          session.surveyor
-        ]
-      ]
+    -- Survey ->
+    --   [ activeSubNav session
+    --   , div
+    --     [ class "content" ]
+    --     [ Surveyor.view
+    --       { transform = SurveyorMsg
+    --       , readRouteBuilder = Routes.Read session.topic.id
+    --       , showAllRoute = Routes.Survey session.topic.id
+    --       }
+    --       session.surveyor
+    --     ]
+    --   ]
 
     Compose ->
       [ activeSubNav session
@@ -372,6 +400,9 @@ activeSessionContent user session =
         [ class "content" ]
         [ Html.App.map ComposerMsg (Composer.view session.composer) ]
       ]
+
+    Explore ->
+      [ ExplorerView.view ExplorerMsg session.explorer ]
 
     UserDelegates ->
       [ div
@@ -387,18 +418,18 @@ activeSessionContent user session =
 inactiveSessionContent : Session -> List (Html Msg)
 inactiveSessionContent session =
   case session.currentView of
-    Survey ->
-      [ inactiveSubNav session
-      , div
-        [ class "content" ]
-        [ Surveyor.view
-          { transform = SurveyorMsg
-          , readRouteBuilder = Routes.Read session.topic.id
-          , showAllRoute = Routes.Survey session.topic.id
-          }
-          session.surveyor
-        ]
-      ]
+    -- Survey ->
+    --   [ inactiveSubNav session
+    --   , div
+    --     [ class "content" ]
+    --     [ Surveyor.view
+    --       { transform = SurveyorMsg
+    --       , readRouteBuilder = Routes.Read session.topic.id
+    --       , showAllRoute = Routes.Survey session.topic.id
+    --       }
+    --       session.surveyor
+    --     ]
+    --   ]
 
     _ ->
       [ inactiveSubNav session

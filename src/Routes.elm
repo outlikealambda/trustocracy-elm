@@ -11,19 +11,25 @@ import String
 type Route
   = Home
   | Topics
-  | Survey Int
-  | Compose Int
-  | Read Int Int
+  -- | Survey TopicId
+  | Compose TopicId
+  | Read TopicId OpinionId
+  | Explore TopicId
   | UserDelegates
   | EmptyRoute
+
+
+type alias TopicId = Int
+type alias OpinionId = Int
 
 
 routeParsers : List (RouteParser.Matcher Route)
 routeParsers =
   [ RouteParser.static Home "/"
   , RouteParser.static Topics "/topics"
-  , RouteParser.dyn1 Survey "/topic/" RouteParser.int "/survey"
+  -- , RouteParser.dyn1 Survey "/topic/" RouteParser.int "/survey"
   , RouteParser.dyn1 Compose "/topic/" RouteParser.int "/compose"
+  , RouteParser.dyn1 Explore "/topic/" RouteParser.int "/explore"
   , RouteParser.dyn2 Read "/topic/" RouteParser.int "/read/" RouteParser.int ""
   , RouteParser.static UserDelegates "/my/trust"
   ]
@@ -40,7 +46,7 @@ encode route =
   case route of
     Home -> "/"
     Topics -> "/topics"
-    Survey topicId -> "/topic/" ++ toString topicId ++ "/survey"
+    -- Survey topicId -> "/topic/" ++ toString topicId ++ "/survey"
     Compose topicId -> "/topic/" ++ toString topicId ++ "/compose"
     Read topicId opinionId ->
       String.concat
@@ -49,6 +55,7 @@ encode route =
         , "/read/"
         , toString opinionId
         ]
+    Explore topicId -> "/topic/" ++ toString topicId ++ "/explore"
     UserDelegates -> "/my/trust"
     EmptyRoute -> "/"
 

@@ -7,6 +7,7 @@ module Model.Opinion exposing
 
 
 import Model.Qualifications as Qualifications exposing (Qualifications)
+import Utils.String as StringUtils
 
 
 import Json.Decode as Decode exposing ((:=))
@@ -71,4 +72,5 @@ fromApi id text influence qualifications =
   , influence = influence
   , qualifications = qualifications
   , fetched = True
+  , snippet = StringUtils.snippetize 100 text
   }

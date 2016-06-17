@@ -1,4 +1,7 @@
-module View.Connection exposing (..)
+module View.Connection exposing
+  ( view
+  , Context
+  )
 
 
 import Model.Connection as Connection exposing (Connection)
@@ -12,11 +15,22 @@ import View.Path as PathView
 
 
 import Html exposing (Html)
+import Html.App
 import Html.Attributes exposing (class)
+import Html.Events as Events
 
 
-view : Connection -> Html msg
-view {author, opinion, paths, status} =
+type alias OpinionId = Int
+
+
+type alias Context msg =
+  { showAll : (() -> msg)
+  , readMore : (OpinionId -> msg)
+  }
+
+
+view : Context msg -> Connection -> Html msg
+view context {author, opinion, paths, status} =
   case status of
 
     Expandable.Expanded ->
@@ -27,6 +41,7 @@ view {author, opinion, paths, status} =
           ( List.map PathView.view paths )
         , AuthorView.view author opinion.influence opinion.qualifications
         , OpinionView.view True opinion
+        , Html.App.map context.showAll showAll
         ]
 
     Expandable.Collapsed ->
@@ -34,7 +49,7 @@ view {author, opinion, paths, status} =
         [ class "connection" ]
         [ Html.div
           [ class "paths" ]
-          ( List.head paths
+          ( List.head (Debug.log "all paths" paths)
             |> Maybe.map PathView.view
             |> Maybe.map ListUtils.singleton
             |> Maybe.withDefault []
@@ -42,4 +57,25 @@ view {author, opinion, paths, status} =
         , AuthorView.view author opinion.influence opinion.qualifications
         , OpinionView.view False opinion
         -- insert read more here
+        , Html.App.map context.readMore <| readMore opinion.id
         ]
+
+
+readMore : OpinionId -> Html OpinionId
+readMore oid =
+  Html.a
+    [ class "read-more"
+    , Events.onClick oid
+    ]
+    [ Html.text "read more..."
+    ]
+
+
+showAll : Html ()
+showAll =
+  Html.a
+    [ class "show-all"
+    , Events.onClick ()
+    ]
+    [ Html.text "show all..."
+    ]

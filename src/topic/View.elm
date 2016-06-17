@@ -4,32 +4,27 @@ module Topic.View exposing
   )
 
 
-import Html exposing (Html, div, text)
-import Html.Attributes exposing (class, href)
-import Html.Events exposing (onWithOptions)
-import Json.Decode as Json
+import Html exposing (Html)
+import Html.App
+import Html.Attributes exposing (class)
+import Html.Events as Events
 
 
 import Model.Topic exposing (Topic)
-import Routes
 
 
-view : (Routes.Route -> msg) -> Topic -> Html msg
-view onRoute topic =
-  div
-    [ class "topic", clickTo <| onRoute (Routes.Survey topic.id) ]
-    [ text topic.text ]
+type alias TopicId = Int
 
 
-viewAll : (Routes.Route -> msg) -> List Topic -> Html msg
-viewAll onRoute topics =
-  div [ class "topics" ]
-    (List.map (view onRoute) topics)
+view : Topic -> Html TopicId
+view topic =
+  Html.div
+    [ class "topic"
+    , Events.onClick topic.id ]
+    [ Html.text topic.text ]
 
 
-clickTo : msg -> Html.Attribute msg
-clickTo msg =
-  onWithOptions
-    "click"
-    { stopPropagation = True, preventDefault = True }
-    (Json.map (\_ -> msg) Json.value)
+viewAll : (TopicId -> msg) -> List Topic -> Html msg
+viewAll transform topics =
+  Html.div [ class "topics" ]
+    (List.map (Html.App.map transform << view ) topics)

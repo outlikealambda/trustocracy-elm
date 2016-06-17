@@ -25,11 +25,15 @@ type alias World =
   { route : Route
   , session : Session
   , topics : List Topic
+  , currentView : WorldView
   }
 
 
+type WorldView = SessionView | TopicsView
+
 type Msg
-  = SessionMsg Session.Msg
+  = GoSession Session.Msg -- temp hack to let TopicView change the model state
+  | SessionMsg Session.Msg
   | TopicsLoadComplete (List Topic)
   | TopicsLoadFailed (String)
   | SetPath String
@@ -58,8 +62,11 @@ mountRoute route world =
           -- by updating the Session
           updateSession <| Session.GoCompose topicId
 
-        Routes.Survey topicId ->
-          updateSession <| Session.GoSurvey topicId
+        Routes.Explore topicId ->
+          updateSession <| Session.GoExplore topicId
+
+        -- Routes.Survey topicId ->
+        --   updateSession <| Session.GoSurvey topicId
 
         Routes.Read topicId opinionId ->
           updateSession <| Session.GoRead topicId opinionId
@@ -103,6 +110,7 @@ initialModel =
     ( { topics = []
       , session = session
       , route = Routes.EmptyRoute
+      , currentView = TopicsView
       }
     , Cmd.map SessionMsg sessionFx )
 
@@ -110,10 +118,15 @@ initialModel =
 update : Msg -> World -> (World, Cmd Msg)
 update message world =
   case message of
+    GoSession sessionAction ->
+      ( { world | currentView = SessionView }
+      , CmdUtils.init <| SessionMsg sessionAction
+      )
+
     SessionMsg sessionAction ->
       let
         (update, updateFx) =
-          Session.update sessionAction world.session
+          Session.update (Debug.log "session action" sessionAction) world.session
       in
         ( { world | session = update }
         , Cmd.map SessionMsg updateFx
@@ -158,27 +171,37 @@ view world =
       <| Session.navHeader SessionMsg world.session
     , div
       [ class "world" ]
-      ( case (Debug.log "world view route" world.route) of
+      ( case (Debug.log "world view " world.currentView) of
+        TopicsView ->
+          [ Topic.View.viewAll (GoSession << Session.GoExplore) world.topics ]
 
-        Routes.Topics ->
-          [ Topic.View.viewAll (SetPath << Routes.encode) world.topics ]
-
-        Routes.Home ->
-          [ Topic.View.viewAll (SetPath << Routes.encode) (Debug.log "home route topics" world.topics) ]
-
-        Routes.Survey _ ->
+        SessionView ->
           [ Session.view SessionMsg world.session ]
 
-        Routes.Compose _ ->
-          [ Session.view SessionMsg world.session ]
-
-        Routes.Read _ _ ->
-          [ Session.view SessionMsg world.session ]
-
-        Routes.UserDelegates ->
-          [ Session.view SessionMsg world.session ]
-
-        Routes.EmptyRoute ->
-          [ text "" ]
+        -- Routes.Topics ->
+        --   -- [ Topic.View.viewAll (SetPath << Routes.encode) world.topics ]
+        --   [ Topic.View.viewAll (SessionMsg << Session.GoExplore) world.topics ]
+        --
+        -- Routes.Home ->
+        --   -- [ Topic.View.viewAll (SetPath << Routes.encode) world.topics ]
+        --   [ Topic.View.viewAll (SessionMsg << Session.GoExplore) world.topics ]
+        --
+        -- -- Routes.Survey _ ->
+        -- --   [ Session.view SessionMsg world.session ]
+        --
+        -- Routes.Compose _ ->
+        --   [ Session.view SessionMsg world.session ]
+        --
+        -- Routes.Explore _ ->
+        --   [ Session.view SessionMsg world.session ]
+        --
+        -- Routes.Read _ _ ->
+        --   [ Session.view SessionMsg world.session ]
+        --
+        -- Routes.UserDelegates ->
+        --   [ Session.view SessionMsg world.session ]
+        --
+        -- Routes.EmptyRoute ->
+        --   [ text "" ]
       )
     ]

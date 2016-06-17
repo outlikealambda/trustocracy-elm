@@ -12,12 +12,11 @@ module Opinion.Presenter exposing
 import Html exposing (Html, div, text, p, span)
 import Html.Attributes as Attribute exposing (class)
 import Markdown
-import String
-
 
 import Model.Qualifications as Qualifications exposing (Qualifications)
 import Model.Trustee exposing (Trustee)
 import Routes
+import Utils.String as StringUtils
 
 
 type alias Presenter a =
@@ -25,7 +24,7 @@ type alias Presenter a =
   | id : Int
   , text : String
   , influence : Int
-  , opiner : Trustee
+  -- , opiner : Trustee
   , snippet : String
   , qualifications : Qualifications
   , expanded : Bool
@@ -34,7 +33,7 @@ type alias Presenter a =
 
 
 prepare : Presenter a -> Presenter a
-prepare p = { p | snippet = snippetize 200 p.text }
+prepare p = { p | snippet = StringUtils.snippetize 200 p.text }
 
 
 expand : Presenter a -> Presenter a
@@ -48,7 +47,7 @@ collapse presenter =
 
 
 viewExpanded : Presenter a -> Html msg
-viewExpanded {text, qualifications, opiner, influence, fetched} =
+viewExpanded {text, qualifications, influence, fetched} =
   div
     [ class "opinion-full" ]
     [ Qualifications.view qualifications
@@ -59,7 +58,7 @@ viewExpanded {text, qualifications, opiner, influence, fetched} =
 
 
 viewCollapsed : (Int -> msg) -> Presenter a -> Html msg
-viewCollapsed buildRoute {id, snippet, opiner, influence, fetched} =
+viewCollapsed buildRoute {id, snippet, influence, fetched} =
   div
     [ class "opinion-snippet" ]
     [ div
@@ -82,8 +81,8 @@ view expanded routeBuilder presenter =
       , ("collapsed", not expanded)
       ]
     ]
-    [ viewOpiner presenter.opiner presenter.influence
-    , viewCollapsed routeBuilder presenter
+    -- [ viewOpiner presenter.opiner presenter.influence
+    [ viewCollapsed routeBuilder presenter
     , viewExpanded presenter ]
 
 
@@ -122,29 +121,3 @@ viewOpiner {name} influence =
         [ text "influenced people" ]
       ]
     ]
-
-
-snippetize : Int -> String -> String
-snippetize maxLength s =
-  -- add a space on the end to avoid removing the last word every time
-  s ++ " "
-    |> String.indexes " "
-    |> maxValLessThan maxLength
-    |> maybeSlice s
-
-
-maxValLessThan : Int -> List Int -> Maybe Int
-maxValLessThan maxVal ns =
-  List.filter ((>) maxVal) ns
-    |> List.maximum
-
-
-maybeSlice : String -> Maybe Int -> String
-maybeSlice s maybeBound =
-  case maybeBound of
-    Nothing -> s
-    Just bound ->
-      if bound < String.length s then
-        (String.slice 0 bound s) ++ "..."
-      else
-        s

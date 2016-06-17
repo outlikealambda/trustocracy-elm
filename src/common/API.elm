@@ -5,6 +5,7 @@ module Common.API exposing
   , fetchUserByGoogleAuth
   , updateGoogleContacts
   , fetchConnected
+  , fetchConnectedV2
   , fetchOpinionById
   , fetchIdsByTopic
   , fetchDraftByTopic
@@ -28,6 +29,7 @@ import Task exposing (Task)
 
 import Auth.Facebook as Facebook
 import Auth.Google as Google
+import Model.Connection as Connection exposing (Connection)
 import Model.Path as Path exposing (Path)
 import Model.Opinion as Opinion exposing (Opinion)
 import Model.Topic as Topic exposing (Topic)
@@ -36,6 +38,7 @@ import User exposing (User)
 
 
 type alias Url = String
+type alias TopicId = Int
 
 
 rootUrl : Url
@@ -162,6 +165,14 @@ fetchConnected onError onSuccess topic =
     |> Task.perform onError onSuccess
 
 
+fetchConnectedV2 : (String -> a) -> (List Connection -> a) -> TopicId -> Cmd a
+fetchConnectedV2 onError onSuccess tid =
+  openEndpoint ["topic/", toString tid, "/connected/v2"]
+    |> Http.get (Decode.list Connection.decoder)
+    |> Task.mapError httpErrorToString
+    |> Task.perform onError onSuccess
+
+
 fetchOpinionById : (String -> a) -> (Opinion -> a) -> Int -> Cmd a
 fetchOpinionById onError onSuccess opinionId =
   openEndpoint ["opinion/", toString opinionId]
@@ -170,7 +181,7 @@ fetchOpinionById onError onSuccess opinionId =
     |> Task.perform onError onSuccess
 
 
-fetchOpinionsByTopic : (String -> a) -> (List Opinion -> a) -> Int -> Cmd a
+fetchOpinionsByTopic : (String -> a) -> (List Opinion -> a) -> TopicId -> Cmd a
 fetchOpinionsByTopic onError onSuccess topicId =
   openEndpoint ["topic/", toString topicId, "/opinion"]
     |> Http.get (Decode.list Opinion.decoder)
@@ -188,7 +199,7 @@ fetchIdsByTopic onError onSuccess topic =
     topic.id
 
 
-fetchDraftByTopic : (String -> a) -> (Opinion -> a) -> Int -> Cmd a
+fetchDraftByTopic : (String -> a) -> (Opinion -> a) -> TopicId -> Cmd a
 fetchDraftByTopic onError onComplete topicId =
   secureEndpoint ["topic/", toString topicId, "/opinion"]
     |> Http.get Opinion.decoder
@@ -196,17 +207,17 @@ fetchDraftByTopic onError onComplete topicId =
     |> Task.perform onError onComplete
 
 
-saveOpinion : (String -> a) -> (Opinion -> a) -> Opinion -> Int -> Cmd a
+saveOpinion : (String -> a) -> (Opinion -> a) -> Opinion -> TopicId -> Cmd a
 saveOpinion =
   writeOpinion "save"
 
 
-publishOpinion : (String -> a) -> (Opinion -> a) -> Opinion -> Int -> Cmd a
+publishOpinion : (String -> a) -> (Opinion -> a) -> Opinion -> TopicId -> Cmd a
 publishOpinion =
   writeOpinion "publish"
 
 
-writeOpinion : String -> (String -> a) -> (Opinion -> a) -> Opinion -> Int -> Cmd a
+writeOpinion : String -> (String -> a) -> (Opinion -> a) -> Opinion -> TopicId -> Cmd a
 writeOpinion writeType onError onSuccess opinion topicId =
   Opinion.encode opinion
     |> Encode.encode 0 -- no pretty print
@@ -216,7 +227,7 @@ writeOpinion writeType onError onSuccess opinion topicId =
     |> Task.perform onError onSuccess
 
 
-writeUrlBuilder : Int -> String -> String
+writeUrlBuilder : TopicId -> String -> String
 writeUrlBuilder topicId writeType =
   secureEndpoint
     [ "topic/"
@@ -231,7 +242,7 @@ writeUrlBuilder topicId writeType =
 ------------
 
 
-fetchTopic : (String -> a) -> (Topic -> a) -> Int -> Cmd a
+fetchTopic : (String -> a) -> (Topic -> a) -> TopicId -> Cmd a
 fetchTopic onError onSuccess topicId =
   openEndpoint ["topic/", toString topicId]
     |> Http.get Topic.decoder
