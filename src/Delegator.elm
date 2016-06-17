@@ -20,9 +20,7 @@ import ActiveUser exposing (ActiveUser (LoggedIn, LoggedOut))
 import Common.API as API
 import Common.Form as Form
 import Model.Relationship as Relationship exposing (Relationship)
-import Location
 import Auth.Google as Google
-import Routes
 import Model.Trustee as Trustee exposing (Trustee)
 
 
@@ -43,7 +41,6 @@ type Msg
   | LookupComplete Trustee
   | LookupFailed String
   | RequestGoogleContacts
-  | SetPath Routes.Route
 
 
 type Direction
@@ -161,9 +158,6 @@ update message delegator =
 
     RequestGoogleContacts ->
       ( delegator, Google.requestContacts )
-
-    SetPath route ->
-      ( delegator, Location.setPath <| Routes.encode route )
 
 
 isValid : List Trustee -> Result (List String) ()

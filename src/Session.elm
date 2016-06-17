@@ -29,8 +29,6 @@ import Update.Explorer as ExplorerUpdate
 import View.Explorer as ExplorerView
 
 import Opinion.Composer as Composer exposing (Composer)
-import Location
-import Routes
 import User exposing (User)
 
 import Html exposing (Html)
@@ -63,7 +61,6 @@ type Msg
   -- private
   | Error String
   | SetTopic Topic
-  | SetPath Routes.Route
 
   -- exposed to children
   | SetActiveUser ActiveUser
@@ -136,9 +133,6 @@ update action session =
     -- TODO: reload views on user change/logout
     SetTopic topic ->
       updateViews { session | topic = Debug.log "new session topic" topic }
-
-    SetPath route ->
-      session ! [ Location.setPath <| Routes.encode route ]
 
     ComposerMsg composerAction ->
       let
