@@ -1,10 +1,12 @@
 module View.Qualifications exposing
   ( view
   , viewForm
+  , noQualifications
   )
 
 
 import Model.Qualifications as Qualifications exposing (Qualifications, Qualification)
+import Update.Qualifications as QualificationsUpdate exposing (Msg)
 
 
 import Html exposing (Html)
@@ -34,14 +36,18 @@ viewQualification {value, label} =
     ]
 
 
-viewForm : Qualifications -> Html Qualifications.Msg
-viewForm {industry, academia, personal} =
-  Html.div
-    [ class "qualifications-input" ]
-    [ Html.App.map Qualifications.SetIndustry (viewQualificationForm industry)
-    , Html.App.map Qualifications.SetAcademia (viewQualificationForm academia)
-    , Html.App.map Qualifications.SetPersonal (viewQualificationForm personal)
-    ]
+viewForm : Maybe Qualifications -> Html Msg
+viewForm maybeQualifications =
+  let
+    {industry, academia, personal} =
+      Maybe.withDefault Qualifications.empty maybeQualifications
+  in
+    Html.div
+      [ class "qualifications-input" ]
+      [ Html.App.map QualificationsUpdate.SetIndustry (viewQualificationForm industry)
+      , Html.App.map QualificationsUpdate.SetAcademia (viewQualificationForm academia)
+      , Html.App.map QualificationsUpdate.SetPersonal (viewQualificationForm personal)
+      ]
 
 
 viewQualificationForm : Qualification -> Html String
@@ -58,3 +64,9 @@ viewQualificationForm {value, label, placeholder} =
       , Events.on "input" Events.targetValue ]
       []
     ]
+
+noQualifications : Html msg
+noQualifications =
+  Html.div
+    [ class "no-qualifications" ]
+    [ Html.text "No qualifications listed" ]

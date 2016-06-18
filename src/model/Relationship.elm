@@ -70,6 +70,8 @@ toRelationship asString =
       Trusted
     "KNOWS" ->
       Candidate
+    "SELF" ->
+      Self
     _ ->
       None
 

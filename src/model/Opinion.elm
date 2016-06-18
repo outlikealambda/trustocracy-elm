@@ -7,6 +7,7 @@ module Model.Opinion exposing
 
 
 import Model.Qualifications as Qualifications exposing (Qualifications)
+import Model.Trustee as Trustee exposing (Trustee)
 import Utils.String as StringUtils
 
 
@@ -20,7 +21,8 @@ type alias Opinion =
   { id : Int
   , text : String
   , influence : Int
-  , qualifications : Qualifications
+  , author : Trustee
+  , qualifications : Maybe Qualifications
 
   -- derived
   , snippet : String
@@ -34,7 +36,8 @@ empty =
   { id = -1
   , text = ""
   , influence = -1
-  , qualifications = Qualifications.empty
+  , author = Trustee.empty
+  , qualifications = Nothing
   , snippet = ""
   , expanded = False
   , fetched = False
@@ -43,15 +46,12 @@ empty =
 
 decoder : Decode.Decoder Opinion
 decoder =
-  Decode.object4 fromApi
-    ( "id" := Decode.int )
-    ( "text" := Decode.string )
-    ( "influence" := Decode.int )
-    ( Decode.oneOf
-      [ "qualifications" := Qualifications.decoder
-      , Decode.succeed Qualifications.empty
-      ]
-    )
+  Decode.object5 fromApi
+    ("id" := Decode.int)
+    ("text" := Decode.string)
+    ("influence" := Decode.int)
+    ("author" := Trustee.decoder)
+    (Decode.maybe <| "qualifications" := Qualifications.decoder)
 
 
 encode : Opinion -> Encode.Value
@@ -60,16 +60,16 @@ encode opinion =
     [ ("id", Encode.int opinion.id)
     , ("text", Encode.string opinion.text)
     , ("influence", Encode.int opinion.influence)
-    , ("qualifications", Qualifications.encode opinion.qualifications)
     ]
 
 
-fromApi : Int -> String -> Int -> Qualifications -> Opinion
-fromApi id text influence qualifications =
+fromApi : Int -> String -> Int -> Trustee -> Maybe Qualifications -> Opinion
+fromApi id text influence author qualifications =
   { empty
   | id = id
   , text = text
   , influence = influence
+  , author = author
   , qualifications = qualifications
   , fetched = True
   , snippet = StringUtils.snippetize 100 text

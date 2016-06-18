@@ -6,26 +6,27 @@ module Opinion.Writer exposing
   )
 
 
-import Html exposing (Html, div, textarea)
+import Html exposing (Html)
 import Html.App
-import Html.Attributes exposing (class, placeholder, value)
-import Html.Events exposing (on, targetValue)
+import Html.Attributes as Attributes exposing (class)
+import Html.Events as Events
 
 
 import Model.Qualifications as Qualifications exposing (Qualifications)
+import Update.Qualifications as QualificationsUpdate
 import View.Qualifications as QualificationsView
 
 
 type alias Writer a =
   { a
-    | text : String
-    , qualifications : Qualifications
+  | text : String
+  , qualifications : Maybe Qualifications
   }
 
 
 type Msg
   = Write String
-  | QualificationsMsg Qualifications.Msg
+  | QualificationsMsg QualificationsUpdate.Msg
 
 
 update : Msg -> Writer a -> Writer a
@@ -35,28 +36,28 @@ update action writer =
       { writer | text = raw }
     QualificationsMsg msg ->
       { writer
-        | qualifications = Qualifications.update msg writer.qualifications }
+        | qualifications = QualificationsUpdate.update msg writer.qualifications }
 
 
 
 view : Writer a -> Html Msg
 view {text, qualifications} =
-  div
+  Html.div
     [ class "writer" ]
     [ Html.App.map Write (viewOpinionInput text)
     , Html.App.map QualificationsMsg (viewQualificationsInput qualifications)
-    ]
+  ]
 
 
 viewOpinionInput : String -> Html String
 viewOpinionInput currentText =
-  div [ class "opinion-creator" ]
-    [ div [ class "input-field" ]
-      [ textarea
+  Html.div [ class "opinion-creator" ]
+    [ Html.div [ class "input-field" ]
+      [ Html.textarea
         [ class "write"
-        , placeholder "Let's write something!"
-        , value currentText
-        , on "input" targetValue
+        , Attributes.placeholder "Let's write something!"
+        , Attributes.value currentText
+        , Events.on "input" Events.targetValue
         ]
         []
       ]
@@ -69,14 +70,14 @@ viewOpinionInput currentText =
     ]
 
 
-viewQualificationsInput : Qualifications -> Html Qualifications.Msg
+viewQualificationsInput : Maybe Qualifications -> Html QualificationsUpdate.Msg
 viewQualificationsInput qualifications =
-  div
+  Html.div
     [ class "write-qualifications" ]
-    [ div
+    [ Html.div
       [ class "section-header" ]
       [ Html.text "Topic Specific Qualifications" ]
-    , div
+    , Html.div
       [ class "section-sub-header" ]
       [ Html.text "for general qualifications, edit your profile" ]
     , QualificationsView.viewForm qualifications

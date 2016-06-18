@@ -3,8 +3,6 @@ module View.Author exposing
 
 
 import Model.Trustee as Trustee exposing (Trustee)
-import Model.Qualifications as Qualifications exposing (Qualifications)
-import View.Qualifications as QualificationsView
 
 
 import Html exposing (Html)
@@ -15,8 +13,8 @@ type alias Author = Trustee
 type alias Influence = Int
 
 
-view : Author -> Influence -> Qualifications -> Html msg
-view {name} influence qualifications =
+view : Author -> Influence -> Html msg
+view {name} influence =
   Html.div
     [ class "author cf" ]
     [ Html.div
@@ -31,5 +29,4 @@ view {name} influence qualifications =
         [ class "numbered-label" ]
         [ Html.text "influenced people" ]
       ]
-    , QualificationsView.view qualifications
     ]

@@ -1,13 +1,14 @@
 module Model.Qualifications exposing
   ( Qualifications
   , Qualification
-  , Msg
-    (..)
   , empty
-  , update
   , decoder
   , encode
+  , toMaybe
   , hasAnyQualification
+  , industryQualification
+  , academiaQualification
+  , personalQualification
   )
 
 
@@ -24,44 +25,35 @@ type alias Qualifications =
 
 
 type alias Qualification =
-  { value : String
-  , label : String
+  { label : String
   , placeholder : String
+  , value : String
   }
 
 
-type Msg
-  = SetIndustry String
-  | SetAcademia String
-  | SetPersonal String
-
-
 empty : Qualifications
-empty = init "" "" ""
+empty = fromApi "" "" ""
 
 
-init : String -> String -> String -> Qualifications
-init industry academia personal =
+fromApi : String -> String -> String -> Qualifications
+fromApi industry academia personal =
   { industry = industryQualification industry
   , academia = academiaQualification academia
   , personal = personalQualification personal
   }
 
 
-update : Msg -> Qualifications -> Qualifications
-update action qualifications =
-  case action of
-    SetIndustry input ->
-      { qualifications | industry = industryQualification input }
-    SetAcademia input ->
-      { qualifications | academia = academiaQualification input }
-    SetPersonal input ->
-      { qualifications | personal = personalQualification input }
+toMaybe : Qualifications -> Maybe Qualifications
+toMaybe qualifications =
+  if hasAnyQualification qualifications then
+    Just qualifications
+  else
+    Nothing
 
 
 decoder : Decode.Decoder Qualifications
 decoder =
-  Decode.object3 init
+  Decode.object3 fromApi
     ( "industry" := Decode.string )
     ( "academia" := Decode.string )
     ( "personal" := Decode.string )
@@ -89,15 +81,15 @@ hasAnyQualification qualifications =
 
 -- private
 industryQualification : String -> Qualification
-industryQualification value =
-  Qualification value "industry" "I was a professional watermelon carver for 5 years"
+industryQualification =
+  Qualification "industry" "I was a professional watermelon carver for 5 years"
 
 
 academiaQualification : String -> Qualification
-academiaQualification value =
-  Qualification value "academia" "I wrote my thesis on watermelon juggling"
+academiaQualification =
+  Qualification "academia" "I wrote my thesis on watermelon juggling"
 
 
 personalQualification : String -> Qualification
-personalQualification value =
-  Qualification value "personal" "I once ate 3 entire watermelons in a single sitting"
+personalQualification =
+  Qualification "personal" "I once ate 3 entire watermelons in a single sitting"

@@ -9,7 +9,6 @@ import Model.Expandable as Expandable exposing (Expandable)
 import Utils.List as ListUtils
 
 
-import View.Author as AuthorView
 import View.Opinion as OpinionView
 import View.Path as PathView
 
@@ -30,7 +29,7 @@ type alias Context msg =
 
 
 view : Context msg -> Connection -> Html msg
-view context {author, opinion, paths, status} =
+view context {opinion, paths, status} =
   case status of
 
     Expandable.Expanded ->
@@ -39,7 +38,6 @@ view context {author, opinion, paths, status} =
         [ Html.div
           [ class "paths" ]
           ( List.map PathView.view paths )
-        , AuthorView.view author opinion.influence opinion.qualifications
         , OpinionView.view True opinion
         , Html.App.map context.showAll showAll
         ]
@@ -54,9 +52,7 @@ view context {author, opinion, paths, status} =
             |> Maybe.map ListUtils.singleton
             |> Maybe.withDefault []
           )
-        , AuthorView.view author opinion.influence opinion.qualifications
         , OpinionView.view False opinion
-        -- insert read more here
         , Html.App.map context.readMore <| readMore opinion.id
         ]
 
