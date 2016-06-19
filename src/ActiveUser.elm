@@ -6,7 +6,7 @@ module ActiveUser exposing
     )
 
 
-import User exposing (User)
+import Model.User exposing (User)
 
 
 type ActiveUser

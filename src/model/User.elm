@@ -1,4 +1,4 @@
-module User exposing
+module Model.User exposing
   ( User
   , decoder
   , encode

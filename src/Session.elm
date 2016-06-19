@@ -22,14 +22,14 @@ import ActiveUser exposing
 import Auth exposing (Auth)
 import Common.API as API
 import Delegator exposing (Delegator)
-import Model.Topic as Topic exposing (Topic)
 
 import Model.Explorer as Explorer exposing (Explorer)
+import Model.Topic as Topic exposing (Topic)
+import Model.User exposing (User)
 import Update.Explorer as ExplorerUpdate
 import View.Explorer as ExplorerView
 
 import Opinion.Composer as Composer exposing (Composer)
-import User exposing (User)
 
 import Html exposing (Html)
 import Html.App

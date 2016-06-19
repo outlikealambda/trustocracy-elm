@@ -34,7 +34,7 @@ import Model.Path as Path exposing (Path)
 import Model.Opinion as Opinion exposing (Opinion)
 import Model.Topic as Topic exposing (Topic)
 import Model.Trustee as Trustee exposing (Trustee)
-import User exposing (User)
+import Model.User as User exposing (User)
 
 
 type alias Url = String

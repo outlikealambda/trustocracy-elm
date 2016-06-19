@@ -36,15 +36,15 @@
 
     // OUR PORTS
 
-    elmApp.ports.setPath.subscribe(path => {
-      history.pushState({}, "", path);
-      elmApp.ports.pathUpdates.send(path);
-    })
+    // elmApp.ports.setPath.subscribe(path => {
+    //   history.pushState({}, "", path);
+    //   elmApp.ports.pathUpdates.send(path);
+    // })
 
-    window.onpopstate = event => {
-      console.log(document.location);
-      elmApp.ports.pathUpdates.send(document.location.pathname);
-    };
+    // window.onpopstate = event => {
+    //   console.log(document.location);
+    //   elmApp.ports.pathUpdates.send(document.location.pathname);
+    // };
 
     elmApp.ports.trustoLogout.subscribe(() => {
       console.log('deleting trusto token');

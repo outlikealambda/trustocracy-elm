@@ -20,7 +20,7 @@ import Utils.Cmd as CmdUtils
 import Common.API as API
 import Common.Form as Form
 import ActiveUser exposing (ActiveUser)
-import User exposing (User)
+import Model.User exposing (User)
 import Auth.Cookie as Cookie
 import Auth.Facebook as Facebook
 import Auth.Google as Google
