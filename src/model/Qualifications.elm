@@ -55,7 +55,6 @@ toRealm raw =
     _ ->
       Unknown
 
--- buildQualification
 
 realmToString : Realm -> String
 realmToString realm =
@@ -120,13 +119,6 @@ removeEmpty : Qualifications -> Qualifications
 removeEmpty =
   List.filter (not << String.isEmpty << .credentials)
 
--- fromApi : String -> String -> String -> Qualifications
--- fromApi industry academia personal =
---   { industry = industryQualification industry
---   , academia = academiaQualification academia
---   , personal = personalQualification personal
---   }
-
 
 fromApi : List (String, String) -> Qualifications
 fromApi raws =
@@ -150,68 +142,3 @@ encode qualifications =
     (\{realm, credentials} -> (realmToString realm, Encode.string credentials))
     (removeEmpty qualifications)
     |> Encode.object
-
-
--- hasAnyQualification : Qualifications -> Bool
--- hasAnyQualification qualifications =
---   let fields =
---     [ .industry qualifications
---     , .academia qualifications
---     , .personal qualifications
---     ]
---   in
---     List.any (not << String.isEmpty << .value) fields
-
-
--- setIndustry : String -> Maybe Qualifications -> Maybe Qualifications
--- setIndustry = setQualification updateIndustry
---
---
--- setAcademia : String -> Maybe Qualifications -> Maybe Qualifications
--- setAcademia = setQualification updateAcademia
---
---
--- setPersonal : String -> Maybe Qualifications -> Maybe Qualifications
--- setPersonal = setQualification updatePersonal
---
---
--- -- private
--- setQualification
---   : (String -> Qualifications-> Qualifications)
---   -> String
---   -> Maybe Qualifications
---   -> Maybe Qualifications
--- setQualification updater credentials maybeQualifications =
---     Maybe.withDefault empty maybeQualifications
---     |> updater credentials
---     |> toMaybe
---
---
--- updateIndustry : String -> Qualifications -> Qualifications
--- updateIndustry credentials qualifications =
---   { qualifications | academia = industryQualification credentials }
---
---
--- updateAcademia : String -> Qualifications -> Qualifications
--- updateAcademia credentials qualifications =
---   { qualifications | academia = academiaQualification credentials }
---
---
--- updatePersonal : String -> Qualifications -> Qualifications
--- updatePersonal credentials qualifications =
---   { qualifications | personal = personalQualification credentials }
---
---
--- industryQualification : String -> Qualification
--- industryQualification =
---   Qualification "industry" "I was a professional watermelon carver for 5 years"
---
---
--- academiaQualification : String -> Qualification
--- academiaQualification =
---   Qualification "academia" "I wrote my thesis on watermelon juggling"
---
---
--- personalQualification : String -> Qualification
--- personalQualification =
---   Qualification "personal" "I once ate 3 entire watermelons in a single sitting"
