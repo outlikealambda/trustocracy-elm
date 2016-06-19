@@ -22,7 +22,7 @@ type alias Opinion =
   , text : String
   , influence : Int
   , author : Trustee
-  , qualifications : Maybe Qualifications
+  , qualifications : Qualifications
 
   -- derived
   , snippet : String
@@ -37,7 +37,7 @@ empty =
   , text = ""
   , influence = -1
   , author = Trustee.empty
-  , qualifications = Nothing
+  , qualifications = []
   , snippet = ""
   , expanded = False
   , fetched = False
@@ -51,7 +51,11 @@ decoder =
     ("text" := Decode.string)
     ("influence" := Decode.int)
     ("author" := Trustee.decoder)
-    (Decode.maybe <| "qualifications" := Qualifications.decoder)
+    (Decode.oneOf
+      [ "qualifications" := Qualifications.decoder
+      , Decode.succeed Qualifications.empty
+      ]
+    )
 
 
 encode : Opinion -> Encode.Value
@@ -63,7 +67,7 @@ encode opinion =
     ]
 
 
-fromApi : Int -> String -> Int -> Trustee -> Maybe Qualifications -> Opinion
+fromApi : Int -> String -> Int -> Trustee -> Qualifications -> Opinion
 fromApi id text influence author qualifications =
   { empty
   | id = id

@@ -50,10 +50,6 @@ empty =
   }
 
 
--- This is a little ugly; we only need the User to create a new opinion
--- if there isn't an existing one.  But this means we need to import User and
--- Trustee, and removes the Maybe response logic from the Action handler...
--- TODO: create a new Opinion on the server side if the opinion doesn't exist?
 init : Topic -> (Composer, Cmd Msg)
 init topic =
   let

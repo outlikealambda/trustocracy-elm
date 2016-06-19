@@ -4,6 +4,7 @@ module View.Opinion exposing
 
 
 import Model.Opinion as Opinion exposing (Opinion)
+import Model.Qualifications as Qualifications
 import View.Author as AuthorView
 import View.Qualifications as QualificationsView
 
@@ -16,9 +17,13 @@ import Markdown
 view : Bool -> Opinion -> Html msg
 view expanded {qualifications, text, snippet, id, author, influence} =
   let
+    nonEmpty =
+      Qualifications.removeEmpty qualifications
     qualificationsHtml =
-      Maybe.map QualificationsView.view qualifications
-      |> Maybe.withDefault QualificationsView.noQualifications
+      if List.isEmpty nonEmpty then
+        QualificationsView.noQualifications
+      else
+        QualificationsView.view nonEmpty
   in
     case expanded of
       True ->

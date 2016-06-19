@@ -12,21 +12,22 @@ import Html.Attributes as Attributes exposing (class)
 import Html.Events as Events
 
 
-import Model.Qualifications as Qualifications exposing (Qualifications)
-import Update.Qualifications as QualificationsUpdate
+import Model.Qualifications as Qualifications exposing
+  ( Qualifications
+  , Qualification )
 import View.Qualifications as QualificationsView
 
 
 type alias Writer a =
   { a
   | text : String
-  , qualifications : Maybe Qualifications
+  , qualifications : Qualifications
   }
 
 
 type Msg
   = Write String
-  | QualificationsMsg QualificationsUpdate.Msg
+  | SetQualification Qualification
 
 
 update : Msg -> Writer a -> Writer a
@@ -34,9 +35,11 @@ update action writer =
   case action of
     Write raw ->
       { writer | text = raw }
-    QualificationsMsg msg ->
+    SetQualification qualification ->
       { writer
-        | qualifications = QualificationsUpdate.update msg writer.qualifications }
+      | qualifications =
+          Qualifications.setQualification qualification writer.qualifications
+      }
 
 
 
@@ -45,7 +48,7 @@ view {text, qualifications} =
   Html.div
     [ class "writer" ]
     [ Html.App.map Write (viewOpinionInput text)
-    , Html.App.map QualificationsMsg (viewQualificationsInput qualifications)
+    , Html.App.map SetQualification (viewQualificationsInput qualifications)
   ]
 
 
@@ -70,7 +73,7 @@ viewOpinionInput currentText =
     ]
 
 
-viewQualificationsInput : Maybe Qualifications -> Html QualificationsUpdate.Msg
+viewQualificationsInput : Qualifications -> Html Qualification
 viewQualificationsInput qualifications =
   Html.div
     [ class "write-qualifications" ]
