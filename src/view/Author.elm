@@ -5,6 +5,7 @@ module View.Author exposing
 
 
 import Model.Trustee as Trustee exposing (Trustee)
+import Model.Relationship as Relationship
 
 
 import Html exposing (Html)
@@ -15,14 +16,12 @@ type alias Author = Trustee
 type alias Influence = Int
 
 
-connection : Author -> Int -> Html msg
-connection author lineHeight =
+connection : Author -> Html msg
+connection author =
   Html.div
-    [ class "author"
-    , Attrs.style [ ("line-height", toString lineHeight ++ "px") ]
-    ]
+    [ class "author" ]
     [ Html.div
-      [ class "author-name" ]
+      [ class <| "author-name " ++ Relationship.toClass author.relationship ]
       [ Html.text <| author.name ]
     ]
 

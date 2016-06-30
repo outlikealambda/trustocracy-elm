@@ -24,7 +24,7 @@ view {trustee, hops} =
     , Html.div
       [ class "hops" ]
       [ List.map Relationship.toSvg hops
-        |> List.intersperse (arrow 15 30)
+        |> List.concatMap (\relationship -> [arrow 12 24, relationship])
         |> buildPath
       ]
     ]
@@ -38,8 +38,8 @@ type alias Settings =
 settings : Settings
 settings =
   Settings
-    20
-    40
+    16
+    32
 
 
 arrow : Float -> Float -> Float -> Float -> (Svg msg, SvgUtils.Dimensions)

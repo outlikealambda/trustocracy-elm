@@ -41,7 +41,7 @@ view context {opinion, paths, status} =
           [ Html.div
             [ class "paths" ]
             ( List.map PathView.view paths )
-          , AuthorView.connection opinion.author (40 * (List.length paths))
+          , AuthorView.connection opinion.author
           ]
         , OpinionView.text True opinion
         , Html.App.map context.showAll showAll
@@ -59,7 +59,7 @@ view context {opinion, paths, status} =
               |> Maybe.map ListUtils.singleton
               |> Maybe.withDefault []
             )
-          , AuthorView.connection opinion.author 40
+          , AuthorView.connection opinion.author
           ]
         , OpinionView.text False opinion
         , Html.App.map context.readMore <| readMore opinion.id

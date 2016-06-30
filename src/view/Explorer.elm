@@ -28,6 +28,7 @@ view transform { connections } =
       ( Dict.values connections
         |> List.sortBy .score
         |> List.map (ConnectionView.view context)
+        |> List.intersperse (Html.hr [] [])
       )
 
 navButton : Explorer -> Html msg

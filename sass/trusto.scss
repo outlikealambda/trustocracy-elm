@@ -725,9 +725,12 @@ $opinion-link-color : #aaa;
   margin-top: 1.6rem;
 }
 
+$bff-color : DarkTurquoise;
+$trusted-color: PaleGreen;
+
 .connection-header {
 
-  line-height: 40px;
+  line-height: 3.2rem;
 
   .paths {
     float: left;
@@ -739,6 +742,15 @@ $opinion-link-color : #aaa;
 
   .trustee {
     float: left;
+    padding: 0 1.6rem;
+
+    &.bff {
+      background: $bff-color;
+    }
+
+    &.trusted {
+      background: $trusted-color;
+    }
   }
 
   .paths {
@@ -749,4 +761,33 @@ $opinion-link-color : #aaa;
     float: left;
   }
 
+  rect.bff {
+    fill: $bff-color;
+  }
+
+  rect.trusted {
+    fill: $trusted-color;
+  }
+
+  .author .author-name {
+    padding: 0 1.6rem;
+    line-height: 3.2rem;
+  }
+
+  .author .bff {
+    background: $bff-color;
+  }
+
+  .author .trusted {
+    background: $trusted-color;
+  }
+
+  .author .none {
+    background: #ccc;
+  }
+
+}
+
+.connection {
+  margin: 3.2rem 0;
 }

@@ -24,12 +24,12 @@ sum d1 d2 =
 
 
 rect : Float -> Float -> Float -> Float -> String -> Svg msg
-rect width height x1 y1 fill =
+rect width height x1 y1 classes =
   Svg.rect
     [ SvgAttrs.x <| toString x1
     , SvgAttrs.y <| toString y1
     , SvgAttrs.width <| toString width
     , SvgAttrs.height <| toString height
-    , SvgAttrs.fill fill
+    , SvgAttrs.class classes
     ]
     []

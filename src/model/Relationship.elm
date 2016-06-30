@@ -51,14 +51,14 @@ view relationship =
 toSvg : Relationship -> Float -> Float -> (Svg msg, SvgUtils.Dimensions)
 toSvg r x1 lineHeight =
   let
-    (rectSize, fill) =
+    rectSize =
       case r of
         Bff ->
-          (32, "#36CC7C")
+          24
         Trusted ->
-          (20, "#94D794")
+          16
         _ ->
-          (10, "#cccccc")
+          8
     width =
       rectSize
     height =
@@ -66,7 +66,7 @@ toSvg r x1 lineHeight =
     y1 =
       (lineHeight - rectSize) / 2
   in
-    ( SvgUtils.rect width height x1 y1 fill
+    ( SvgUtils.rect width height x1 y1 (toClass r)
     , SvgUtils.Dimensions width height
     )
 
