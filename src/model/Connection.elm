@@ -16,6 +16,7 @@ type alias Connection =
   Expandable
     { opinion : Opinion
     , paths : List Path
+    , score : Int
     }
 
 
@@ -29,6 +30,15 @@ decoder =
 fromApi : Opinion -> List Path -> Connection
 fromApi opinion paths =
   { opinion = opinion
-  , paths = paths
+  , paths = sortPaths paths
+  , score = minScore paths
   , status = Expandable.Collapsed
   }
+
+
+sortPaths : List Path -> List Path
+sortPaths = List.sortBy .score
+
+
+minScore : List Path -> Int
+minScore = Maybe.withDefault 1000 << List.minimum << List.map .score

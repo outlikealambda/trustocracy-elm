@@ -26,6 +26,7 @@ view transform { connections } =
     Html.div
       []
       ( Dict.values connections
+        |> List.sortBy .score
         |> List.map (ConnectionView.view context)
       )
 
