@@ -13,7 +13,11 @@ module Model.Relationship exposing
   , toString
   , toReadable
   , toClass
+  , toSvg
   )
+
+
+import Utils.Svg as SvgUtils
 
 
 import Html exposing (Html)
@@ -21,6 +25,7 @@ import Html.Attributes as Attributes exposing (class)
 import Json.Decode as Decode
 import Json.Encode as Encode
 import String
+import Svg exposing (Svg)
 
 
 type Relationship
@@ -41,6 +46,29 @@ view relationship =
       ]
     ]
     []
+
+
+toSvg : Relationship -> Float -> Float -> (Svg msg, SvgUtils.Dimensions)
+toSvg r x1 lineHeight =
+  let
+    (rectSize, fill) =
+      case r of
+        Bff ->
+          (32, "#36CC7C")
+        Trusted ->
+          (20, "#94D794")
+        _ ->
+          (10, "#cccccc")
+    width =
+      rectSize
+    height =
+      rectSize
+    y1 =
+      (lineHeight - rectSize) / 2
+  in
+    ( SvgUtils.rect width height x1 y1 fill
+    , SvgUtils.Dimensions width height
+    )
 
 
 getCircleType : Relationship -> String

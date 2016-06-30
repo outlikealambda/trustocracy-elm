@@ -9,13 +9,14 @@ import Model.Expandable as Expandable exposing (Expandable)
 import Utils.List as ListUtils
 
 
+import View.Author as AuthorView
 import View.Opinion as OpinionView
 import View.Path as PathView
 
 
 import Html exposing (Html)
 import Html.App
-import Html.Attributes exposing (class)
+import Html.Attributes as Attrs exposing (class)
 import Html.Events as Events
 
 
@@ -36,9 +37,13 @@ view context {opinion, paths, status} =
       Html.div
         [ class "connection cf" ]
         [ Html.div
-          [ class "paths" ]
-          ( List.map PathView.view paths )
-        , OpinionView.view True opinion
+          [ class "connection-header cf" ]
+          [ Html.div
+            [ class "paths" ]
+            ( List.map PathView.view paths )
+          , AuthorView.connection opinion.author (40 * (List.length paths))
+          ]
+        , OpinionView.text True opinion
         , Html.App.map context.showAll showAll
         ]
 
@@ -46,13 +51,17 @@ view context {opinion, paths, status} =
       Html.div
         [ class "connection cf" ]
         [ Html.div
-          [ class "paths" ]
-          ( List.head (Debug.log "all paths" paths)
-            |> Maybe.map PathView.view
-            |> Maybe.map ListUtils.singleton
-            |> Maybe.withDefault []
-          )
-        , OpinionView.view False opinion
+          [ class "connection-header cf" ]
+          [ Html.div
+            [ class "paths" ]
+            ( List.head (Debug.log "all paths" paths)
+              |> Maybe.map PathView.view
+              |> Maybe.map ListUtils.singleton
+              |> Maybe.withDefault []
+            )
+          , AuthorView.connection opinion.author 40
+          ]
+        , OpinionView.text False opinion
         , Html.App.map context.readMore <| readMore opinion.id
         ]
 

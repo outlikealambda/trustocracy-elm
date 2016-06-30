@@ -124,7 +124,7 @@ view {opinion, composerView} =
       Preview ->
         Html.div
           [ class "preview" ]
-          [ OpinionView.view True opinion ]
+          [ OpinionView.kitchenSink True opinion ]
   in
     Html.div
       [ class "composer" ]

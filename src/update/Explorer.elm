@@ -38,7 +38,7 @@ init tid maybeOid =
     ( { connections = Dict.empty
       , zoom = zoom
       }
-    , API.fetchConnectedV2 Error FetchComplete tid
+    , API.fetchConnectedV3 Error FetchComplete tid
     )
 
 

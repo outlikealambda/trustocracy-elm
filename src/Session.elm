@@ -215,7 +215,7 @@ updateViews session =
         (composer, composerFx) =
           Composer.init session.topic
         (explorer, explorerFx) =
-          ExplorerUpdate.init (Debug.log "explore topic id" session.topic.id) Nothing
+          ExplorerUpdate.init session.topic.id Nothing
       in
         ( { session
           | composer = composer
@@ -331,7 +331,9 @@ activeSessionContent user session =
 
     Explore ->
       [ activeSubNav session
-      , ExplorerView.view ExplorerMsg session.explorer
+      , Html.div
+        [ class "content" ]
+        [ ExplorerView.view ExplorerMsg session.explorer ]
       ]
 
     UserDelegates ->

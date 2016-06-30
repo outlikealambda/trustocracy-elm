@@ -1,20 +1,34 @@
 module View.Author exposing
-  (view)
+  ( connection
+  , withInfluence
+  )
 
 
 import Model.Trustee as Trustee exposing (Trustee)
 
 
 import Html exposing (Html)
-import Html.Attributes exposing (class)
+import Html.Attributes as Attrs exposing (class)
 
 
 type alias Author = Trustee
 type alias Influence = Int
 
 
-view : Author -> Influence -> Html msg
-view {name} influence =
+connection : Author -> Int -> Html msg
+connection author lineHeight =
+  Html.div
+    [ class "author"
+    , Attrs.style [ ("line-height", toString lineHeight ++ "px") ]
+    ]
+    [ Html.div
+      [ class "author-name" ]
+      [ Html.text <| author.name ]
+    ]
+
+
+withInfluence : Author -> Influence -> Html msg
+withInfluence {name} influence =
   Html.div
     [ class "author cf" ]
     [ Html.div

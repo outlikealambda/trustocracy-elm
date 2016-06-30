@@ -6,6 +6,7 @@ module Common.API exposing
   , updateGoogleContacts
   , fetchConnected
   , fetchConnectedV2
+  , fetchConnectedV3
   , fetchOpinionById
   , fetchIdsByTopic
   , fetchDraftByTopic
@@ -168,6 +169,14 @@ fetchConnected onError onSuccess topic =
 fetchConnectedV2 : (String -> a) -> (List Connection -> a) -> TopicId -> Cmd a
 fetchConnectedV2 onError onSuccess tid =
   secureEndpoint ["topic/", toString tid, "/connected/v2"]
+    |> Http.get (Decode.list Connection.decoder)
+    |> Task.mapError httpErrorToString
+    |> Task.perform onError onSuccess
+
+
+fetchConnectedV3 : (String -> a) -> (List Connection -> a) -> TopicId -> Cmd a
+fetchConnectedV3 onError onSuccess tid =
+  secureEndpoint ["topic/", toString tid, "/connected/v3"]
     |> Http.get (Decode.list Connection.decoder)
     |> Task.mapError httpErrorToString
     |> Task.perform onError onSuccess

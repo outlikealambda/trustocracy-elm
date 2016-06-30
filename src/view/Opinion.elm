@@ -1,5 +1,6 @@
 module View.Opinion exposing
-  ( view
+  ( text
+  , kitchenSink
   )
 
 
@@ -14,8 +15,8 @@ import Html.Attributes exposing (class)
 import Markdown
 
 
-view : Bool -> Opinion -> Html msg
-view expanded {qualifications, text, snippet, id, author, influence} =
+kitchenSink : Bool -> Opinion -> Html msg
+kitchenSink expanded {qualifications, text, snippet, author, influence} =
   let
     nonEmpty =
       Qualifications.removeEmpty qualifications
@@ -29,7 +30,7 @@ view expanded {qualifications, text, snippet, id, author, influence} =
       True ->
         Html.div
           [ class "opinion-full" ]
-          [ AuthorView.view author influence
+          [ AuthorView.withInfluence author influence
           , qualificationsHtml
           , Html.div
             [ class "text markdown" ]
@@ -38,9 +39,31 @@ view expanded {qualifications, text, snippet, id, author, influence} =
       False ->
         Html.div
           [ class "opinion-snippet" ]
-          [ AuthorView.view author influence
+          [ AuthorView.withInfluence author influence
           , qualificationsHtml
           , Html.div
+            [ class "text snippet" ]
+            [ Html.p
+              []
+              [ Html.text snippet ]
+            ]
+        ]
+
+
+text : Bool -> Opinion -> Html msg
+text expanded {text, snippet} =
+  case expanded of
+    True ->
+      Html.div
+        [ class "opinion-full" ]
+        [ Html.div
+          [ class "text markdown" ]
+          [ Markdown.toHtml [] text ]
+        ]
+    False ->
+        Html.div
+          [ class "opinion-snippet" ]
+          [ Html.div
             [ class "text snippet" ]
             [ Html.p
               []

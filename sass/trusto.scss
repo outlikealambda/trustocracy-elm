@@ -724,3 +724,29 @@ $opinion-link-color : #aaa;
 .email-lookup input {
   margin-top: 1.6rem;
 }
+
+.connection-header {
+
+  line-height: 40px;
+
+  .paths {
+    float: left;
+  }
+
+  .author {
+    float: right;
+  }
+
+  .trustee {
+    float: left;
+  }
+
+  .paths {
+    float: left;
+  }
+
+  .hops {
+    float: left;
+  }
+
+}
