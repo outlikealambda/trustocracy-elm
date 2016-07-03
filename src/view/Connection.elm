@@ -7,6 +7,7 @@ module View.Connection exposing
 import Model.Connection as Connection exposing (Connection)
 import Model.Expandable as Expandable exposing (Expandable)
 import Utils.List as ListUtils
+import Utils.Date as DateUtils
 
 
 import View.Author as AuthorView
@@ -18,6 +19,7 @@ import Html exposing (Html)
 import Html.App
 import Html.Attributes as Attrs exposing (class)
 import Html.Events as Events
+import Date exposing (Date)
 
 
 type alias OpinionId = Int
@@ -44,6 +46,7 @@ view context {opinion, paths, status} =
           , AuthorView.connection opinion.author
           ]
         , OpinionView.text True opinion
+        , lastUpdated opinion.created
         , Html.App.map context.showAll showAll
         ]
 
@@ -84,3 +87,10 @@ showAll =
     ]
     [ Html.text "show all..."
     ]
+
+
+lastUpdated : Date -> Html msg
+lastUpdated date =
+  Html.div
+    [ class "last-updated" ]
+    [ Html.text <| DateUtils.asString date ]

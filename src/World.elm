@@ -120,7 +120,7 @@ view world =
       [ class "world" ]
       ( case (Debug.log "world view " world.currentView) of
         TopicsView ->
-          [ TopicView.viewAll (GoSession << Session.GoExplore) world.topics ]
+          [ TopicView.all (GoSession << Session.GoExplore) world.topics ]
 
         SessionView ->
           [ Session.view SessionMsg world.session ]

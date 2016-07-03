@@ -11,8 +11,10 @@ import Model.Trustee as Trustee exposing (Trustee)
 import Utils.String as StringUtils
 
 
+import Date exposing (Date)
 import Json.Decode as Decode exposing ((:=))
 import Json.Encode as Encode
+import Time
 
 
 type alias Opinion =
@@ -23,6 +25,7 @@ type alias Opinion =
   , influence : Int
   , author : Trustee
   , qualifications : Qualifications
+  , created : Date
 
   -- derived
   , snippet : String
@@ -38,6 +41,7 @@ empty =
   , influence = -1
   , author = Trustee.empty
   , qualifications = []
+  , created = Date.fromTime 0
   , snippet = ""
   , expanded = False
   , fetched = False
@@ -46,7 +50,7 @@ empty =
 
 decoder : Decode.Decoder Opinion
 decoder =
-  Decode.object5 fromApi
+  Decode.object6 fromApi
     ("id" := Decode.int)
     ("text" := Decode.string)
     ("influence" := Decode.int)
@@ -56,6 +60,7 @@ decoder =
       , Decode.succeed Qualifications.empty
       ]
     )
+    ("created" := Decode.float)
 
 
 encode : Opinion -> Encode.Value
@@ -67,14 +72,15 @@ encode opinion =
     ]
 
 
-fromApi : Int -> String -> Int -> Trustee -> Qualifications -> Opinion
-fromApi id text influence author qualifications =
+fromApi : Int -> String -> Int -> Trustee -> Qualifications -> Float -> Opinion
+fromApi id text influence author qualifications created =
   { empty
   | id = id
   , text = text
   , influence = influence
   , author = author
   , qualifications = qualifications
+  , created = Date.fromTime <| Time.second * created
   , fetched = True
   , snippet = StringUtils.snippetize 100 text
   }
