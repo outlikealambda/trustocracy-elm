@@ -211,21 +211,24 @@ updateViews session =
       session ! []
 
     LoggedIn user ->
-      let
-        (composer, composerFx) =
-          Composer.init session.topic
-        (explorer, explorerFx) =
-          ExplorerUpdate.init session.topic.id Nothing
-      in
-        ( { session
-          | composer = composer
-          , explorer = explorer
-          }
-        , Cmd.batch
-          [ Cmd.map ComposerMsg composerFx
-          , Cmd.map ExplorerMsg explorerFx
-          ]
-        )
+      if session.topic.id < 0 then
+        session ! []
+      else
+        let
+          (composer, composerFx) =
+            Composer.init session.topic
+          (explorer, explorerFx) =
+            ExplorerUpdate.init session.topic.id Nothing
+        in
+          ( { session
+            | composer = composer
+            , explorer = explorer
+            }
+          , Cmd.batch
+            [ Cmd.map ComposerMsg composerFx
+            , Cmd.map ExplorerMsg explorerFx
+            ]
+          )
 
 
 view : (Msg -> msg) -> Session -> Html msg
