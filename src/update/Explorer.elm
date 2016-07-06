@@ -2,6 +2,7 @@ module Update.Explorer exposing
   ( Msg
     ( Focus
     , Blur
+    , ConnectionMsg
     )
   , init
   , update
@@ -12,6 +13,8 @@ import Common.API as API
 import Model.Connection exposing (Connection)
 import Model.Expandable as Expandable
 import Model.Explorer as Explorer exposing (Explorer)
+
+import Update.Connection as ConnectionUpdate
 
 
 import Dict
@@ -24,6 +27,7 @@ type alias OpinionId = Int
 type Msg
   = Focus OpinionId
   | Blur ()
+  | ConnectionMsg OpinionId ConnectionUpdate.Msg
   | FetchComplete (List Connection)
   | Error String
 
@@ -59,6 +63,17 @@ update message explorer =
         Dict.map (\_ -> Expandable.collapse) explorer.connections
       in
         { explorer | connections = blurred } ! []
+
+    ConnectionMsg cId msg ->
+      let
+        goUpdate (update, updateCmd) =
+          { explorer | connections = Dict.insert cId update explorer.connections }
+          ! [ Cmd.map (ConnectionMsg cId) updateCmd ]
+      in
+        Dict.get cId explorer.connections
+        |> Maybe.map (ConnectionUpdate.update msg)
+        |> Maybe.map goUpdate
+        |> Maybe.withDefault (explorer, Cmd.none)
 
     FetchComplete fetched ->
       let

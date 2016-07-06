@@ -14,13 +14,14 @@ import Html exposing (Html)
 import Html.Attributes exposing (class)
 
 
-view : (Update.Msg -> msg) -> Explorer -> Html msg
-view transform { connections } =
+view : Explorer -> Html Update.Msg
+view { connections } =
   let
     context =
       ConnectionView.Context
-        (transform << Update.Blur)
-        (transform << Update.Focus)
+        Update.Blur
+        Update.Focus
+        Update.ConnectionMsg
 
   in
     Html.div

@@ -336,7 +336,9 @@ activeSessionContent user session =
       [ activeSubNav session
       , Html.div
         [ class "content" ]
-        [ ExplorerView.view ExplorerMsg session.explorer ]
+        [ ExplorerView.view session.explorer
+          |> Html.App.map ExplorerMsg
+        ]
       ]
 
     UserDelegates ->

@@ -6,6 +6,9 @@ module View.Connection exposing
 
 import Model.Connection as Connection exposing (Connection)
 import Model.Expandable as Expandable exposing (Expandable)
+
+import Update.Connection as Update
+
 import Utils.List as ListUtils
 import Utils.Date as DateUtils
 
@@ -13,6 +16,7 @@ import Utils.Date as DateUtils
 import View.Author as AuthorView
 import View.Opinion as OpinionView
 import View.Path as PathView
+import View.Question.Question as QuestionView
 
 
 import Html exposing (Html)
@@ -20,19 +24,21 @@ import Html.App
 import Html.Attributes as Attrs exposing (class)
 import Html.Events as Events
 import Date exposing (Date)
+import Dict
 
 
 type alias OpinionId = Int
 
 
 type alias Context msg =
-  { showAll : (() -> msg)
-  , readMore : (OpinionId -> msg)
+  { showAll : () -> msg
+  , readMore : OpinionId -> msg
+  , next : Int -> Update.Msg -> msg
   }
 
 
 view : Context msg -> Connection -> Html msg
-view context {opinion, paths, status} =
+view context {opinion, paths, status, questions} =
   case status of
 
     Expandable.Expanded ->
@@ -48,6 +54,15 @@ view context {opinion, paths, status} =
         , OpinionView.text True opinion
         , lastUpdated opinion.created
         , Html.App.map context.showAll showAll
+        , Html.div
+          [ class "questions" ]
+          ( Dict.toList questions
+            |> List.map
+                (\(qid, q) ->
+                  Html.App.map (Update.QuestionMsg qid) (QuestionView.view q)
+                )
+            |> List.map (Html.App.map <| context.next opinion.id)
+          )
         ]
 
     Expandable.Collapsed ->
