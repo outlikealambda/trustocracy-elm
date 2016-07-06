@@ -22,7 +22,7 @@ view chosen options prompt =
       radio chosen
   in
     Html.div
-      [ class "picker" ]
+      [ class "picker cf" ]
       ( [ Html.div
           [ class "prompt" ]
           [ Html.text prompt ]
@@ -43,13 +43,11 @@ radio chosen {id, label} =
         _ ->
           False
   in
-    Html.label []
-      [ Html.br [] []
-      , Html.input
-        [ HtmlAttrs.type' "radio"
-        , HtmlAttrs.checked isSelected
-        , HtmlEvents.onCheck (\_ -> Chosen.Picked id)
+    Html.div
+      [ HtmlAttrs.classList
+        [ ("selected", isSelected)
+        , ("option", True)
         ]
-        []
-      , Html.text label
+      , HtmlEvents.onClick <| Chosen.Picked id
       ]
+      [ Html.text label ]

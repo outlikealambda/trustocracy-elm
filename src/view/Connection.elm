@@ -53,7 +53,6 @@ view context {opinion, paths, status, questions} =
           ]
         , OpinionView.text True opinion
         , lastUpdated opinion.created
-        , Html.App.map context.showAll showAll
         , Html.div
           [ class "questions" ]
           ( Dict.toList questions
@@ -63,6 +62,7 @@ view context {opinion, paths, status, questions} =
                 )
             |> List.map (Html.App.map <| context.next opinion.id)
           )
+        , Html.App.map context.showAll showAll
         ]
 
     Expandable.Collapsed ->
