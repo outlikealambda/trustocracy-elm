@@ -266,14 +266,14 @@ viewForm auth =
           [ Form.onEnter (\_ -> LoadUser) ]
           [ Html.App.map ((flip UpdateInput) secret) <| input
             [ placeholder "User Name"
-            , value <| name
+            , value name
             , on "input" targetValue
             ]
             []
           , Html.App.map (UpdateInput name) <| input
             [ placeholder "Password"
             , Attribute.type' "password"
-            , value <| secret
+            , value secret
             , on "input" targetValue
             ]
             []
