@@ -14,6 +14,7 @@ module Common.API exposing
   , publishOpinion
   , fetchTopic
   , fetchAllTopics
+  , fetchTopicQuestions
   , setTrustee
   , setTrustees
   , lookupTrustee
@@ -36,6 +37,7 @@ import Model.Opinion as Opinion exposing (Opinion)
 import Model.Topic as Topic exposing (Topic)
 import Model.Trustee as Trustee exposing (Trustee)
 import Model.User as User exposing (User)
+import Model.Question.Question as Question exposing (Question)
 
 
 type alias Url = String
@@ -266,6 +268,13 @@ fetchAllTopics onError onComplete =
     |> Task.mapError httpErrorToString
     |> Task.perform onError onComplete
 
+
+fetchTopicQuestions : (String -> a) -> (List Question -> a) -> TopicId -> Cmd a
+fetchTopicQuestions onError onSuccess topicId =
+  openEndpoint ["topic/", toString topicId, "/question/pickone"]
+    |> Http.get (Decode.list Question.decoder)
+    |> Task.mapError httpErrorToString
+    |> Task.perform onError onSuccess
 
 --------------
 -- TRUSTEES --

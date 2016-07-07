@@ -7,11 +7,14 @@ module Model.Connection exposing
 import Model.Expandable as Expandable exposing (Expandable)
 import Model.Opinion as Opinion exposing (Opinion)
 import Model.Path as Path exposing (Path)
-import Model.Question.Question as Question exposing (Question)
+import Model.Question.Chosen exposing (Chosen)
 
 
 import Dict exposing (Dict)
 import Json.Decode as Decode exposing ((:=))
+
+
+type alias Qid = Int
 
 
 type alias Connection =
@@ -19,7 +22,7 @@ type alias Connection =
     { opinion : Opinion
     , paths : List Path
     , score : Int
-    , questions : Dict Int Question
+    , answers : Dict Qid Chosen
     }
 
 
@@ -36,9 +39,7 @@ fromApi opinion paths =
   , paths = sortPaths paths
   , score = minScore paths
   , status = Expandable.Collapsed
-  , questions =
-      List.map (\q -> (q.id, q)) Question.samples
-      |> Dict.fromList
+  , answers = Dict.empty
   }
 
 

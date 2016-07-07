@@ -6,6 +6,8 @@ module View.Connection exposing
 
 import Model.Connection as Connection exposing (Connection)
 import Model.Expandable as Expandable exposing (Expandable)
+import Model.Question.Chosen exposing (Chosen)
+import Model.Question.Question exposing (Question)
 
 import Update.Connection as Update
 
@@ -24,21 +26,22 @@ import Html.App
 import Html.Attributes as Attrs exposing (class)
 import Html.Events as Events
 import Date exposing (Date)
-import Dict
+import Dict exposing (Dict)
 
 
 type alias OpinionId = Int
-
+type alias Qid = Int
 
 type alias Context msg =
   { showAll : () -> msg
   , readMore : OpinionId -> msg
   , next : Int -> Update.Msg -> msg
+  , questions : List Question
   }
 
 
 view : Context msg -> Connection -> Html msg
-view context {opinion, paths, status, questions} =
+view context {opinion, paths, status, answers} =
   case status of
 
     Expandable.Expanded ->
@@ -55,13 +58,7 @@ view context {opinion, paths, status, questions} =
         , lastUpdated opinion.created
         , Html.div
           [ class "questions" ]
-          ( Dict.toList questions
-            |> List.map
-                (\(qid, q) ->
-                  Html.App.map (Update.QuestionMsg qid) (QuestionView.view q)
-                )
-            |> List.map (Html.App.map <| context.next opinion.id)
-          )
+          ( viewQuestions answers context.questions <| context.next opinion.id )
         , Html.App.map context.showAll showAll
         ]
 
@@ -109,3 +106,15 @@ lastUpdated date =
   Html.div
     [ class "last-updated" ]
     [ Html.text <| DateUtils.asString date ]
+
+
+viewQuestions : Dict Qid Chosen -> List Question -> (Update.Msg -> msg) -> List (Html msg)
+viewQuestions answers questions toExplorerMsg =
+  let
+    mapQuestionView q =
+      Dict.get q.id answers
+      |> QuestionView.view q
+      |> Html.App.map (Update.Answer q.id)
+      |> Html.App.map toExplorerMsg
+  in
+    List.map mapQuestionView questions

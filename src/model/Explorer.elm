@@ -7,6 +7,7 @@ module Model.Explorer exposing
 
 
 import Model.Connection as Connection exposing (Connection)
+import Model.Question.Question exposing (Question)
 
 
 import Dict exposing (Dict)
@@ -15,6 +16,7 @@ import Dict exposing (Dict)
 type alias Explorer =
   { connections : Dict OpinionId Connection
   , zoom : Zoom
+  , questions : List Question
   }
 
 
@@ -31,4 +33,5 @@ empty : Explorer
 empty =
   { connections = Dict.empty
   , zoom = Blurred
+  , questions = []
   }

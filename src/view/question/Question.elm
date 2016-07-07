@@ -3,20 +3,21 @@ module View.Question.Question exposing
   )
 
 
+import Model.Question.Chosen as Chosen exposing (Chosen)
 import Model.Question.Question as Question exposing (Question)
-import Update.Question.Question as Update
 import View.Question.Picker as PickerView
 
 
 import Html exposing (Html)
-import Html.App
 
 
-view : Question -> Html Update.Msg
-view q =
+view : Question -> Maybe Chosen -> Html Chosen
+view q mc =
   case q.selector of
     Question.Picker ->
-      PickerView.view q.chosen q.options q.prompt
-      |> Html.App.map Update.ChosenMsg
+      PickerView.view
+        (Maybe.withDefault Chosen.None mc)
+        q.options
+        q.prompt
     Question.Rater ->
       Html.div [] []

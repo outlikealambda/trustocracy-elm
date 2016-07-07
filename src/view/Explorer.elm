@@ -15,13 +15,15 @@ import Html.Attributes exposing (class)
 
 
 view : Explorer -> Html Update.Msg
-view { connections } =
+view {connections, questions} =
   let
     context =
       ConnectionView.Context
         Update.Blur
         Update.Focus
         Update.ConnectionMsg
+        questions
+
 
   in
     Html.div

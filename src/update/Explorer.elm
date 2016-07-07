@@ -13,6 +13,8 @@ import Common.API as API
 import Model.Connection exposing (Connection)
 import Model.Expandable as Expandable
 import Model.Explorer as Explorer exposing (Explorer)
+import Model.Question.Question exposing (Question)
+
 
 import Update.Connection as ConnectionUpdate
 
@@ -28,7 +30,8 @@ type Msg
   = Focus OpinionId
   | Blur ()
   | ConnectionMsg OpinionId ConnectionUpdate.Msg
-  | FetchComplete (List Connection)
+  | FetchedConnections (List Connection)
+  | FetchedQuestions (List Question)
   | Error String
 
 
@@ -39,11 +42,13 @@ init tid maybeOid =
       Maybe.map Explorer.Focused maybeOid
         |> Maybe.withDefault Explorer.Blurred
   in
-    ( { connections = Dict.empty
-      , zoom = zoom
-      }
-    , API.fetchConnectedV3 Error FetchComplete tid
-    )
+    { connections = Dict.empty
+    , zoom = zoom
+    , questions = [] -- need to fetch questions here
+    }
+    ! [ API.fetchConnectedV3 Error FetchedConnections tid
+      , API.fetchTopicQuestions Error FetchedQuestions tid
+      ]
 
 
 update : Msg -> Explorer -> (Explorer, Cmd Msg)
@@ -75,13 +80,16 @@ update message explorer =
         |> Maybe.map goUpdate
         |> Maybe.withDefault (explorer, Cmd.none)
 
-    FetchComplete fetched ->
+    FetchedConnections fetched ->
       let
         connections =
           List.map (\connection -> (connection.opinion.id, connection)) fetched
             |> Dict.fromList
       in
         { explorer | connections = connections } ! []
+
+    FetchedQuestions fetched ->
+      { explorer | questions = fetched } ! []
 
     Error err ->
       let
