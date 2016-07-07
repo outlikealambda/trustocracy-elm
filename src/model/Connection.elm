@@ -7,7 +7,7 @@ module Model.Connection exposing
 import Model.Expandable as Expandable exposing (Expandable)
 import Model.Opinion as Opinion exposing (Opinion)
 import Model.Path as Path exposing (Path)
-import Model.Question.Chosen exposing (Chosen)
+import Model.Question.Answer exposing (Answer)
 
 
 import Dict exposing (Dict)
@@ -22,7 +22,7 @@ type alias Connection =
     { opinion : Opinion
     , paths : List Path
     , score : Int
-    , answers : Dict Qid Chosen
+    , answers : Dict Qid Answer
     }
 
 

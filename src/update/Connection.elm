@@ -5,7 +5,7 @@ module Update.Connection exposing
 
 
 import Model.Connection as Connection exposing (Connection)
-import Model.Question.Chosen exposing (Chosen)
+import Model.Question.Answer exposing (Answer)
 
 
 import Dict
@@ -15,12 +15,12 @@ type alias Qid = Int
 
 
 type Msg
-  = AnswerQuestion Qid Chosen
+  = AnswerQuestion Qid Answer
 
 
 update : Msg -> Connection -> (Connection, Cmd Msg)
 update msg connection =
   case msg of
-    AnswerQuestion qid chosen ->
-      { connection | answers = Dict.insert qid chosen connection.answers }
+    AnswerQuestion qid answer ->
+      { connection | answers = Dict.insert qid answer connection.answers }
       ! []

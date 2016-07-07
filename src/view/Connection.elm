@@ -6,7 +6,7 @@ module View.Connection exposing
 
 import Model.Connection as Connection exposing (Connection)
 import Model.Expandable as Expandable exposing (Expandable)
-import Model.Question.Chosen exposing (Chosen)
+import Model.Question.Answer exposing (Answer)
 import Model.Question.Question exposing (Question)
 
 import Update.Connection as Update
@@ -108,7 +108,7 @@ lastUpdated date =
     [ Html.text <| DateUtils.asString date ]
 
 
-viewQuestions : Dict Qid Chosen -> List Question -> (Update.Msg -> msg) -> List (Html msg)
+viewQuestions : Dict Qid Answer -> List Question -> (Update.Msg -> msg) -> List (Html msg)
 viewQuestions answers questions toExplorerMsg =
   let
     mapQuestionView q =

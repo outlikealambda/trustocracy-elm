@@ -1,5 +1,5 @@
-module Model.Question.Chosen exposing
-  ( Chosen
+module Model.Question.Answer exposing
+  ( Answer
     ( None
     , Picked
     , Rated
@@ -7,7 +7,7 @@ module Model.Question.Chosen exposing
   )
 
 
-type Chosen
+type Answer
   = None
   | Picked Int
   | Rated (List (Int, Float))

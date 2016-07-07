@@ -3,7 +3,7 @@ module View.Question.Picker exposing
   )
 
 
-import Model.Question.Chosen as Chosen exposing (Chosen)
+import Model.Question.Answer as Answer exposing (Answer)
 import Model.Question.Option exposing (Option)
 
 
@@ -15,11 +15,11 @@ import Html.Events as HtmlEvents
 type alias Prompt = String
 
 
-view : Chosen -> List Option -> Prompt -> Html Chosen
-view chosen options prompt =
+view : Answer -> List Option -> Prompt -> Html Answer
+view answer options prompt =
   let
     radio' =
-      radio chosen
+      radio answer
   in
     Html.div
       [ class "picker cf" ]
@@ -31,14 +31,14 @@ view chosen options prompt =
       )
 
 
-radio : Chosen -> Option -> Html Chosen
-radio chosen {id, label} =
+radio : Answer -> Option -> Html Answer
+radio answer {id, label} =
   let
     isSelected =
-      case chosen of
-        Chosen.None ->
+      case answer of
+        Answer.None ->
           False
-        Chosen.Picked optionId ->
+        Answer.Picked optionId ->
           optionId == id
         _ ->
           False
@@ -48,6 +48,6 @@ radio chosen {id, label} =
         [ ("selected", isSelected)
         , ("option", True)
         ]
-      , HtmlEvents.onClick <| Chosen.Picked id
+      , HtmlEvents.onClick <| Answer.Picked id
       ]
       [ Html.text label ]
