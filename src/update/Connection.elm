@@ -15,12 +15,12 @@ type alias Qid = Int
 
 
 type Msg
-  = Answer Qid Chosen
+  = AnswerQuestion Qid Chosen
 
 
 update : Msg -> Connection -> (Connection, Cmd Msg)
 update msg connection =
   case msg of
-    Answer qid chosen ->
+    AnswerQuestion qid chosen ->
       { connection | answers = Dict.insert qid chosen connection.answers }
       ! []

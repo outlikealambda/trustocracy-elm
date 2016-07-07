@@ -114,7 +114,7 @@ viewQuestions answers questions toExplorerMsg =
     mapQuestionView q =
       Dict.get q.id answers
       |> QuestionView.view q
-      |> Html.App.map (Update.Answer q.id)
+      |> Html.App.map (Update.AnswerQuestion q.id)
       |> Html.App.map toExplorerMsg
   in
     List.map mapQuestionView questions
