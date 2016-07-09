@@ -10,7 +10,7 @@ module Opinion.Composer exposing
 
 
 import Common.API as API
-import Model.Opinion as Opinion exposing (Opinion)
+import Model.Opinion.Composition as Composition exposing (Composition)
 import Model.Topic as Topic exposing (Topic)
 import Opinion.Writer as Writer
 import View.Opinion as OpinionView
@@ -22,15 +22,15 @@ import Html.Events as Events
 
 
 type alias Composer =
-  { opinion : Opinion
+  { composition : Composition
   , composerView : ComposerView
   }
 
 
 type Msg
-  = FetchComplete Opinion
+  = FetchComplete Composition
   | FetchError String
-  | WriteComplete Opinion
+  | WriteComplete Composition
   | WriteError String
   | Save
   | Publish
@@ -45,35 +45,27 @@ type ComposerView
 
 empty : Composer
 empty =
-  { opinion = Opinion.empty
+  { composition = Composition.empty
   , composerView = Write
   }
 
 
 init : Topic -> (Composer, Cmd Msg)
 init topic =
-  let
-    emptyOpinion =
-      Opinion.empty
-    default =
-      { emptyOpinion
-      | fetched = True
-      }
-  in
-    ( empty
-    , API.fetchDraftByTopic
-      FetchError
-      FetchComplete
-      topic.id
-    )
+  ( empty
+  , API.fetchDraftByTopic
+    FetchError
+    FetchComplete
+    topic.id
+  )
 
 
 update : Msg -> Topic -> Composer -> (Composer, Cmd Msg)
 update action topic composer =
   case action of
 
-    FetchComplete opinion ->
-      { composer | opinion = opinion } ! []
+    FetchComplete composition ->
+      { composer | composition = composition } ! []
 
     FetchError err ->
       let
@@ -81,9 +73,9 @@ update action topic composer =
       in
         composer ! []
 
-    WriteComplete opinion ->
+    WriteComplete composition ->
       let
-        msg = Debug.log "written!" opinion
+        msg = Debug.log "written!" composition
       in
         composer ! []
 
@@ -99,32 +91,32 @@ update action topic composer =
 
     WriterMsg msg ->
       { composer
-      | opinion = Writer.update msg composer.opinion
+      | composition = Writer.update msg composer.composition
       }
       ! []
 
     Save ->
       composer
       ! [ API.saveOpinion
-          WriteError WriteComplete composer.opinion topic.id
+          WriteError WriteComplete composer.composition topic.id
         ]
 
     Publish ->
       composer
       ! [ API.publishOpinion
-          WriteError WriteComplete composer.opinion topic.id
+          WriteError WriteComplete composer.composition topic.id
         ]
 
 view : Composer -> Html Msg
-view {opinion, composerView} =
+view {composition, composerView} =
   let content =
     case composerView of
       Write ->
-        Html.App.map WriterMsg (Writer.view opinion)
+        Html.App.map WriterMsg (Writer.view composition)
       Preview ->
         Html.div
           [ class "preview" ]
-          [ OpinionView.kitchenSink True opinion ]
+          [ OpinionView.kitchenSink True composition ]
   in
     Html.div
       [ class "composer" ]
@@ -168,25 +160,26 @@ composerNav composerView =
       ]
 
 navButton : Composer -> Html m
-navButton {opinion} =
+navButton {composition} =
   let
     actionText =
-      if (Debug.log "Composer navButton opinion" opinion).id == -1 then
-        [ Html.text "Compose"
-        , Html.br [] []
-        , Html.text "an"
-        , Html.br [] []
-        , Html.text "Opinion"
-        ]
-      else
-        [ Html.text "Edit"
-        , Html.br [] []
-        , Html.text "your"
-        , Html.br [] []
-        , Html.text "Opinion"
-        ]
+      case Composition.key composition of
+        Nothing ->
+          [ Html.text "Compose"
+          , Html.br [] []
+          , Html.text "an"
+          , Html.br [] []
+          , Html.text "Opinion"
+          ]
+        Just _ ->
+          [ Html.text "Edit"
+          , Html.br [] []
+          , Html.text "your"
+          , Html.br [] []
+          , Html.text "Opinion"
+          ]
   in
-    if opinion.fetched then
+    if composition.fetched then
       Html.div
         [ class "compose fetched" ]
         actionText

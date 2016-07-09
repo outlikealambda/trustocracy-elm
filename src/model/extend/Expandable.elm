@@ -1,4 +1,4 @@
-module Model.Expandable exposing
+module Model.Extend.Expandable exposing
   ( Expandable
   , Status (..)
   , expand

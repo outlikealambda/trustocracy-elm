@@ -1,11 +1,13 @@
 module Model.Connection exposing
   ( Connection
   , decoder
+  , toDict
+  , key
   )
 
 
-import Model.Expandable as Expandable exposing (Expandable)
-import Model.Opinion as Opinion exposing (Opinion)
+import Model.Extend.Expandable as Expandable exposing (Expandable)
+import Model.Opinion.Opinion as Opinion exposing (Opinion)
 import Model.Path as Path exposing (Path)
 import Model.Question.Answer exposing (Answer)
 
@@ -49,3 +51,17 @@ sortPaths = List.sortBy .score
 
 minScore : List Path -> Int
 minScore = Maybe.withDefault 1000 << List.minimum << List.map .score
+
+
+toDict : List Connection -> Dict Int Connection
+toDict connections =
+  Dict.fromList <| List.map keyPair connections
+
+
+keyPair : Connection -> (Int, Connection)
+keyPair c =
+  (key c, c)
+
+
+key : Connection -> Int
+key = .opinion >> .id

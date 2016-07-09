@@ -1,5 +1,6 @@
 module View.Explorer exposing
   ( view
+  , Context
   , navButton
   )
 
@@ -14,8 +15,12 @@ import Html exposing (Html)
 import Html.Attributes exposing (class)
 
 
-view : Explorer -> Html Update.Msg
-view {connections, questions} =
+type alias Context = { topicId : Int }
+
+
+view : Context -> Explorer -> Html Update.Msg
+view {topicId} {connections, questions} =
+
   let
     context =
       ConnectionView.Context
@@ -23,6 +28,7 @@ view {connections, questions} =
         Update.Focus
         Update.ConnectionMsg
         questions
+        topicId
 
 
   in

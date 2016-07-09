@@ -7,14 +7,16 @@ module Common.API exposing
   , fetchConnected
   , fetchConnectedV2
   , fetchConnectedV3
-  , fetchOpinionById
-  , fetchIdsByTopic
   , fetchDraftByTopic
   , saveOpinion
   , publishOpinion
   , fetchTopic
   , fetchAllTopics
-  , fetchTopicQuestions
+  , fetchQuestions
+  , fetchAnswers
+  , createAnswer
+  , updateAnswer
+  , deleteAnswer
   , setTrustee
   , setTrustees
   , lookupTrustee
@@ -32,16 +34,21 @@ import Task exposing (Task)
 import Auth.Facebook as Facebook
 import Auth.Google as Google
 import Model.Connection as Connection exposing (Connection)
+import Model.Opinion.Composition as Composition exposing (Composition)
+import Model.Opinion.Opinion as Opinion exposing (Opinion)
 import Model.Path as Path exposing (Path)
-import Model.Opinion as Opinion exposing (Opinion)
+import Model.Question.Answer as Answer exposing (Answer)
+import Model.Question.Question as Question exposing (Question)
 import Model.Topic as Topic exposing (Topic)
 import Model.Trustee as Trustee exposing (Trustee)
 import Model.User as User exposing (User)
-import Model.Question.Question as Question exposing (Question)
 
 
 type alias Url = String
 type alias TopicId = Int
+type alias OpinionId = Int
+type alias QuestionId = Int
+type alias AnswerId = Int
 
 
 rootUrl : Url
@@ -176,20 +183,12 @@ fetchConnectedV2 onError onSuccess tid =
     |> Task.perform onError onSuccess
 
 
-fetchConnectedV3 : (String -> a) -> (List Connection -> a) -> TopicId -> Cmd a
+fetchConnectedV3 : (String -> a) -> (TopicId -> List Connection -> a) -> TopicId -> Cmd a
 fetchConnectedV3 onError onSuccess tid =
   secureEndpoint ["topic/", toString tid, "/connected/v3"]
     |> Http.get (Decode.list Connection.decoder)
     |> Task.mapError httpErrorToString
-    |> Task.perform onError onSuccess
-
-
-fetchOpinionById : (String -> a) -> (Opinion -> a) -> Int -> Cmd a
-fetchOpinionById onError onSuccess opinionId =
-  openEndpoint ["opinion/", toString opinionId]
-    |> Http.get Opinion.decoder
-    |> Task.mapError httpErrorToString
-    |> Task.perform onError onSuccess
+    |> Task.perform onError (onSuccess tid)
 
 
 fetchOpinionsByTopic : (String -> a) -> (List Opinion -> a) -> TopicId -> Cmd a
@@ -200,40 +199,30 @@ fetchOpinionsByTopic onError onSuccess topicId =
     |> Task.perform onError onSuccess
 
 
--- super inefficient; gets all the opinions, and then extracts the id
--- TODO: new endpoint on server
-fetchIdsByTopic : (String -> a) -> (List Int -> a) -> Topic -> Cmd a
-fetchIdsByTopic onError onSuccess topic =
-  fetchOpinionsByTopic
-    onError
-    (onSuccess << (List.map .id))
-    topic.id
-
-
-fetchDraftByTopic : (String -> a) -> (Opinion -> a) -> TopicId -> Cmd a
+fetchDraftByTopic : (String -> a) -> (Composition -> a) -> TopicId -> Cmd a
 fetchDraftByTopic onError onComplete topicId =
   secureEndpoint ["topic/", toString topicId, "/opinion"]
-    |> Http.get Opinion.decoder
+    |> Http.get Composition.decoder
     |> Task.mapError httpErrorToString
     |> Task.perform onError onComplete
 
 
-saveOpinion : (String -> a) -> (Opinion -> a) -> Opinion -> TopicId -> Cmd a
+saveOpinion : (String -> a) -> (Composition -> a) -> Composition -> TopicId -> Cmd a
 saveOpinion =
   writeOpinion "save"
 
 
-publishOpinion : (String -> a) -> (Opinion -> a) -> Opinion -> TopicId -> Cmd a
+publishOpinion : (String -> a) -> (Composition -> a) -> Composition -> TopicId -> Cmd a
 publishOpinion =
   writeOpinion "publish"
 
 
-writeOpinion : String -> (String -> a) -> (Opinion -> a) -> Opinion -> TopicId -> Cmd a
-writeOpinion writeType onError onSuccess opinion topicId =
-  Opinion.encode opinion
+writeOpinion : String -> (String -> a) -> (Composition -> a) -> Composition -> TopicId -> Cmd a
+writeOpinion writeType onError onSuccess composition topicId =
+  Composition.encode composition
     |> Encode.encode 0 -- no pretty print
     |> Http.string
-    |> post' Opinion.decoder (writeUrlBuilder topicId writeType)
+    |> post' Composition.decoder (writeUrlBuilder topicId writeType)
     |> Task.mapError httpErrorToString
     |> Task.perform onError onSuccess
 
@@ -269,12 +258,75 @@ fetchAllTopics onError onComplete =
     |> Task.perform onError onComplete
 
 
-fetchTopicQuestions : (String -> a) -> (List Question -> a) -> TopicId -> Cmd a
-fetchTopicQuestions onError onSuccess topicId =
+---------------
+-- QUESTIONS --
+---------------
+
+
+fetchQuestions : (String -> a) -> (List Question -> a) -> TopicId -> Cmd a
+fetchQuestions onError onSuccess topicId =
   openEndpoint ["topic/", toString topicId, "/question/pickone"]
     |> Http.get (Decode.list Question.decoder)
     |> Task.mapError httpErrorToString
     |> Task.perform onError onSuccess
+
+
+fetchAnswers : (String -> a) -> (List (QuestionId, Answer) -> a) -> TopicId -> OpinionId -> Cmd a
+fetchAnswers onError onSuccess topicId opinionId =
+  secureEndpoint ["topic/", toString topicId, "/opinion/", toString opinionId, "/answer" ]
+    |> Http.get (Decode.list Answer.qidPairDecoder)
+    |> Task.mapError httpErrorToString
+    |> Task.perform onError onSuccess
+
+
+createAnswer : (String -> a) -> (Maybe AnswerId -> a) -> Answer -> TopicId -> OpinionId -> QuestionId -> Cmd a
+createAnswer onError onSuccess answer tid oid qid =
+  let
+    postAnswer =
+      post' (Decode.map Just Answer.idDecoder)
+        <| secureEndpoint
+          [ "topic/"
+          , toString tid
+          , "/opinion/"
+          , toString oid
+          , "/question/"
+          , toString qid
+          , "/answer"
+          ]
+  in
+    Answer.encode answer
+      |> Encode.encode 0
+      |> Http.string
+      |> postAnswer
+      |> Task.mapError httpErrorToString
+      |> Task.perform onError onSuccess
+
+
+updateAnswer : (String -> a) -> (Maybe AnswerId -> a) -> AnswerId -> Answer -> Cmd a
+updateAnswer onError onSuccess answerId answer =
+  let
+    putAnswer =
+      post' (Decode.map Just Answer.idDecoder)
+        <| secureEndpoint
+          [ "answer/"
+          , toString answerId
+          ]
+  in
+    Answer.encode answer
+      |> Encode.encode 0
+      |> Http.string
+      |> putAnswer
+      |> Task.mapError httpErrorToString
+      |> Task.perform onError onSuccess
+
+
+deleteAnswer : (String -> a) -> (Maybe AnswerId -> a) -> AnswerId -> Cmd a
+deleteAnswer onError onSuccess answerId =
+  secureEndpoint [ "answer/", toString answerId ]
+    |> delete (Decode.succeed Nothing)
+    |> Task.mapError httpErrorToString
+    |> Task.perform onError onSuccess
+
 
 --------------
 -- TRUSTEES --
@@ -324,6 +376,17 @@ post' decoder url body =
     , headers = [("Content-type", "application/json")]
     , url = url
     , body = body
+    }
+  |> Http.fromJson decoder
+
+
+delete : Decode.Decoder a -> String -> Task.Task Http.Error a
+delete decoder url =
+  Http.send Http.defaultSettings
+    { verb = "DELETE"
+    , headers = [("Content-type", "plain/text")]
+    , url = url
+    , body = Http.empty
     }
   |> Http.fromJson decoder
 

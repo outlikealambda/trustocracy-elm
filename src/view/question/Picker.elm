@@ -35,7 +35,7 @@ radio : Answer -> Option -> Html Answer
 radio answer {id, label} =
   let
     isSelected =
-      case answer of
+      case answer.choice of
         Answer.None ->
           False
         Answer.Picked optionId ->
@@ -48,6 +48,6 @@ radio answer {id, label} =
         [ ("selected", isSelected)
         , ("option", True)
         ]
-      , HtmlEvents.onClick <| Answer.Picked id
+      , HtmlEvents.onClick <| { answer | choice = Answer.Picked id }
       ]
       [ Html.text label ]

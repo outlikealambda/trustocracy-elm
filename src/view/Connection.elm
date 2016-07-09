@@ -5,7 +5,7 @@ module View.Connection exposing
 
 
 import Model.Connection as Connection exposing (Connection)
-import Model.Expandable as Expandable exposing (Expandable)
+import Model.Extend.Expandable as Expandable exposing (Expandable)
 import Model.Question.Answer exposing (Answer)
 import Model.Question.Question exposing (Question)
 
@@ -37,6 +37,7 @@ type alias Context msg =
   , readMore : OpinionId -> msg
   , next : Int -> Update.Msg -> msg
   , questions : List Question
+  , topicId : Int
   }
 
 
@@ -45,22 +46,32 @@ view context {opinion, paths, status, answers} =
   case status of
 
     Expandable.Expanded ->
-      Html.div
-        [ class "connection cf" ]
-        [ Html.div
-          [ class "connection-header cf" ]
+      let
+        mapQuestion =
+          viewQuestion
+            ( buildMsg
+              ( context.next opinion.id )
+              ( Update.AnswerQuestion context.topicId )
+            )
+            answers
+
+      in
+        Html.div
+          [ class "connection cf" ]
           [ Html.div
-            [ class "paths" ]
-            ( List.map PathView.view paths )
-          , AuthorView.connection opinion.author
+            [ class "connection-header cf" ]
+            [ Html.div
+              [ class "paths" ]
+              ( List.map PathView.view paths )
+            , AuthorView.connection opinion.author
+            ]
+          , OpinionView.text True opinion
+          , lastUpdated opinion.created
+          , Html.div
+            [ class "questions" ]
+            ( List.map mapQuestion context.questions )
+          , Html.App.map context.showAll showAll
           ]
-        , OpinionView.text True opinion
-        , lastUpdated opinion.created
-        , Html.div
-          [ class "questions" ]
-          ( viewQuestions answers context.questions <| context.next opinion.id )
-        , Html.App.map context.showAll showAll
-        ]
 
     Expandable.Collapsed ->
       Html.div
@@ -108,13 +119,13 @@ lastUpdated date =
     [ Html.text <| DateUtils.asString date ]
 
 
-viewQuestions : Dict Qid Answer -> List Question -> (Update.Msg -> msg) -> List (Html msg)
-viewQuestions answers questions toExplorerMsg =
-  let
-    mapQuestionView q =
-      Dict.get q.id answers
-      |> QuestionView.view q
-      |> Html.App.map (Update.AnswerQuestion q.id)
-      |> Html.App.map toExplorerMsg
-  in
-    List.map mapQuestionView questions
+buildMsg : (Update.Msg -> msg) -> (Qid -> Answer -> Update.Msg) -> Question -> Answer -> msg
+buildMsg next toUpdateMsg q =
+  next << toUpdateMsg q.id
+
+
+viewQuestion : (Question -> Answer -> msg) -> Dict Qid Answer -> Question -> Html msg
+viewQuestion messageBuilder answers question =
+  Dict.get question.id answers
+    |> QuestionView.view question
+    |> Html.App.map (messageBuilder question)

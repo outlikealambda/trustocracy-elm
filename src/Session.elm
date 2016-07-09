@@ -336,7 +336,7 @@ activeSessionContent user session =
       [ activeSubNav session
       , Html.div
         [ class "content" ]
-        [ ExplorerView.view session.explorer
+        [ ExplorerView.view {topicId = session.topic.id} session.explorer
           |> Html.App.map ExplorerMsg
         ]
       ]

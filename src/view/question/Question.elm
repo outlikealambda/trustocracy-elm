@@ -16,7 +16,7 @@ view q mc =
   case q.selector of
     Question.Picker ->
       PickerView.view
-        (Maybe.withDefault Answer.None mc)
+        (Maybe.withDefault Answer.unanswered mc)
         q.options
         q.prompt
     Question.Rater ->

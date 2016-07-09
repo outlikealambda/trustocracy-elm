@@ -10,8 +10,8 @@ module Update.Explorer exposing
 
 
 import Common.API as API
-import Model.Connection exposing (Connection)
-import Model.Expandable as Expandable
+import Model.Connection as Connection exposing (Connection)
+import Model.Extend.Expandable as Expandable
 import Model.Explorer as Explorer exposing (Explorer)
 import Model.Question.Question exposing (Question)
 
@@ -30,7 +30,7 @@ type Msg
   = Focus OpinionId
   | Blur ()
   | ConnectionMsg OpinionId ConnectionUpdate.Msg
-  | FetchedConnections (List Connection)
+  | FetchedConnections TopicId (List Connection)
   | FetchedQuestions (List Question)
   | Error String
 
@@ -47,7 +47,7 @@ init tid maybeOid =
     , questions = [] -- need to fetch questions here
     }
     ! [ API.fetchConnectedV3 Error FetchedConnections tid
-      , API.fetchTopicQuestions Error FetchedQuestions tid
+      , API.fetchQuestions Error FetchedQuestions tid
       ]
 
 
@@ -73,20 +73,24 @@ update message explorer =
       let
         goUpdate (update, updateCmd) =
           { explorer | connections = Dict.insert cId update explorer.connections }
-          ! [ Cmd.map (ConnectionMsg cId) updateCmd ]
+          ! [ updateCmd ]
       in
         Dict.get cId explorer.connections
         |> Maybe.map (ConnectionUpdate.update msg)
+        |> Maybe.map remapConnectionMsg
         |> Maybe.map goUpdate
         |> Maybe.withDefault (explorer, Cmd.none)
 
-    FetchedConnections fetched ->
+    FetchedConnections tid fetched ->
       let
-        connections =
-          List.map (\connection -> (connection.opinion.id, connection)) fetched
-            |> Dict.fromList
+        mergeModel (connections, commands) =
+          { explorer | connections = Connection.toDict connections }
+          ! commands
       in
-        { explorer | connections = connections } ! []
+        List.map (ConnectionUpdate.init tid) fetched
+        |> List.map remapConnectionMsg
+        |> List.unzip
+        |> mergeModel
 
     FetchedQuestions fetched ->
       { explorer | questions = fetched } ! []
@@ -96,3 +100,8 @@ update message explorer =
         msg = Debug.log "error in Surveyer!" err
       in
         explorer ! []
+
+
+remapConnectionMsg : (Connection, Cmd ConnectionUpdate.Msg) -> (Connection, Cmd Msg)
+remapConnectionMsg (connection, connectionMsg) =
+  (connection, Cmd.map (ConnectionMsg connection.opinion.id) connectionMsg)
