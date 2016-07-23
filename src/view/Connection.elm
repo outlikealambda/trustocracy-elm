@@ -64,7 +64,8 @@ authorQualifications context {opinion, inflation, assessor} =
       [ class "disjoint cf" ]
       childElements
 
-
+-- Just (Html msg) if the Opinion is connected
+-- Nothing if the opinion is not connected
 linked : Context msg -> Connection -> Maybe (Html msg)
 linked context {opinion, inflation, assessor, userLink} =
   let

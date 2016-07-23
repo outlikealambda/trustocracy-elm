@@ -4,6 +4,7 @@ module Session exposing
   , init
   , Msg
     ( GoCompose
+    , GoExplore
     , GoExploreAll
     , GoExploreConnected
     , GoUserDelegates
@@ -57,6 +58,7 @@ type alias OpinionId = Int
 type Msg
   -- exposed
   = GoCompose TopicId
+  | GoExplore TopicId
   | GoExploreAll TopicId
   | GoExploreConnected TopicId
   | GoUserDelegates
@@ -118,6 +120,13 @@ update action session =
 
     GoCompose topicId ->
       setSessionTopic session Compose topicId
+
+    GoExplore topicId ->
+      case session.activeUser of
+        LoggedOut ->
+          setSessionTopic session ExploreAll topicId
+        LoggedIn _ ->
+          setSessionTopic session ExploreConnected topicId
 
     GoExploreAll topicId ->
       setSessionTopic session ExploreAll topicId
@@ -318,8 +327,8 @@ activeSubNav session =
       [ Html.text session.topic.text ]
     , Html.div
       [ class "session-links" ]
-      [ exploreAllLinker session
-      , exploreConnectedLinker session
+      [ exploreConnectedLinker session
+      , exploreAllLinker session
       , composeLinker session
       ]
     ]
@@ -367,7 +376,6 @@ activeSessionContent user session =
         ]
       ]
 
-
     UserDelegates ->
       [ Html.div
         [ class "content" ]
@@ -385,6 +393,15 @@ activeSessionContent user session =
 inactiveSessionContent : Session -> List (Html Msg)
 inactiveSessionContent session =
   case session.currentView of
+
+    ExploreAll ->
+      [ inactiveSubNav session
+      , Html.div
+        [ class "content" ]
+        [ ExplorerView.all session.explorer
+          |> Html.App.map ExplorerMsg
+        ]
+      ]
 
     _ ->
       [ inactiveSubNav session

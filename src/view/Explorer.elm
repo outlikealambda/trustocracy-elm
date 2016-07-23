@@ -63,11 +63,7 @@ connectedButton {connections} =
 
 allButton : Explorer -> Html msg
 allButton {connections} =
-  String.join " "
-    [ "Explore All"
-    , toString <| List.length <| Dict.values connections
-    , "Opinions"
-    ]
+  "Explore All Opinions"
     |> navButton
 
 
