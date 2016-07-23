@@ -69,7 +69,9 @@ view context {opinion, paths, status, answers} =
           , lastUpdated opinion.created
           , Html.div
             [ class "questions" ]
-            ( List.map mapQuestion context.questions )
+            ( List.map mapQuestion context.questions
+              |> List.intersperse (Html.hr [] [])
+            )
           , Html.App.map context.showAll showAll
           ]
 
@@ -80,7 +82,7 @@ view context {opinion, paths, status, answers} =
           [ class "connection-header cf" ]
           [ Html.div
             [ class "paths" ]
-            ( List.head (Debug.log "all paths" paths)
+            ( List.head paths
               |> Maybe.map PathView.view
               |> Maybe.map ListUtils.singleton
               |> Maybe.withDefault []

@@ -23,12 +23,13 @@ view answer options prompt =
   in
     Html.div
       [ class "picker cf" ]
-      ( [ Html.div
-          [ class "prompt" ]
-          [ Html.text prompt ]
-        ]
-        ++ ( List.map radio' options )
-      )
+      [ Html.div
+        [ class "prompt" ]
+        [ Html.text prompt ]
+      , Html.ul
+        [ class "options" ]
+        ( List.map radio' options )
+      ]
 
 
 radio : Answer -> Option -> Html Answer
@@ -43,7 +44,7 @@ radio answer {id, label} =
         _ ->
           False
   in
-    Html.div
+    Html.li
       [ HtmlAttrs.classList
         [ ("selected", isSelected)
         , ("option", True)

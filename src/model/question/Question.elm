@@ -16,14 +16,13 @@ type alias Question =
   { id : Int
   , prompt : String
   , promptShort : String
-  , options : List Option
   , selector : Selector
   }
 
 
 type Selector
-  = Picker
-  | Rater
+  = Picker (List Option)
+  | Rater (Option, Option)
 
 
 decoder : Decode.Decoder Question
@@ -34,27 +33,38 @@ decoder =
 typeCheckingDecoder : String -> Decode.Decoder Question
 typeCheckingDecoder qType =
   case qType of
-    "PICK_ONE" ->
-      Decode.object4 (fromApi Picker)
+    "PICK" ->
+      Decode.object4 pickerFromApi
         ("id" := Decode.int)
         ("prompt" := Decode.string)
         ("promptShort" := Decode.string)
         (Decode.at ["options", "answers"] <| Decode.list Option.decoder)
-    "ASSESS" ->
-      Decode.fail "we do not support ASSESS questions yet"
+    "RATE" ->
+      Decode.object4 raterFromApi
+        ("id" := Decode.int)
+        ("prompt" := Decode.string)
+        ("promptShort" := Decode.string)
+        (Decode.at ["options", "endpoints"] <| Decode.tuple2 (,) Option.decoder Option.decoder)
     _ ->
       Decode.fail <| "we do not support " ++ qType ++ " questions yet"
 
 
-fromApi : Selector -> Int -> String -> String -> List Option -> Question
-fromApi selector id prompt promptShort options =
+pickerFromApi : Int -> String -> String -> List Option -> Question
+pickerFromApi id prompt promptShort options =
   { id = id
   , prompt = prompt
   , promptShort = promptShort
-  , options = options
-  , selector = selector
+  , selector = Picker options
   }
 
+
+raterFromApi : Int -> String -> String -> (Option, Option) -> Question
+raterFromApi id prompt promptShort endpoints =
+  { id = id
+  , prompt = prompt
+  , promptShort = promptShort
+  , selector = Rater endpoints
+  }
 
 
 samples : List Question
@@ -62,7 +72,7 @@ samples =
   [ { id = 1
     , prompt = "Do you prefer Soda A or Soda X"
     , promptShort = "Which Soda?"
-    , options =
+    , selector = Picker
       [ { id = 1
         , label = "Soda A"
         }
@@ -73,12 +83,11 @@ samples =
         , label = "da Cracka"
         }
       ]
-    , selector = Picker
     }
   , { id = 2
     , prompt = "Would you like one hamburgah wit cheese, or one cheeseburgah"
     , promptShort = "Which Style?"
-    , options =
+    , selector = Picker
       [ { id = 1
         , label = "Hamburger with cheese"
         }
@@ -86,6 +95,5 @@ samples =
         , label = "Cheeseburger"
         }
       ]
-    , selector = Picker
     }
   ]

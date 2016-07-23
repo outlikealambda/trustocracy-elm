@@ -4,6 +4,7 @@
 @import "markdown";
 @import "t-form";
 @import "t-help";
+@import "trusto-range-input";
 
 $text-font: "EB Garamond";
 
@@ -800,19 +801,45 @@ $trusted-color: PaleGreen;
 }
 
 
+.connection {
+  .text {
+    font-family: $text-font;
+    font-size: 2.4rem;
+  }
+}
+
+
 // Questions Styling
+
+.questions {
+  font-family : $text-font;
+  width: 400px;
+  margin: 0 auto;
+
+  .prompt {
+    margin-bottom: 0.8rem;
+    color: #444;
+    text-align: center;
+    font-size: 2.4rem;
+  }
+}
+
+.rater, .picker {
+  margin: 3.2rem auto;
+}
+
 .picker {
-  margin: 1.6rem 0;
 
   .option {
-    float:left;
-    clear:left;
+    margin: 0 auto 0.4rem;
     padding: 0.4rem 0.8rem;
+
     cursor: pointer;
+    font-size: 2.0rem;
+    color: #666;
 
     border: 0.2rem solid #fff;
     border-radius: 0.4rem;
-    margin-bottom: 0.4rem;
 
     &:hover {
       border-color: #aaa;
@@ -826,17 +853,32 @@ $trusted-color: PaleGreen;
       border-color: orange;
     }
   }
-
-  .prompt {
-    font-weight:bold;
-    margin-bottom: 0.8rem;
-    color: #777;
-  }
 }
 
-.connection {
-  .text {
-    font-family: $text-font;
-    font-size: 2.4rem;
+.rater {
+
+  .endpoint-left, .endpoint-right {
+    width: 100px;
+    text-align: center;
+    text-transform: uppercase;
+    font-size: 1.4rem;
   }
+
+  .slider {
+    margin: auto;
+    width: 100%;
+  }
+
+  .endpoint-left {
+    float : left;
+  }
+
+  .endpoint-right {
+    float : right;
+  }
+
+}
+
+hr {
+  border: 1px solid #ccc;
 }

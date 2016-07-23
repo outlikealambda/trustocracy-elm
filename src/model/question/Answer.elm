@@ -25,7 +25,7 @@ type alias Answer = Createable {choice : Choice}
 type Choice
   = None
   | Picked Int
-  | Rated (List (Int, Float))
+  | Rated Float
 
 
 unanswered : Answer
@@ -39,11 +39,12 @@ encode : Answer -> Encode.Value
 encode answer =
   case answer.choice of
     Picked choiceId ->
-      Encode.object [ ("pickOne", Encode.int choiceId) ]
-    Rated _ ->
-      Encode.string (Debug.log "Uh oh" "We don't support rating answers yet")
+      Encode.object [ ("picked", Encode.int choiceId) ]
+    Rated rating ->
+      Encode.object [ ("rated", Encode.float rating) ]
+      -- Encode.string (Debug.crash "We don't support rating answers yet")
     None ->
-      Encode.string (Debug.log "Uh oh" "We shouldn't be encoding None answers")
+      Encode.string (Debug.crash "We shouldn't be encoding None answers")
 
 
 decoder : Decode.Decoder Answer
@@ -56,16 +57,9 @@ decoder =
 choiceDecoder : Decode.Decoder Choice
 choiceDecoder =
   Decode.oneOf
-    [ "pickOne" := Decode.map Picked Decode.int
-    , "rated" := Decode.map Rated (Decode.list rating)
+    [ "picked" := Decode.map Picked Decode.int
+    , "rated" := Decode.map Rated Decode.float
     ]
-
-
-rating : Decode.Decoder (Int, Float)
-rating =
-  Decode.object2 (,)
-    ( "id" := Decode.int )
-    ( "rating" := Decode.float )
 
 
 qidPairDecoder : Decode.Decoder (Int, Answer)

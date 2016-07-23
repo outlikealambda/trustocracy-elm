@@ -265,7 +265,7 @@ fetchAllTopics onError onComplete =
 
 fetchQuestions : (String -> a) -> (List Question -> a) -> TopicId -> Cmd a
 fetchQuestions onError onSuccess topicId =
-  openEndpoint ["topic/", toString topicId, "/question/pickone"]
+  openEndpoint ["topic/", toString topicId, "/question"]
     |> Http.get (Decode.list Question.decoder)
     |> Task.mapError httpErrorToString
     |> Task.perform onError onSuccess

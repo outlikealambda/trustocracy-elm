@@ -1,0 +1,74 @@
+module View.Question.Rater exposing
+  ( view
+  )
+
+
+import Model.Question.Answer as Answer exposing (Answer)
+import Model.Question.Option as Option exposing (Option)
+
+
+import Html exposing (Html, Attribute)
+import Html.Attributes as HtmlAttrs exposing (class)
+import Html.Events as HtmlEvents
+import Json.Decode as Decode
+import String
+
+
+type alias Prompt = String
+
+
+view : Answer -> (Option, Option) -> Prompt -> Html Answer
+view answer (leftEndpoint, rightEndpoint) prompt =
+  Html.div
+    [ class "rater cf" ]
+    ( [ Html.div
+        [ class "prompt" ]
+        [ Html.text prompt ]
+      , Html.div
+        [ class "slider"]
+        [ Html.input
+          [ HtmlAttrs.type' "range"
+          , HtmlAttrs.min "0"
+          , HtmlAttrs.max "1"
+          , HtmlAttrs.step ".01"
+          , HtmlAttrs.value <| toString <| getRating answer
+          , mouseUpWithDefault 0.5 answer
+          ]
+          []
+        , Html.div
+          [ class "labels" ]
+          [ Html.div
+            [ class "endpoint-left"]
+            [ Html.text leftEndpoint.label ]
+          , Html.div
+            [ class "endpoint-right"]
+            [ Html.text rightEndpoint.label ]
+          ]
+        ]
+      ]
+    )
+
+
+mouseUpWithDefault : Float -> Answer -> Attribute Answer
+mouseUpWithDefault default answer =
+  HtmlEvents.on
+    "mouseup"
+    ( Decode.map
+      (\v ->
+        let
+          choice =
+            Answer.Rated <| Result.withDefault default (String.toFloat v)
+        in
+          {answer | choice = choice}
+      )
+      ( Decode.at ["target", "value"] Decode.string )
+    )
+
+
+getRating : Answer -> Float
+getRating answer =
+  case answer.choice of
+    Answer.Rated v ->
+      v
+    _ ->
+      0.5

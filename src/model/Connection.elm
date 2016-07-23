@@ -25,6 +25,7 @@ type alias Connection =
     , paths : List Path
     , score : Int
     , answers : Dict Qid Answer
+    , updateHistory : Dict Qid Int -- used for debouncing slider
     }
 
 
@@ -42,6 +43,7 @@ fromApi opinion paths =
   , score = minScore paths
   , status = Expandable.Collapsed
   , answers = Dict.empty
+  , updateHistory = Dict.empty
   }
 
 
