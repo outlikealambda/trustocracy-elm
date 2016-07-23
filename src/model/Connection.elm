@@ -41,7 +41,7 @@ fromApi opinion paths =
   { opinion = opinion
   , paths = sortPaths paths
   , score = minScore paths
-  , status = Expandable.Collapsed
+  , inflation = Expandable.Collapsed
   , assessor = Assessor.empty
   }
 

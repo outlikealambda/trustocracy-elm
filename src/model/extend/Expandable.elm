@@ -1,22 +1,22 @@
 module Model.Extend.Expandable exposing
   ( Expandable
-  , Status (..)
+  , Inflation (..)
   , expand
   , collapse
   )
 
 type alias Expandable a =
   { a
-  | status : Status }
+  | inflation : Inflation }
 
-type Status = Expanded | Collapsed
+type Inflation = Expanded | Collapsed
 
 
 expand : Expandable a -> Expandable a
 expand expandable =
-  { expandable | status = Expanded }
+  { expandable | inflation = Expanded }
 
 
 collapse : Expandable a -> Expandable a
 collapse expandable =
-  { expandable | status = Collapsed }
+  { expandable | inflation = Collapsed }

@@ -40,8 +40,8 @@ type alias Context msg =
 
 
 connection : Context msg -> Connection -> Html msg
-connection context {opinion, paths, status, assessor} =
-  case status of
+connection context {opinion, paths, inflation, assessor} =
+  case inflation of
 
     Expandable.Expanded ->
       Html.div
