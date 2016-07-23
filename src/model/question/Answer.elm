@@ -13,13 +13,14 @@ module Model.Question.Answer exposing
 
 
 import Model.Extend.Createable exposing (Createable)
+import Model.Extend.Writeable as Writeable exposing (Writeable)
 
 
 import Json.Decode as Decode exposing ((:=))
 import Json.Encode as Encode
 
 
-type alias Answer = Createable {choice : Choice}
+type alias Answer = Createable ( Writeable { choice : Choice } )
 
 
 type Choice
@@ -32,6 +33,7 @@ unanswered : Answer
 unanswered =
   { id = Nothing
   , choice = None
+  , writeStatus = Writeable.None
   }
 
 
@@ -73,6 +75,7 @@ fromApi : Int -> Choice -> Answer
 fromApi id choice =
   { id = Just id
   , choice = choice
+  , writeStatus = Writeable.None
   }
 
 

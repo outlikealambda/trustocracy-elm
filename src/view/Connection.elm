@@ -1,12 +1,11 @@
 module View.Connection exposing
-  ( view
+  ( connection
   , Context
   )
 
 
 import Model.Connection as Connection exposing (Connection)
 import Model.Extend.Expandable as Expandable exposing (Expandable)
-import Model.Question.Answer exposing (Answer)
 import Model.Question.Question exposing (Question)
 
 import Update.Connection as Update
@@ -15,10 +14,10 @@ import Utils.List as ListUtils
 import Utils.Date as DateUtils
 
 
+import View.Question.Assessor as AssessorView
 import View.Author as AuthorView
 import View.Opinion as OpinionView
 import View.Path as PathView
-import View.Question.Question as QuestionView
 
 
 import Html exposing (Html)
@@ -26,54 +25,41 @@ import Html.App
 import Html.Attributes as Attrs exposing (class)
 import Html.Events as Events
 import Date exposing (Date)
-import Dict exposing (Dict)
 
 
 type alias OpinionId = Int
 type alias Qid = Int
 
+
 type alias Context msg =
   { showAll : () -> msg
   , readMore : OpinionId -> msg
-  , next : Int -> Update.Msg -> msg
+  , next : Update.Msg -> msg
   , questions : List Question
-  , topicId : Int
   }
 
 
-view : Context msg -> Connection -> Html msg
-view context {opinion, paths, status, answers} =
+connection : Context msg -> Connection -> Html msg
+connection context {opinion, paths, status, assessor} =
   case status of
 
     Expandable.Expanded ->
-      let
-        mapQuestion =
-          viewQuestion
-            ( buildMsg
-              ( context.next opinion.id )
-              ( Update.AnswerQuestion context.topicId )
-            )
-            answers
-
-      in
-        Html.div
-          [ class "connection cf" ]
+      Html.div
+        [ class "connection cf" ]
+        [ Html.div
+          [ class "connection-header cf" ]
           [ Html.div
-            [ class "connection-header cf" ]
-            [ Html.div
-              [ class "paths" ]
-              ( List.map PathView.view paths )
-            , AuthorView.connection opinion.author
-            ]
-          , OpinionView.text True opinion
-          , lastUpdated opinion.created
-          , Html.div
-            [ class "questions" ]
-            ( List.map mapQuestion context.questions
-              |> List.intersperse (Html.hr [] [])
-            )
-          , Html.App.map context.showAll showAll
+            [ class "paths" ]
+            ( List.map PathView.view paths )
+          , AuthorView.connection opinion.author
           ]
+        , OpinionView.text True opinion
+        , lastUpdated opinion.created
+        , AssessorView.questions context.questions assessor
+          |> Html.App.map Update.DelegateToAssessor
+          |> Html.App.map context.next
+        , Html.App.map context.showAll showAll
+        ]
 
     Expandable.Collapsed ->
       Html.div
@@ -119,15 +105,3 @@ lastUpdated date =
   Html.div
     [ class "last-updated" ]
     [ Html.text <| DateUtils.asString date ]
-
-
-buildMsg : (Update.Msg -> msg) -> (Qid -> Answer -> Update.Msg) -> Question -> Answer -> msg
-buildMsg next toUpdateMsg q =
-  next << toUpdateMsg q.id
-
-
-viewQuestion : (Question -> Answer -> msg) -> Dict Qid Answer -> Question -> Html msg
-viewQuestion messageBuilder answers question =
-  Dict.get question.id answers
-    |> QuestionView.view question
-    |> Html.App.map (messageBuilder question)

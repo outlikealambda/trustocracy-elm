@@ -22,20 +22,20 @@ import Update.Connection as ConnectionUpdate
 import Dict
 
 
-type alias TopicId = Int
-type alias OpinionId = Int
+type alias Tid = Int
+type alias Oid = Int
 
 
 type Msg
-  = Focus OpinionId
+  = Focus Oid
   | Blur ()
-  | ConnectionMsg OpinionId ConnectionUpdate.Msg
-  | FetchedConnections TopicId (List Connection)
+  | ConnectionMsg Oid ConnectionUpdate.Msg
+  | FetchedConnections (List Connection)
   | FetchedQuestions (List Question)
   | Error String
 
 
-init : TopicId -> Maybe OpinionId -> (Explorer, Cmd Msg)
+init : Tid -> Maybe Oid -> (Explorer, Cmd Msg)
 init tid maybeOid =
   let
     zoom =
@@ -51,8 +51,13 @@ init tid maybeOid =
       ]
 
 
-update : Msg -> Explorer -> (Explorer, Cmd Msg)
-update message explorer =
+type alias Context =
+  { tid : Tid
+  }
+
+
+update : Context -> Msg -> Explorer -> (Explorer, Cmd Msg)
+update context message explorer =
   case message of
     Focus key ->
       let
@@ -76,18 +81,18 @@ update message explorer =
           ! [ updateCmd ]
       in
         Dict.get cId explorer.connections
-        |> Maybe.map (ConnectionUpdate.update msg)
+        |> Maybe.map (ConnectionUpdate.update context msg)
         |> Maybe.map remapConnectionMsg
         |> Maybe.map goUpdate
         |> Maybe.withDefault (explorer, Cmd.none)
 
-    FetchedConnections tid fetched ->
+    FetchedConnections fetched ->
       let
         mergeModel (connections, commands) =
           { explorer | connections = Connection.toDict connections }
           ! commands
       in
-        List.map (ConnectionUpdate.init tid) fetched
+        List.map (ConnectionUpdate.secondaryFetch context.tid) fetched
         |> List.map remapConnectionMsg
         |> List.unzip
         |> mergeModel

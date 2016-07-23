@@ -7,7 +7,11 @@ import Model.Question.Answer as Answer exposing (Answer)
 import Model.Question.Option as Option exposing (Option)
 
 
+import Update.Question.Answer as AnswerUpdate
+
+
 import Html exposing (Html, Attribute)
+import Html.App
 import Html.Attributes as HtmlAttrs exposing (class)
 import Html.Events as HtmlEvents
 import Json.Decode as Decode
@@ -17,7 +21,7 @@ import String
 type alias Prompt = String
 
 
-view : Answer -> (Option, Option) -> Prompt -> Html Answer
+view : Answer -> (Option, Option) -> Prompt -> Html AnswerUpdate.Msg
 view answer (leftEndpoint, rightEndpoint) prompt =
   Html.div
     [ class "rater cf" ]
@@ -32,7 +36,7 @@ view answer (leftEndpoint, rightEndpoint) prompt =
           , HtmlAttrs.max "1"
           , HtmlAttrs.step ".01"
           , HtmlAttrs.value <| toString <| getRating answer
-          , mouseUpWithDefault 0.5 answer
+          , mouseUpWithDefault 0.5
           ]
           []
         , Html.div
@@ -47,19 +51,16 @@ view answer (leftEndpoint, rightEndpoint) prompt =
         ]
       ]
     )
+  |> Html.App.map AnswerUpdate.Choose
 
 
-mouseUpWithDefault : Float -> Answer -> Attribute Answer
-mouseUpWithDefault default answer =
+mouseUpWithDefault : Float -> Attribute Answer.Choice
+mouseUpWithDefault default =
   HtmlEvents.on
     "mouseup"
     ( Decode.map
       (\v ->
-        let
-          choice =
-            Answer.Rated <| Result.withDefault default (String.toFloat v)
-        in
-          {answer | choice = choice}
+        Answer.Rated <| Result.withDefault default (String.toFloat v)
       )
       ( Decode.at ["target", "value"] Decode.string )
     )

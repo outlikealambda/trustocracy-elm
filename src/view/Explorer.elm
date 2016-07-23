@@ -5,6 +5,8 @@ module View.Explorer exposing
   )
 
 
+import Model.Question.Question exposing (Question)
+import Model.Connection as Connection
 import Model.Explorer exposing (Explorer)
 import Update.Explorer as Update
 import View.Connection as ConnectionView
@@ -20,32 +22,35 @@ type alias Context = { topicId : Int }
 
 view : Context -> Explorer -> Html Update.Msg
 view {topicId} {connections, questions} =
-
   let
-    context =
-      ConnectionView.Context
-        Update.Blur
-        Update.Focus
-        Update.ConnectionMsg
-        questions
-        topicId
-
+    viewConnection c =
+      ConnectionView.connection (buildContext questions <| Connection.key c) c
 
   in
     Html.div
       []
       ( Dict.values connections
         |> List.sortBy .score
-        |> List.map (ConnectionView.view context)
+        |> List.map viewConnection
         |> List.intersperse (Html.hr [] [])
       )
 
 navButton : Explorer -> Html msg
 navButton {connections} =
-
   let
     count = Dict.size connections
+
   in
     Html.div
       [ class "connect fetched" ]
       [ Html.text <| (toString count) ++ " Opinions" ]
+
+
+
+buildContext : List Question -> Int -> ConnectionView.Context Update.Msg
+buildContext questions connectionKey =
+  { showAll = Update.Blur
+  , readMore = Update.Focus
+  , next = Update.ConnectionMsg connectionKey
+  , questions = questions
+  }

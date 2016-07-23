@@ -9,7 +9,7 @@ module Model.Connection exposing
 import Model.Extend.Expandable as Expandable exposing (Expandable)
 import Model.Opinion.Opinion as Opinion exposing (Opinion)
 import Model.Path as Path exposing (Path)
-import Model.Question.Answer exposing (Answer)
+import Model.Question.Assessor as Assessor exposing (Assessor)
 
 
 import Dict exposing (Dict)
@@ -17,6 +17,7 @@ import Json.Decode as Decode exposing ((:=))
 
 
 type alias Qid = Int
+type alias Tid = Int
 
 
 type alias Connection =
@@ -24,8 +25,7 @@ type alias Connection =
     { opinion : Opinion
     , paths : List Path
     , score : Int
-    , answers : Dict Qid Answer
-    , updateHistory : Dict Qid Int -- used for debouncing slider
+    , assessor : Assessor
     }
 
 
@@ -42,8 +42,7 @@ fromApi opinion paths =
   , paths = sortPaths paths
   , score = minScore paths
   , status = Expandable.Collapsed
-  , answers = Dict.empty
-  , updateHistory = Dict.empty
+  , assessor = Assessor.empty
   }
 
 

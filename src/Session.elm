@@ -145,7 +145,7 @@ update action session =
     ExplorerMsg msg ->
       let
         (update, updateFx) =
-          ExplorerUpdate.update msg session.explorer
+          ExplorerUpdate.update {tid = session.topic.id} msg session.explorer
       in
         { session | explorer = update }
         ! [ Cmd.map ExplorerMsg updateFx ]
