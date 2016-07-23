@@ -109,4 +109,4 @@ update context message explorer =
 
 remapConnectionMsg : (Connection, Cmd ConnectionUpdate.Msg) -> (Connection, Cmd Msg)
 remapConnectionMsg (connection, connectionMsg) =
-  (connection, Cmd.map (ConnectionMsg connection.opinion.id) connectionMsg)
+  (connection, Cmd.map (ConnectionMsg <| Connection.key connection) connectionMsg)

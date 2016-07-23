@@ -22,6 +22,7 @@ type alias Record a =
 
   -- derived
   , snippet : String
+  , preview : String
   , expanded : Bool
   , fetched : Bool
   }

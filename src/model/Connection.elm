@@ -3,6 +3,7 @@ module Model.Connection exposing
   , decoder
   , toDict
   , key
+  , connectedCount
   )
 
 
@@ -23,26 +24,33 @@ type alias Tid = Int
 type alias Connection =
   Expandable
     { opinion : Opinion
-    , paths : List Path
-    , score : Int
     , assessor : Assessor
+    , score : Int
+    , userLink : UserLink
     }
+
+
+type alias UserLink = Maybe (List Path)
 
 
 decoder : Decode.Decoder Connection
 decoder =
   Decode.object2 fromApi
-    ("opinion" := Opinion.decoder)
-    ("paths" := Decode.list Path.decoder)
+    ( "opinion" := Opinion.decoder )
+    ( Decode.oneOf
+      [ "paths" := Decode.map Just (Decode.list Path.decoder)
+      , Decode.succeed Nothing
+      ]
+    )
 
 
-fromApi : Opinion -> List Path -> Connection
+fromApi : Opinion -> Maybe (List Path) -> Connection
 fromApi opinion paths =
   { opinion = opinion
-  , paths = sortPaths paths
-  , score = minScore paths
-  , inflation = Expandable.Collapsed
   , assessor = Assessor.empty
+  , userLink = Maybe.map sortPaths paths
+  , score = Maybe.withDefault 1000 <| Maybe.map (minScore 0) paths
+  , inflation = Expandable.Collapsed
   }
 
 
@@ -50,8 +58,9 @@ sortPaths : List Path -> List Path
 sortPaths = List.sortBy .score
 
 
-minScore : List Path -> Int
-minScore = Maybe.withDefault 1000 << List.minimum << List.map .score
+minScore : Int -> List Path -> Int
+minScore default =
+  Maybe.withDefault default << List.minimum << List.map .score
 
 
 toDict : List Connection -> Dict Int Connection
@@ -66,3 +75,8 @@ keyPair c =
 
 key : Connection -> Int
 key = .opinion >> .id
+
+
+connectedCount : List Connection -> Int
+connectedCount =
+  List.length << (List.filterMap .userLink)

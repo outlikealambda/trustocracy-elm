@@ -45,5 +45,6 @@ fromApi id text influence author qualifications created =
   , created = Date.fromTime <| Time.second * created
   , fetched = True
   , snippet = StringUtils.snippetize 100 text
+  , preview = StringUtils.snippetize 300 text
   , expanded = False
   }

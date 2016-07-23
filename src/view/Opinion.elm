@@ -16,7 +16,7 @@ import Markdown
 
 
 kitchenSink : Bool -> Opinion.Record a -> Html msg
-kitchenSink expanded {qualifications, text, snippet, author, influence} =
+kitchenSink expanded {qualifications, text, preview, author, influence} =
   let
     nonEmpty =
       Qualifications.removeEmpty qualifications
@@ -32,21 +32,14 @@ kitchenSink expanded {qualifications, text, snippet, author, influence} =
           [ class "opinion-full" ]
           [ AuthorView.withInfluence author influence
           , qualificationsHtml
-          , Html.div
-            [ class "text markdown" ]
-            [ Markdown.toHtml [] text ]
+          , viewFull text
           ]
       False ->
         Html.div
           [ class "opinion-snippet" ]
           [ AuthorView.withInfluence author influence
           , qualificationsHtml
-          , Html.div
-            [ class "text snippet" ]
-            [ Html.p
-              []
-              [ Html.text snippet ]
-            ]
+          , viewPreview preview
         ]
 
 
@@ -56,17 +49,35 @@ text expanded {text, snippet} =
     True ->
       Html.div
         [ class "opinion-full" ]
-        [ Html.div
-          [ class "text markdown" ]
-          [ Markdown.toHtml [] text ]
-        ]
+        [ viewFull text ]
     False ->
-        Html.div
-          [ class "opinion-snippet" ]
-          [ Html.div
-            [ class "text snippet" ]
-            [ Html.p
-              []
-              [ Html.text snippet ]
-            ]
-        ]
+      Html.div
+        [ class "opinion-snippet" ]
+        [ viewSnippet snippet ]
+
+
+viewSnippet : String -> Html msg
+viewSnippet prose =
+  Html.div
+    [ class "text snippet" ]
+    [ Html.p
+      []
+      [ Html.text prose ]
+    ]
+
+
+viewPreview : String -> Html msg
+viewPreview prose =
+  Html.div
+    [ class "text preview" ]
+    [ Html.p
+      []
+      [ Html.text prose ]
+    ]
+
+
+viewFull : String -> Html msg
+viewFull prose =
+  Html.div
+    [ class "text markdown" ]
+    [ Markdown.toHtml [] prose ]

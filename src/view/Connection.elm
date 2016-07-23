@@ -1,5 +1,6 @@
 module View.Connection exposing
-  ( connection
+  ( linked
+  , authorQualifications
   , Context
   )
 
@@ -29,6 +30,7 @@ import Date exposing (Date)
 
 type alias OpinionId = Int
 type alias Qid = Int
+type alias Key = Int
 
 
 type alias Context msg =
@@ -39,45 +41,76 @@ type alias Context msg =
   }
 
 
-connection : Context msg -> Connection -> Html msg
-connection context {opinion, paths, inflation, assessor} =
-  case inflation of
+authorQualifications : Context msg -> Connection -> Html msg
+authorQualifications context {opinion, inflation, assessor} =
+  let
+    childElements =
+      case inflation of
+        Expandable.Expanded ->
+            [ OpinionView.kitchenSink True opinion
+            , lastUpdated opinion.created
+            , AssessorView.questions context.questions assessor
+              |> Html.App.map Update.DelegateToAssessor
+              |> Html.App.map context.next
+            , Html.App.map context.showAll showAll
+            ]
 
-    Expandable.Expanded ->
+        Expandable.Collapsed ->
+            [ OpinionView.kitchenSink False opinion
+            , Html.App.map context.readMore <| readMore opinion.id
+            ]
+  in
+    Html.div
+      [ class "disjoint cf" ]
+      childElements
+
+
+linked : Context msg -> Connection -> Maybe (Html msg)
+linked context {opinion, inflation, assessor, userLink} =
+  let
+    childElements =
+      case inflation of
+        Expandable.Expanded ->
+          [ OpinionView.text True opinion
+          , lastUpdated opinion.created
+          , AssessorView.questions context.questions assessor
+            |> Html.App.map Update.DelegateToAssessor
+            |> Html.App.map context.next
+          , Html.App.map context.showAll showAll
+          ]
+
+        Expandable.Collapsed ->
+          [ OpinionView.text False opinion
+          , Html.App.map context.readMore <| readMore opinion.id
+          ]
+
+    buildPathElements paths =
+      case inflation of
+        Expandable.Expanded ->
+          List.map PathView.view paths
+
+        Expandable.Collapsed ->
+          List.head paths
+            |> Maybe.map PathView.view
+            |> Maybe.map ListUtils.singleton
+            |> Maybe.withDefault []
+
+    build pathElements =
       Html.div
         [ class "connection cf" ]
-        [ Html.div
-          [ class "connection-header cf" ]
-          [ Html.div
-            [ class "paths" ]
-            ( List.map PathView.view paths )
-          , AuthorView.connection opinion.author
-          ]
-        , OpinionView.text True opinion
-        , lastUpdated opinion.created
-        , AssessorView.questions context.questions assessor
-          |> Html.App.map Update.DelegateToAssessor
-          |> Html.App.map context.next
-        , Html.App.map context.showAll showAll
-        ]
+        ( ( Html.div
+            [ class "connection-header cf" ]
+            [ Html.div
+              [ class "paths" ]
+              pathElements
+            , AuthorView.connection opinion.author
+            ]
+          )
+          :: childElements
+        )
 
-    Expandable.Collapsed ->
-      Html.div
-        [ class "connection cf" ]
-        [ Html.div
-          [ class "connection-header cf" ]
-          [ Html.div
-            [ class "paths" ]
-            ( List.head paths
-              |> Maybe.map PathView.view
-              |> Maybe.map ListUtils.singleton
-              |> Maybe.withDefault []
-            )
-          , AuthorView.connection opinion.author
-          ]
-        , OpinionView.text False opinion
-        , Html.App.map context.readMore <| readMore opinion.id
-        ]
+  in
+    Maybe.map (build << buildPathElements) userLink
 
 
 readMore : OpinionId -> Html OpinionId

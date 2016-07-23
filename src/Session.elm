@@ -4,7 +4,8 @@ module Session exposing
   , init
   , Msg
     ( GoCompose
-    , GoExplore
+    , GoExploreAll
+    , GoExploreConnected
     , GoUserDelegates
     )
   , update
@@ -48,6 +49,7 @@ type alias Session =
   , delegator : Delegator
   }
 
+
 type alias TopicId = Int
 type alias OpinionId = Int
 
@@ -55,7 +57,8 @@ type alias OpinionId = Int
 type Msg
   -- exposed
   = GoCompose TopicId
-  | GoExplore TopicId
+  | GoExploreAll TopicId
+  | GoExploreConnected TopicId
   | GoUserDelegates
 
   -- private
@@ -76,7 +79,8 @@ type Msg
 type SessionView
   = Compose
   | UserDelegates
-  | Explore
+  | ExploreAll
+  | ExploreConnected
   | Empty
 
 
@@ -115,8 +119,11 @@ update action session =
     GoCompose topicId ->
       setSessionTopic session Compose topicId
 
-    GoExplore topicId ->
-      setSessionTopic session Explore topicId
+    GoExploreAll topicId ->
+      setSessionTopic session ExploreAll topicId
+
+    GoExploreConnected topicId ->
+      setSessionTopic session ExploreConnected topicId
 
     GoUserDelegates ->
       { session | currentView = UserDelegates } ! []
@@ -284,11 +291,20 @@ composeLinker = buildComponentNav
   }
 
 
-exploreLinker : Session -> Html Msg
-exploreLinker = buildComponentNav
-  { componentView = Explore
-  , sessionMsg = GoExplore << .id << .topic
-  , html = ExplorerView.navButton
+exploreAllLinker : Session -> Html Msg
+exploreAllLinker = buildComponentNav
+  { componentView = ExploreAll
+  , sessionMsg = GoExploreAll << .id << .topic
+  , html = ExplorerView.allButton
+  , getter = .explorer
+  }
+
+
+exploreConnectedLinker : Session -> Html Msg
+exploreConnectedLinker = buildComponentNav
+  { componentView = ExploreConnected
+  , sessionMsg = GoExploreConnected << .id << .topic
+  , html = ExplorerView.connectedButton
   , getter = .explorer
   }
 
@@ -302,7 +318,8 @@ activeSubNav session =
       [ Html.text session.topic.text ]
     , Html.div
       [ class "session-links" ]
-      [ exploreLinker session
+      [ exploreAllLinker session
+      , exploreConnectedLinker session
       , composeLinker session
       ]
     ]
@@ -317,7 +334,7 @@ inactiveSubNav session =
       [ Html.text session.topic.text ]
     , Html.div
       [ class "session-links" ]
-      [ exploreLinker session ]
+      [ exploreAllLinker session ]
     ]
 
 
@@ -332,14 +349,24 @@ activeSessionContent user session =
         [ Html.App.map ComposerMsg (Composer.view session.composer) ]
       ]
 
-    Explore ->
+    ExploreAll ->
       [ activeSubNav session
       , Html.div
         [ class "content" ]
-        [ ExplorerView.view {topicId = session.topic.id} session.explorer
+        [ ExplorerView.all session.explorer
           |> Html.App.map ExplorerMsg
         ]
       ]
+
+    ExploreConnected ->
+      [ activeSubNav session
+      , Html.div
+        [ class "content" ]
+        [ ExplorerView.connected session.explorer
+          |> Html.App.map ExplorerMsg
+        ]
+      ]
+
 
     UserDelegates ->
       [ Html.div
@@ -350,7 +377,8 @@ activeSessionContent user session =
     Empty ->
       [ Html.div
         []
-        [ Html.text "whoops, why we here?" ] ]
+        [ Html.text "whoops, why we here?" ]
+      ]
 
 
 -- an inactiveSession should only route to browse
