@@ -1,12 +1,13 @@
 module Update.Connection exposing
   ( Msg
     ( DelegateToAssessor
+    , Zoom
     )
   , update
-  , secondaryFetch
   )
 
 import Model.Connection as Connection exposing (Connection)
+import Model.Extend.Expandable as Expandable
 import Update.Question.Assessor as AssessorUpdate
 
 
@@ -15,6 +16,7 @@ type alias Tid = Int -- Topic ID
 
 type Msg
   = DelegateToAssessor AssessorUpdate.Msg
+  | Zoom
 
 
 type alias Context =
@@ -25,6 +27,7 @@ type alias Context =
 update : Context -> Msg -> Connection -> (Connection, Cmd Msg)
 update context msg connection =
   case msg of
+
     DelegateToAssessor assessorMsg ->
       let
         context =
@@ -37,6 +40,10 @@ update context msg connection =
         ( { connection | assessor = assessor }
         , Cmd.map DelegateToAssessor cmd
         )
+
+    Zoom ->
+      Expandable.expand connection
+        |> secondaryFetch context.tid
 
 
 secondaryFetch : Tid -> Connection -> (Connection, Cmd Msg)

@@ -77,7 +77,7 @@ navButton label =
 buildContext : List Question -> Int -> ConnectionView.Context Update.Msg
 buildContext questions connectionKey =
   { showAll = Update.Blur
-  , readMore = Update.Focus
+  , readMore = Update.Focus connectionKey
   , next = Update.ConnectionMsg connectionKey
   , questions = questions
   }

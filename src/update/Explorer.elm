@@ -19,15 +19,18 @@ import Model.Question.Question exposing (Question)
 import Update.Connection as ConnectionUpdate
 
 
-import Dict
+import Dict exposing (Dict)
 
 
 type alias Tid = Int
 type alias Oid = Int
 
 
+type alias Connections = Dict Oid Connection
+
+
 type Msg
-  = Focus Oid
+  = Focus Oid ConnectionUpdate.Msg
   | Blur ()
   | ConnectionMsg Oid ConnectionUpdate.Msg
   | FetchedConnections (List Connection)
@@ -59,43 +62,20 @@ type alias Context =
 update : Context -> Msg -> Explorer -> (Explorer, Cmd Msg)
 update context message explorer =
   case message of
-    Focus key ->
-      let
-        blurred =
-          Dict.map (\_ -> Expandable.collapse) explorer.connections
-        focused =
-          Dict.update key (Maybe.map Expandable.expand) blurred
-      in
-        { explorer | connections = focused } ! []
+    -- blurs all connections before passing through the message
+    -- to the identified connection
+    Focus cId childMsg ->
+      { explorer | connections = blurAll explorer.connections }
+        |> delegateConnectionMsg context cId childMsg
 
     Blur () ->
-      let blurred =
-        Dict.map (\_ -> Expandable.collapse) explorer.connections
-      in
-        { explorer | connections = blurred } ! []
+      { explorer | connections = blurAll explorer.connections } ! []
 
     ConnectionMsg cId msg ->
-      let
-        goUpdate (update, updateCmd) =
-          { explorer | connections = Dict.insert cId update explorer.connections }
-          ! [ updateCmd ]
-      in
-        Dict.get cId explorer.connections
-        |> Maybe.map (ConnectionUpdate.update context msg)
-        |> Maybe.map remapConnectionMsg
-        |> Maybe.map goUpdate
-        |> Maybe.withDefault (explorer, Cmd.none)
+      delegateConnectionMsg context cId msg explorer
 
     FetchedConnections fetched ->
-      let
-        mergeModel (connections, commands) =
-          { explorer | connections = Connection.toDict connections }
-          ! commands
-      in
-        List.map (ConnectionUpdate.secondaryFetch context.tid) fetched
-        |> List.map remapConnectionMsg
-        |> List.unzip
-        |> mergeModel
+      { explorer | connections = Connection.toDict fetched } ! []
 
     FetchedQuestions fetched ->
       { explorer | questions = fetched } ! []
@@ -107,6 +87,32 @@ update context message explorer =
         explorer ! []
 
 
-remapConnectionMsg : (Connection, Cmd ConnectionUpdate.Msg) -> (Connection, Cmd Msg)
-remapConnectionMsg (connection, connectionMsg) =
-  (connection, Cmd.map (ConnectionMsg <| Connection.key connection) connectionMsg)
+blurAll : Connections -> Connections
+blurAll connections =
+  Dict.map (\_ -> Expandable.collapse) connections
+
+
+delegateConnectionMsg : Context -> Oid -> ConnectionUpdate.Msg -> Explorer -> (Explorer, Cmd Msg)
+delegateConnectionMsg context cId msg explorer =
+  let
+    goUpdate (update, updateCmd) =
+      { explorer | connections = Dict.insert cId update explorer.connections }
+      ! [ updateCmd ]
+  in
+    Dict.get cId explorer.connections
+    |> Maybe.map (ConnectionUpdate.update context msg)
+    |> Maybe.map (remapConnectionMsg cId)
+    |> Maybe.map goUpdate
+    |> Maybe.withDefault (explorer, Cmd.none)
+
+
+remapConnectionMsg : Int -> (c, Cmd ConnectionUpdate.Msg) -> (c, Cmd Msg)
+remapConnectionMsg cId (c, connectionMsg) =
+  (c, Cmd.map (ConnectionMsg cId) connectionMsg)
+
+
+-- no longer used: useful if we want to do some secondary fetching after the
+-- initial connection fetch
+remapPostFetchMessage : (Connection, Cmd ConnectionUpdate.Msg) -> (Connection, Cmd Msg)
+remapPostFetchMessage pair =
+  remapConnectionMsg (Connection.key (fst pair)) pair

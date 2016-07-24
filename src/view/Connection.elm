@@ -35,7 +35,7 @@ type alias Key = Int
 
 type alias Context msg =
   { showAll : () -> msg
-  , readMore : OpinionId -> msg
+  , readMore : Update.Msg -> msg
   , next : Update.Msg -> msg
   , questions : List Question
   }
@@ -57,7 +57,7 @@ authorQualifications context {opinion, inflation, assessor} =
 
         Expandable.Collapsed ->
             [ OpinionView.kitchenSink False opinion
-            , Html.App.map context.readMore <| readMore opinion.id
+            , Html.App.map context.readMore readMoreButton
             ]
   in
     Html.div
@@ -82,7 +82,7 @@ linked context {opinion, inflation, assessor, userLink} =
 
         Expandable.Collapsed ->
           [ OpinionView.text False opinion
-          , Html.App.map context.readMore <| readMore opinion.id
+          , Html.App.map context.readMore readMoreButton
           ]
 
     buildPathElements paths =
@@ -114,14 +114,15 @@ linked context {opinion, inflation, assessor, userLink} =
     Maybe.map (build << buildPathElements) userLink
 
 
-readMore : OpinionId -> Html OpinionId
-readMore oid =
+readMoreButton : Html Update.Msg
+readMoreButton =
   Html.a
     [ class "read-more"
-    , Events.onClick oid
+    , Events.onClick ()
     ]
     [ Html.text "read more..."
     ]
+    |> Html.App.map (always Update.Zoom)
 
 
 showAll : Html ()
