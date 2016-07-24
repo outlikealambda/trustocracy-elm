@@ -20,11 +20,16 @@ import Html.Attributes exposing (class)
 type alias Qid = Int -- Question ID
 
 
-questions : List Question -> Assessor -> Html AssessorUpdate.Msg
-questions questions assessor =
-  Html.div
-    [ class "questions" ]
-    ( List.map (mapQuestion assessor) questions )
+questions : List Question -> Maybe Assessor -> Html AssessorUpdate.Msg
+questions questions mAssessor =
+
+  case mAssessor of
+    Nothing ->
+      Html.div [] [ Html.text "Loading..." ]
+    Just assessor ->
+      Html.div
+        [ class "questions" ]
+        ( List.map (mapQuestion assessor) questions )
 
 
 mapQuestion : Assessor -> Question -> Html AssessorUpdate.Msg
