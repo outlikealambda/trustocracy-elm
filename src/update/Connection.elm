@@ -4,7 +4,10 @@ module Update.Connection exposing
     , Zoom
     )
   , update
+  , secondaryFetch
   )
+
+import Common.API as API
 
 import Model.Connection as Connection exposing (Connection)
 import Model.Extend.Expandable as Expandable
@@ -15,10 +18,10 @@ import Utils.Pair as Pair
 
 type alias Tid = Int -- Topic ID
 
-
 type Msg
   = DelegateToAssessor AssessorUpdate.Msg
   | Zoom
+  | FetchedInfluence (Result String Int)
 
 
 type alias Context =
@@ -48,11 +51,21 @@ update context msg connection =
 
     Zoom ->
       Expandable.expand connection
-        |> secondaryFetch context.tid
+        |> zoomFetch context.tid
+
+    FetchedInfluence result ->
+      case result of
+        Ok influence ->
+          { connection | influence = influence } ! []
+        Err errorMsg ->
+          let
+            e = Debug.log "error fetching influence" errorMsg
+          in
+            connection ! []
 
 
-secondaryFetch : Tid -> Connection -> (Connection, Cmd Msg)
-secondaryFetch tid connection =
+zoomFetch : Tid -> Connection -> (Connection, Cmd Msg)
+zoomFetch tid connection =
   let
     (assessor, cmd) =
       case connection.assessor of
@@ -64,3 +77,13 @@ secondaryFetch tid connection =
   in
     ( { connection | assessor = Just assessor }
     , Cmd.map DelegateToAssessor cmd)
+
+
+secondaryFetch : Connection -> (Connection, Cmd Msg)
+secondaryFetch connection =
+  ( connection
+  , API.fetchInfluence
+    (FetchedInfluence << Err)
+    (FetchedInfluence << Ok)
+    (Connection.key connection)
+  )

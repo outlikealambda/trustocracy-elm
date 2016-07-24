@@ -24,8 +24,6 @@ import Dict exposing (Dict)
 
 type alias Tid = Int
 type alias Oid = Int
-
-
 type alias Connections = Dict Oid Connection
 
 
@@ -75,10 +73,17 @@ update context message explorer =
       delegateConnectionMsg context cId msg explorer
 
     FetchedConnections fetched ->
-      { explorer | connections = Connection.toDict fetched } ! []
+      let
+        (connections, cmds) =
+          List.map ConnectionUpdate.secondaryFetch fetched
+            |> List.map remapPostFetchMessage
+            |> List.unzip
+      in
+        { explorer | connections = Connection.toDict connections }
+        ! cmds
 
-    FetchedQuestions fetched ->
-      { explorer | questions = fetched } ! []
+    FetchedQuestions questions ->
+      { explorer | questions = questions } ! []
 
     Error err ->
       let

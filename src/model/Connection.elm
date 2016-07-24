@@ -24,6 +24,7 @@ type alias Tid = Int
 type alias Connection =
   Expandable
     { opinion : Opinion
+    , influence : Int
     , assessor : Maybe Assessor
     , score : Int
     , userLink : UserLink
@@ -47,6 +48,7 @@ decoder =
 fromApi : Opinion -> Maybe (List Path) -> Connection
 fromApi opinion paths =
   { opinion = opinion
+  , influence = 0
   , assessor = Nothing
   , userLink = Maybe.map sortPaths paths
   , score = Maybe.withDefault 1000 <| Maybe.map (minScore 0) paths
