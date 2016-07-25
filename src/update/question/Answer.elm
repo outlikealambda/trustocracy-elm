@@ -7,7 +7,7 @@ module Update.Question.Answer exposing
 
 
 import Common.API as API
-import Common.Tether as Tether exposing (Tether (Disjoint, Attached))
+import Common.Tether as Tether exposing (Tether)
 
 
 import Model.Question.Answer as Answer exposing (Answer, Choice (None))
@@ -27,23 +27,14 @@ type Msg
 
 
 update : Context -> Msg -> Answer -> (Answer, Cmd Msg)
-update {tid, oid, qid} msg answer =
+update context msg answer =
   case msg of
     Choose choice ->
-      case answer of
-
-        Disjoint _ ->
-          ( Disjoint choice
-          , API.createAnswer
-            ( WriteComplete << Err )
-            ( WriteComplete << Ok)
-            choice tid oid qid
-          )
-
-        Attached aid _ ->
-          ( Attached aid choice
-          , saveOrDelete aid choice
-          )
+      ( Tether.map (\_ -> choice) answer
+      , Tether.id answer
+          |> Maybe.map (saveOrDelete choice)
+          |> Maybe.withDefault (createOrNothing choice context)
+      )
 
 
     -- comes back with Nothing on delete, the allocated ID on create,
@@ -51,7 +42,7 @@ update {tid, oid, qid} msg answer =
     WriteComplete result ->
       case result of
         Ok aid ->
-          ( Tether.Attached aid <| Tether.data answer
+          ( Tether.attach aid answer
           , Cmd.none )
         Err errorMsg ->
           Debug.log ("error saving answer" ++ errorMsg) answer ! []
@@ -60,14 +51,14 @@ update {tid, oid, qid} msg answer =
     DeleteComplete result ->
       case result of
         Ok aid ->
-          ( Disjoint None
+          ( Tether.detach answer
           , Cmd.none )
         Err errorMsg ->
           Debug.log ("error deleting answer" ++ errorMsg) answer ! []
 
 
-saveOrDelete : Int -> Choice -> Cmd Msg
-saveOrDelete aid choice =
+saveOrDelete : Choice -> Int -> Cmd Msg
+saveOrDelete choice aid =
   case choice of
     None ->
       API.deleteAnswer
@@ -76,7 +67,19 @@ saveOrDelete aid choice =
         aid
     _ ->
       API.updateAnswer
-        ( WriteComplete << Err )
-        ( WriteComplete << Ok)
+        (WriteComplete << Err)
+        (WriteComplete << Ok)
         aid
         choice
+
+
+createOrNothing : Choice -> Context -> Cmd Msg
+createOrNothing choice {tid, oid, qid} =
+  case choice of
+    None ->
+      Cmd.none
+    _ ->
+      API.createAnswer
+        (WriteComplete << Err)
+        (WriteComplete << Ok)
+        choice tid oid qid

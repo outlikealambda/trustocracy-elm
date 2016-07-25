@@ -19,7 +19,7 @@ import Json.Decode as Decode exposing ((:=))
 import Json.Encode as Encode
 
 
-type alias Answer = Tether Choice
+type alias Answer = Tether Int Choice
 
 
 type Choice
@@ -29,7 +29,7 @@ type Choice
 
 
 unanswered : Answer
-unanswered = Tether.Disjoint None
+unanswered = Tether.init None
 
 
 encodeChoice : Choice -> Encode.Value
@@ -66,7 +66,8 @@ qidPairDecoder =
 
 
 fromApi : Int -> Choice -> Answer
-fromApi = Tether.Attached
+fromApi aid choice =
+  Tether.attach aid <| Tether.init choice
 
 
 idDecoder : Decode.Decoder Int
