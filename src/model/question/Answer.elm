@@ -12,14 +12,14 @@ module Model.Question.Answer exposing
   )
 
 
-import Common.Backed as Backed exposing (Backed)
+import Common.Tether as Tether exposing (Tether)
 
 
 import Json.Decode as Decode exposing ((:=))
 import Json.Encode as Encode
 
 
-type alias Answer = Backed Choice
+type alias Answer = Tether Choice
 
 
 type Choice
@@ -29,7 +29,7 @@ type Choice
 
 
 unanswered : Answer
-unanswered = Backed.Fresh None
+unanswered = Tether.Disjoint None
 
 
 encodeChoice : Choice -> Encode.Value
@@ -66,7 +66,7 @@ qidPairDecoder =
 
 
 fromApi : Int -> Choice -> Answer
-fromApi = Backed.Linked
+fromApi = Tether.Attached
 
 
 idDecoder : Decode.Decoder Int

@@ -3,7 +3,7 @@ module View.Question.Picker exposing
   )
 
 
-import Common.Backed as Backed
+import Common.Tether as Tether
 
 
 import Model.Question.Answer as Answer exposing (Answer)
@@ -40,7 +40,7 @@ radio : Answer -> Option -> Html Answer.Choice
 radio answer {id, label} =
   let
     choice =
-      Backed.data answer
+      Tether.data answer
 
     isSelected =
       case choice of

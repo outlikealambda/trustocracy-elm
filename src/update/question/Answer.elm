@@ -7,7 +7,7 @@ module Update.Question.Answer exposing
 
 
 import Common.API as API
-import Common.Backed as Backed exposing (Backed (Fresh, Linked))
+import Common.Tether as Tether exposing (Tether (Disjoint, Attached))
 
 
 import Model.Question.Answer as Answer exposing (Answer, Choice (None))
@@ -32,16 +32,16 @@ update {tid, oid, qid} msg answer =
     Choose choice ->
       case answer of
 
-        Fresh _ ->
-          ( Fresh choice
+        Disjoint _ ->
+          ( Disjoint choice
           , API.createAnswer
             ( WriteComplete << Err )
             ( WriteComplete << Ok)
             choice tid oid qid
           )
 
-        Linked aid _ ->
-          ( Linked aid choice
+        Attached aid _ ->
+          ( Attached aid choice
           , saveOrDelete aid choice
           )
 
@@ -51,7 +51,7 @@ update {tid, oid, qid} msg answer =
     WriteComplete result ->
       case result of
         Ok aid ->
-          ( Backed.Linked aid <| Backed.data answer
+          ( Tether.Attached aid <| Tether.data answer
           , Cmd.none )
         Err errorMsg ->
           Debug.log ("error saving answer" ++ errorMsg) answer ! []
@@ -60,7 +60,7 @@ update {tid, oid, qid} msg answer =
     DeleteComplete result ->
       case result of
         Ok aid ->
-          ( Fresh None
+          ( Disjoint None
           , Cmd.none )
         Err errorMsg ->
           Debug.log ("error deleting answer" ++ errorMsg) answer ! []

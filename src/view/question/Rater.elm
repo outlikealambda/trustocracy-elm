@@ -3,7 +3,7 @@ module View.Question.Rater exposing
   )
 
 
-import Common.Backed as Backed
+import Common.Tether as Tether
 
 
 import Model.Question.Answer as Answer exposing (Answer, Choice)
@@ -73,7 +73,7 @@ getRating : Answer -> Float
 getRating answer =
   let
     choice =
-      Backed.data answer
+      Tether.data answer
   in
     case choice of
       Answer.Rated v ->
