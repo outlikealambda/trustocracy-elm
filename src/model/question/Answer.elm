@@ -5,22 +5,21 @@ module Model.Question.Answer exposing
     , Picked
     , Rated
     )
-  , encode
+  , encodeChoice
   , qidPairDecoder
   , idDecoder
   , unanswered
   )
 
 
-import Model.Extend.Createable exposing (Createable)
-import Model.Extend.Writeable as Writeable exposing (Writeable)
+import Common.Backed as Backed exposing (Backed)
 
 
 import Json.Decode as Decode exposing ((:=))
 import Json.Encode as Encode
 
 
-type alias Answer = Createable ( Writeable { choice : Choice } )
+type alias Answer = Backed Choice
 
 
 type Choice
@@ -30,21 +29,16 @@ type Choice
 
 
 unanswered : Answer
-unanswered =
-  { id = Nothing
-  , choice = None
-  , writeStatus = Writeable.None
-  }
+unanswered = Backed.Fresh None
 
 
-encode : Answer -> Encode.Value
-encode answer =
-  case answer.choice of
+encodeChoice : Choice -> Encode.Value
+encodeChoice choice =
+  case choice of
     Picked choiceId ->
       Encode.object [ ("picked", Encode.int choiceId) ]
     Rated rating ->
       Encode.object [ ("rated", Encode.float rating) ]
-      -- Encode.string (Debug.crash "We don't support rating answers yet")
     None ->
       Encode.string (Debug.crash "We shouldn't be encoding None answers")
 
@@ -72,11 +66,7 @@ qidPairDecoder =
 
 
 fromApi : Int -> Choice -> Answer
-fromApi id choice =
-  { id = Just id
-  , choice = choice
-  , writeStatus = Writeable.None
-  }
+fromApi = Backed.Linked
 
 
 idDecoder : Decode.Decoder Int

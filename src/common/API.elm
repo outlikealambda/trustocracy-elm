@@ -38,7 +38,7 @@ import Model.Connection as Connection exposing (Connection)
 import Model.Opinion.Composition as Composition exposing (Composition)
 import Model.Opinion.Opinion as Opinion exposing (Opinion)
 import Model.Path as Path exposing (Path)
-import Model.Question.Answer as Answer exposing (Answer)
+import Model.Question.Answer as Answer exposing (Answer, Choice)
 import Model.Question.Question as Question exposing (Question)
 import Model.Topic as Topic exposing (Topic)
 import Model.Trustee as Trustee exposing (Trustee)
@@ -288,11 +288,11 @@ fetchAnswers onError onSuccess topicId opinionId =
     |> Task.perform onError onSuccess
 
 
-createAnswer : (String -> a) -> (Maybe AnswerId -> a) -> Answer -> TopicId -> OpinionId -> QuestionId -> Cmd a
-createAnswer onError onSuccess answer tid oid qid =
+createAnswer : (String -> a) -> (AnswerId -> a) -> Choice -> TopicId -> OpinionId -> QuestionId -> Cmd a
+createAnswer onError onSuccess choice tid oid qid =
   let
     postAnswer =
-      post' (Decode.map Just Answer.idDecoder)
+      post' Answer.idDecoder
         <| secureEndpoint
           [ "topic/"
           , toString tid
@@ -303,7 +303,7 @@ createAnswer onError onSuccess answer tid oid qid =
           , "/answer"
           ]
   in
-    Answer.encode answer
+    Answer.encodeChoice choice
       |> Encode.encode 0
       |> Http.string
       |> postAnswer
@@ -311,17 +311,17 @@ createAnswer onError onSuccess answer tid oid qid =
       |> Task.perform onError onSuccess
 
 
-updateAnswer : (String -> a) -> (Maybe AnswerId -> a) -> AnswerId -> Answer -> Cmd a
-updateAnswer onError onSuccess answerId answer =
+updateAnswer : (String -> a) -> (AnswerId -> a) -> AnswerId -> Choice -> Cmd a
+updateAnswer onError onSuccess answerId choice =
   let
     putAnswer =
-      post' (Decode.map Just Answer.idDecoder)
+      post' Answer.idDecoder
         <| secureEndpoint
           [ "answer/"
           , toString answerId
           ]
   in
-    Answer.encode answer
+    Answer.encodeChoice choice
       |> Encode.encode 0
       |> Http.string
       |> putAnswer
@@ -329,10 +329,10 @@ updateAnswer onError onSuccess answerId answer =
       |> Task.perform onError onSuccess
 
 
-deleteAnswer : (String -> a) -> (Maybe AnswerId -> a) -> AnswerId -> Cmd a
+deleteAnswer : (String -> a) -> (AnswerId -> a) -> AnswerId -> Cmd a
 deleteAnswer onError onSuccess answerId =
   secureEndpoint [ "answer/", toString answerId ]
-    |> delete (Decode.succeed Nothing)
+    |> delete (Decode.succeed answerId)
     |> Task.mapError httpErrorToString
     |> Task.perform onError onSuccess
 

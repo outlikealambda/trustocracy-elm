@@ -3,7 +3,10 @@ module View.Question.Rater exposing
   )
 
 
-import Model.Question.Answer as Answer exposing (Answer)
+import Common.Backed as Backed
+
+
+import Model.Question.Answer as Answer exposing (Answer, Choice)
 import Model.Question.Option as Option exposing (Option)
 
 
@@ -54,7 +57,7 @@ view answer (leftEndpoint, rightEndpoint) prompt =
   |> Html.App.map AnswerUpdate.Choose
 
 
-mouseUpWithDefault : Float -> Attribute Answer.Choice
+mouseUpWithDefault : Float -> Attribute Choice
 mouseUpWithDefault default =
   HtmlEvents.on
     "mouseup"
@@ -68,8 +71,12 @@ mouseUpWithDefault default =
 
 getRating : Answer -> Float
 getRating answer =
-  case answer.choice of
-    Answer.Rated v ->
-      v
-    _ ->
-      0.5
+  let
+    choice =
+      Backed.data answer
+  in
+    case choice of
+      Answer.Rated v ->
+        v
+      _ ->
+        0.5

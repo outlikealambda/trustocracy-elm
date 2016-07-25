@@ -7,10 +7,10 @@ module Update.Question.Answer exposing
 
 
 import Common.API as API
+import Common.Backed as Backed exposing (Backed (Fresh, Linked))
 
 
-import Model.Extend.Writeable as Writeable
-import Model.Question.Answer as Answer exposing (Answer)
+import Model.Question.Answer as Answer exposing (Answer, Choice (None))
 
 
 type alias Context =
@@ -22,74 +22,61 @@ type alias Context =
 
 type Msg
   = Choose Answer.Choice
-  | WriteSuccess (Maybe Int)
-  | WriteFail String
-
-
-type CRUD
-  = Create
-  | Update Int
-  | Delete Int
-  | None
+  | WriteComplete (Result String Int)
+  | DeleteComplete (Result String Int)
 
 
 update : Context -> Msg -> Answer -> (Answer, Cmd Msg)
 update {tid, oid, qid} msg answer =
   case msg of
     Choose choice ->
-      let
-        updated =
-          { answer
-          | choice = choice
-          , writeStatus = Writeable.Writing
-          }
+      case answer of
 
-        cmd =
-          case extractCrudAction updated of
-            Create ->
-              API.createAnswer WriteFail WriteSuccess updated tid oid qid
+        Fresh _ ->
+          ( Fresh choice
+          , API.createAnswer
+            ( WriteComplete << Err )
+            ( WriteComplete << Ok)
+            choice tid oid qid
+          )
 
-            Update answerId ->
-              API.updateAnswer WriteFail WriteSuccess answerId updated
+        Linked aid _ ->
+          ( Linked aid choice
+          , saveOrDelete aid choice
+          )
 
-            Delete answerId ->
-              API.deleteAnswer WriteFail WriteSuccess answerId
-
-            None ->
-              Cmd.none
-
-      in
-        ( updated, cmd )
 
     -- comes back with Nothing on delete, the allocated ID on create,
     -- or the existing ID on update
-    WriteSuccess maybeAnswerId ->
-      ( { answer
-        | id = maybeAnswerId
-        , writeStatus = Writeable.Written
-        }
-      , Cmd.none
-      )
-
-    WriteFail string ->
-      { answer | writeStatus = Writeable.Failed } ! []
+    WriteComplete result ->
+      case result of
+        Ok aid ->
+          ( Backed.Linked aid <| Backed.data answer
+          , Cmd.none )
+        Err errorMsg ->
+          Debug.log ("error saving answer" ++ errorMsg) answer ! []
 
 
-extractCrudAction : Answer -> CRUD
-extractCrudAction {id, choice} =
-  case id of
-    Nothing ->
-      case choice of
-        Answer.None ->
-          None
+    DeleteComplete result ->
+      case result of
+        Ok aid ->
+          ( Fresh None
+          , Cmd.none )
+        Err errorMsg ->
+          Debug.log ("error deleting answer" ++ errorMsg) answer ! []
 
-        _ ->
-          Create
 
-    Just allocatedId ->
-      case choice of
-        Answer.None ->
-          Delete allocatedId
-
-        _ ->
-          Update allocatedId
+saveOrDelete : Int -> Choice -> Cmd Msg
+saveOrDelete aid choice =
+  case choice of
+    None ->
+      API.deleteAnswer
+        (DeleteComplete << Err)
+        (DeleteComplete << Ok)
+        aid
+    _ ->
+      API.updateAnswer
+        ( WriteComplete << Err )
+        ( WriteComplete << Ok)
+        aid
+        choice

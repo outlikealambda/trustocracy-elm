@@ -3,6 +3,9 @@ module View.Question.Picker exposing
   )
 
 
+import Common.Backed as Backed
+
+
 import Model.Question.Answer as Answer exposing (Answer)
 import Model.Question.Option exposing (Option)
 
@@ -36,8 +39,11 @@ view answer options prompt =
 radio : Answer -> Option -> Html Answer.Choice
 radio answer {id, label} =
   let
+    choice =
+      Backed.data answer
+
     isSelected =
-      case answer.choice of
+      case choice of
         Answer.None ->
           False
         Answer.Picked optionId ->
