@@ -311,13 +311,15 @@ addPlace onError onSuccess =
     |> Encode.encode 0
     |> Http.string
     |> post'
-      (Decode.list Place.decoder) ("/api/secure/postLocation" )
+      (Decode.list Place.decoder)
+        (secureEndpoint ["postLocation"])
     |> Task.mapError httpErrorToString
     |> Task.perform onError onSuccess
 
 fetchPlaces : (String -> a) -> (List Place -> a) -> Cmd a
 fetchPlaces onError onSuccess =
-  Http.get (Decode.list Place.decoder) ("/api/secure/getLocation")
+  Http.get (Decode.list Place.decoder)
+    (secureEndpoint ["getLocation"])
   |> Task.mapError httpErrorToString
   |> Task.perform onError onSuccess
 
@@ -327,7 +329,8 @@ updatePlace onError onSuccess place =
     |> Encode.encode 0
     |> Http.string
     |> post'
-      Place.decoder ("/api/" ++ toString place.id ++ "/updateLocation" )
+      Place.decoder
+        (openEndpoint [ toString place.id , "/updateLocation"] )
     |> Task.mapError httpErrorToString
     |> Task.perform onError onSuccess
 
@@ -335,7 +338,7 @@ removePlace : (String -> a) -> (Int -> a) -> Int -> Cmd a
 removePlace onError onSuccess placeId =
   delete'
     Place.removalDecoder
-    ( "/api/" ++ toString placeId ++ "/deleteLocation" )
+    (openEndpoint [ toString placeId , "/deleteLocation"] )
   |> Task.mapError httpErrorToString
   |> Task.perform onError onSuccess
 

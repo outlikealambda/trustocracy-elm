@@ -23,10 +23,10 @@ import Auth exposing (Auth)
 import Common.API as API
 import Delegator exposing (Delegator)
 
+import Model.Whereabouts as Whereabouts exposing (Whereabouts)
 import Model.Explorer as Explorer exposing (Explorer)
 import Model.Topic as Topic exposing (Topic)
 import Model.User exposing (User)
-import Model.Place as Place exposing (Place)
 import Update.Explorer as ExplorerUpdate
 import View.Explorer as ExplorerView
 import View.Whereabouts as WhereaboutsView
@@ -50,7 +50,7 @@ type alias Session =
   , explorer : Explorer
   , auth : Auth
   , delegator : Delegator
-  , places : List Place
+  , whereabouts : Whereabouts
   }
 
 type alias TopicId = Int
@@ -106,7 +106,7 @@ init =
     , explorer = Explorer.empty
     , auth = auth
     , delegator = Delegator.fromActiveUser LoggedOut
-    , places = []
+    , whereabouts = []
     }
     ! [ Cmd.map AuthMsg authFx ]
 
@@ -135,7 +135,7 @@ update action session =
         (update, updateCmd) =
           WhereaboutsUpdate.init
       in
-        ({ session | currentView = Whereabouts, places = update }
+        ({ session | currentView = Whereabouts, whereabouts = update }
         , Cmd.map WhereaboutsMsg updateCmd)
 
     Error err ->
@@ -170,9 +170,9 @@ update action session =
     WhereaboutsMsg msg ->
       let
         (update, updateCmd) =
-          WhereaboutsUpdate.update msg session.places
+          WhereaboutsUpdate.update msg session.whereabouts
       in
-        { session | places = update }
+        { session | whereabouts = update }
         ! [ Cmd.map WhereaboutsMsg updateCmd ]
 
     AuthMsg authAction ->
@@ -368,7 +368,7 @@ activeSessionContent user session =
     Whereabouts ->
       [ Html.div
         [ class "content"]
-        [ Html.App.map WhereaboutsMsg (WhereaboutsView.view session.places)]
+        [ Html.App.map WhereaboutsMsg (WhereaboutsView.view session.whereabouts)]
       ]
 
     Empty ->

@@ -6,12 +6,12 @@ import Update.Place as PlaceUpdate
 
 import Html.Events exposing (onClick, onInput)
 import Html exposing (text, div, h1, h2, p, ul, li, body, Html, a, button, Attribute, input)
-import Html.Attributes exposing (id, list, href, placeholder)
+import Html.Attributes exposing (id, list, href, placeholder, class)
 
 view : Place -> Html PlaceUpdate.Msg
 view model =
   div
-    [ id "locationInputs" ]
+    [ class "location-inputs" ]
     [ h2
       []
       []
@@ -40,13 +40,13 @@ view model =
       ]
       []
   , div
-      [ id "updateLocation" ]
+      [ class "update-location" ]
       [ button
         [ onClick PlaceUpdate.UpdatePlace ]
         [ text "Update this location" ]
       ]
   , div
-      [ id "deleteLocation" ]
+      [ class "delete-location" ]
       [ button
         [ onClick PlaceUpdate.RemovePlace ]
         [ text "Remove this location" ]

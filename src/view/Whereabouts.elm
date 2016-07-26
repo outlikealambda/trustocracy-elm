@@ -9,24 +9,24 @@ import View.Place as PlaceView
 
 import Html.App
 import Html.Events exposing (onClick, onInput)
-import Html.Attributes exposing (id, list, href, placeholder)
+import Html.Attributes exposing (id, list, href, placeholder, class)
 import Html exposing (text, div, h1, h2, p, ul, li, body, Html, a, button, Attribute, input)
 
 view : Whereabouts -> Html WhereaboutsUpdate.Msg
 view model =
   div
-    [ id "header" ]
+    []
     [ h2
       []
       [ text "edit user (location) information" ]
   , div
-      [ id "addLocationFields" ]
+      [ class "location-fields" ]
       [ text "Constituent Of: " ]
   , div
-      [ id "currentLocations" ]
+      [ class "current-locations" ]
       (List.map viewCurrentLocations model)
   , div
-      [ id "addLocation" ]
+      [ class "add-location" ]
       [ button
         [ onClick WhereaboutsUpdate.AddPlace ]
         [ text "Add new location" ]
