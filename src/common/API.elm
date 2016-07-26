@@ -330,7 +330,7 @@ updatePlace onError onSuccess place =
     |> Http.string
     |> post'
       Place.decoder
-        (openEndpoint [ toString place.id , "/updateLocation"] )
+        (secureEndpoint [ "location/", toString place.id ] )
     |> Task.mapError httpErrorToString
     |> Task.perform onError onSuccess
 
@@ -338,7 +338,7 @@ removePlace : (String -> a) -> (Int -> a) -> Int -> Cmd a
 removePlace onError onSuccess placeId =
   delete'
     Place.removalDecoder
-    (openEndpoint [ toString placeId , "/deleteLocation"] )
+    (secureEndpoint [ "location/", toString placeId ] )
   |> Task.mapError httpErrorToString
   |> Task.perform onError onSuccess
 
