@@ -26,8 +26,12 @@ import Delegator exposing (Delegator)
 import Model.Explorer as Explorer exposing (Explorer)
 import Model.Topic as Topic exposing (Topic)
 import Model.User exposing (User)
+import Model.Place as Place exposing (Place)
 import Update.Explorer as ExplorerUpdate
 import View.Explorer as ExplorerView
+import View.Whereabouts as WhereaboutsView
+
+import Update.Whereabouts as WhereaboutsUpdate
 
 import Opinion.Composer as Composer exposing (Composer)
 
@@ -46,6 +50,7 @@ type alias Session =
   , explorer : Explorer
   , auth : Auth
   , delegator : Delegator
+  , places : List Place
   }
 
 type alias TopicId = Int
@@ -57,6 +62,7 @@ type Msg
   = GoCompose TopicId
   | GoExplore TopicId
   | GoUserDelegates
+  | GoUserWhereabouts
 
   -- private
   | Error String
@@ -70,6 +76,7 @@ type Msg
   | DelegatorMsg Delegator.Msg
   | ExplorerMsg ExplorerUpdate.Msg
   | AuthMsg Auth.Msg
+  | WhereaboutsMsg WhereaboutsUpdate.Msg
 
 
 -- the current view
@@ -77,6 +84,7 @@ type SessionView
   = Compose
   | UserDelegates
   | Explore
+  | Whereabouts
   | Empty
 
 
@@ -98,6 +106,7 @@ init =
     , explorer = Explorer.empty
     , auth = auth
     , delegator = Delegator.fromActiveUser LoggedOut
+    , places = []
     }
     ! [ Cmd.map AuthMsg authFx ]
 
@@ -120,6 +129,14 @@ update action session =
 
     GoUserDelegates ->
       { session | currentView = UserDelegates } ! []
+
+    GoUserWhereabouts ->
+      let
+        (update, updateCmd) =
+          WhereaboutsUpdate.init
+      in
+        ({ session | currentView = Whereabouts, places = update }
+        , Cmd.map WhereaboutsMsg updateCmd)
 
     Error err ->
       let
@@ -149,6 +166,14 @@ update action session =
       in
         { session | explorer = update }
         ! [ Cmd.map ExplorerMsg updateFx ]
+
+    WhereaboutsMsg msg ->
+      let
+        (update, updateCmd) =
+          WhereaboutsUpdate.update msg session.places
+      in
+        { session | places = update }
+        ! [ Cmd.map WhereaboutsMsg updateCmd ]
 
     AuthMsg authAction ->
       let
@@ -340,6 +365,12 @@ activeSessionContent user session =
         [ Html.App.map DelegatorMsg (Delegator.view user.emails session.delegator) ]
       ]
 
+    Whereabouts ->
+      [ Html.div
+        [ class "content"]
+        [ Html.App.map WhereaboutsMsg (WhereaboutsView.view session.places)]
+      ]
+
     Empty ->
       [ Html.div
         []
@@ -361,10 +392,27 @@ inactiveSessionContent session =
 
 navHeader : (Msg -> msg) -> Session -> List (Html msg)
 navHeader transform {auth, activeUser} =
-  List.append
-    (Auth.view
-      { transform = (transform << AuthMsg)
-      , activeUser = activeUser
-      }
-      auth)
-    (Delegator.navHeader (transform GoUserDelegates) activeUser)
+  List.concat
+    [ Auth.view
+        { transform = (transform << AuthMsg)
+        , activeUser = activeUser
+        }
+        auth
+    , Delegator.navHeader (transform GoUserDelegates) activeUser
+    , whereaboutsLink transform activeUser
+    ]
+
+whereaboutsLink : (Msg -> msg) -> ActiveUser -> List (Html msg)
+whereaboutsLink transform activeUser =
+  case activeUser of
+    LoggedOut ->
+      []
+
+    LoggedIn user ->
+      [ Html.div
+        [class "home" ]
+        [ Html.a
+          [ Events.onClick (transform GoUserWhereabouts) ]
+          [ Html.text "Your Locations" ]
+        ]
+      ]

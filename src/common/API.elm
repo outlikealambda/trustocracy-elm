@@ -16,6 +16,10 @@ module Common.API exposing
   , setTrustee
   , setTrustees
   , lookupTrustee
+  , addPlace
+  , fetchPlaces
+  , updatePlace
+  , removePlace
   )
 
 
@@ -31,6 +35,7 @@ import Auth.Facebook as Facebook
 import Auth.Google as Google
 import Model.Connection as Connection exposing (Connection)
 import Model.Path as Path exposing (Path)
+import Model.Place as Place exposing (Place)
 import Model.Opinion as Opinion exposing (Opinion)
 import Model.Topic as Topic exposing (Topic)
 import Model.Trustee as Trustee exposing (Trustee)
@@ -296,6 +301,43 @@ lookupTrustee onError onSuccess email =
     |> Task.mapError httpErrorToString
     |> Task.perform onError onSuccess
 
+------------
+-- PLACES --
+------------
+
+addPlace : (String -> a) -> (List Place -> a) -> Cmd a
+addPlace onError onSuccess =
+  (Place.encoder Place.createEmpty)
+    |> Encode.encode 0
+    |> Http.string
+    |> post'
+      (Decode.list Place.decoder) ("/api/secure/postLocation" )
+    |> Task.mapError httpErrorToString
+    |> Task.perform onError onSuccess
+
+fetchPlaces : (String -> a) -> (List Place -> a) -> Cmd a
+fetchPlaces onError onSuccess =
+  Http.get (Decode.list Place.decoder) ("/api/secure/getLocation")
+  |> Task.mapError httpErrorToString
+  |> Task.perform onError onSuccess
+
+updatePlace : (String -> a) -> (Place -> a) -> Place -> Cmd a
+updatePlace onError onSuccess place =
+  (Place.encoder place)
+    |> Encode.encode 0
+    |> Http.string
+    |> post'
+      Place.decoder ("/api/" ++ toString place.id ++ "/updateLocation" )
+    |> Task.mapError httpErrorToString
+    |> Task.perform onError onSuccess
+
+removePlace : (String -> a) -> (Int -> a) -> Int -> Cmd a
+removePlace onError onSuccess placeId =
+  delete'
+    Place.removalDecoder
+    ( "/api/" ++ toString placeId ++ "/deleteLocation" )
+  |> Task.mapError httpErrorToString
+  |> Task.perform onError onSuccess
 
 -- because post is pretty worthless
 -- see: https://groups.google.com/forum/#!topic/elm-discuss/Zpq9itvtLEY
@@ -309,6 +351,15 @@ post' decoder url body =
     }
   |> Http.fromJson decoder
 
+delete' : Decode.Decoder a -> String ->Task.Task Http.Error a
+delete' decoder url =
+  Http.send Http.defaultSettings
+    { verb = "DELETE"
+    , headers = [("Content-type", "application/json")]
+    , url = url
+    , body = Http.empty
+    }
+  |> Http.fromJson decoder
 
 httpErrorToString : Http.Error -> String
 httpErrorToString err =
