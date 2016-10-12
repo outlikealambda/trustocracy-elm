@@ -1,10 +1,22 @@
 module Model.Connection exposing
   ( Connection
-  , decoder
-  , noPathDecoder
+  , Basic
+  , Linked
+  , connectedDecoder
+  , unconnectedDecoder
   , toDict
   , key
-  , connectedCount
+  , influence
+  , assessor
+  , opinion
+  , inflation
+  , userLink
+  , setInfluence
+  , setAssessor
+  , collapse
+  , expand
+  , countLinked
+  , either
   )
 
 
@@ -25,42 +37,66 @@ type alias Qid = Int
 type alias Tid = Int
 
 
-type alias Connection =
+type alias Basic =
   Expandable
     { opinion : Opinion
     , influence : Remote Int
     , assessor : Maybe Assessor
-    , score : Int
-    , userLink : UserLink
     }
 
 
-type alias UserLink = Maybe (List Path)
+type alias Link =
+  { userLink : UserLink
+  , score : Int
+  }
 
 
-decoder : Decode.Decoder Connection
-decoder =
-  Decode.object2 fromApi
-    ( Decode.oneOf
-      [ "paths" := Decode.map Just (Decode.list Path.decoder)
-      , Decode.succeed Nothing
-      ]
-    )
-    ( "opinion" := Opinion.decoder )
+type alias Linked =
+  { basic : Basic
+  , link : Link
+  }
 
 
-noPathDecoder : Decode.Decoder Connection
-noPathDecoder =
-  Decode.object1 (fromApi Nothing) Opinion.decoder
+type Connection
+  = Connected Linked
+  | Unconnected Basic
 
 
-fromApi : Maybe (List Path) -> Opinion -> Connection
-fromApi paths opinion =
+type alias UserLink = List Path
+
+
+connectedDecoder : Decode.Decoder Connection
+connectedDecoder =
+  Decode.object2 connectedFromApi
+    ("paths" := Decode.list Path.decoder)
+    ("opinion" := Opinion.decoder)
+
+
+unconnectedDecoder : Decode.Decoder Connection
+unconnectedDecoder =
+  Decode.object1 (Unconnected << basicFromApi) Opinion.decoder
+
+
+connectedFromApi : List Path -> Opinion -> Connection
+connectedFromApi paths opinion =
+  Connected
+    { basic = basicFromApi opinion
+    , link = linkFromApi paths
+    }
+
+
+linkFromApi : List Path -> Link
+linkFromApi paths =
+  { userLink = sortPaths paths
+  , score = minScore 0 paths
+  }
+
+
+basicFromApi : Opinion -> Basic
+basicFromApi opinion =
   { opinion = opinion
   , influence = Remote.NoRequest
   , assessor = Nothing
-  , userLink = Maybe.map sortPaths paths
-  , score = Maybe.withDefault 1000 <| Maybe.map (minScore 0) paths
   , inflation = Expandable.Collapsed
   }
 
@@ -85,9 +121,78 @@ keyPair c =
 
 
 key : Connection -> Int
-key = .opinion >> .id
+key = .id << opinion
 
 
-connectedCount : List Connection -> Int
-connectedCount =
-  List.length << (List.filterMap .userLink)
+opinion : Connection -> Opinion
+opinion = .opinion << unwrap
+
+
+influence : Connection -> Remote Int
+influence = .influence << unwrap
+
+
+setInfluence : Remote Int -> Connection -> Connection
+setInfluence influence =
+  mapBasic (\b -> { b | influence = influence})
+
+
+assessor : Connection -> Maybe Assessor
+assessor = .assessor << unwrap
+
+
+setAssessor : Maybe Assessor -> Connection -> Connection
+setAssessor assessor =
+  mapBasic (\b -> { b | assessor = assessor})
+
+
+inflation : Connection -> Expandable.Inflation
+inflation = .inflation << unwrap
+
+
+userLink : Connection -> Maybe UserLink
+userLink connection =
+  case connection of
+    Unconnected _ ->
+      Nothing
+
+    Connected linked ->
+      linked |> .link |> .userLink |> Just
+
+
+collapse : Connection -> Connection
+collapse = mapBasic Expandable.collapse
+
+
+expand : Connection -> Connection
+expand = mapBasic Expandable.expand
+
+
+unwrap : Connection -> Basic
+unwrap connection =
+  case connection of
+    Unconnected basic ->
+      basic
+    Connected linked ->
+      linked.basic
+
+mapBasic : (Basic -> Basic) -> Connection -> Connection
+mapBasic basicFn connection =
+  case connection of
+    Unconnected basic ->
+      Unconnected (basicFn basic)
+    Connected linked ->
+      Connected { linked | basic = basicFn linked.basic }
+
+
+countLinked : List Connection -> Int
+countLinked = List.length << List.filterMap userLink
+
+
+either : (Basic -> a) -> (Linked -> a) -> Connection -> a
+either basicFn linkedFn connection =
+  case connection of
+    Unconnected basic ->
+      basicFn basic
+    Connected linked ->
+      linkedFn linked

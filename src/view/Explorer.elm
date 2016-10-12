@@ -25,14 +25,13 @@ connected : Explorer -> Html Update.Msg
 connected {connections, questions} =
   let
     viewConnection key connection =
-      ConnectionView.connected (buildContext questions key) connection
+      ConnectionView.view (buildContext questions key) connection
 
   in
     Html.div
       []
       ( Dict.map viewConnection connections
         |> Dict.values
-        |> List.filterMap identity
         |> List.intersperse (Html.hr [] [])
       )
 
@@ -41,7 +40,7 @@ all : Explorer -> Html Update.Msg
 all {connections, questions} =
   let
     viewConnection key connection =
-      ConnectionView.public (buildContext questions key) connection
+      ConnectionView.view (buildContext questions key) connection
 
   in
     Html.div
@@ -55,7 +54,7 @@ all {connections, questions} =
 connectedButton : Explorer -> Html msg
 connectedButton {connections} =
   String.join " "
-    [ toString <| Connection.connectedCount <| Dict.values connections
+    [ toString <| Connection.countLinked <| Dict.values connections
     , "Linked Opinions"
     ]
     |> navButton

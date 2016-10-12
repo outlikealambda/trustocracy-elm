@@ -1,6 +1,5 @@
 module View.Connection exposing
-  ( connected
-  , public
+  ( view
   , Context
   )
 
@@ -49,51 +48,29 @@ type alias Context msg =
   }
 
 
-public : Context msg -> Connection -> Html msg
-public context {opinion, inflation, assessor} =
+view : Context msg -> Connection -> Html msg
+view context =
+  Connection.either (public context) (connected context)
+
+
+public : Context msg -> Connection.Basic -> Html msg
+public context basic =
+  Html.div
+    [ class "disjoint cf" ]
+    <|
+      [ Html.div
+        [ class "connection-header cf" ]
+        [ AuthorView.connection <| .author <| .opinion basic ]
+      ]
+      ++
+        body context basic
+
+
+connected : Context msg -> Connection.Linked -> Html msg
+connected context {basic, link} =
   let
-    childElements =
-      case inflation of
-        Expandable.Expanded ->
-            [ OpinionView.kitchenSink True opinion
-            , lastUpdated opinion.created
-            , AssessorView.questions context.questions assessor
-              |> Html.App.map Update.DelegateToAssessor
-              |> Html.App.map context.next
-            , Html.App.map context.showAll showAll
-            ]
-
-        Expandable.Collapsed ->
-            [ OpinionView.kitchenSink False opinion
-            , Html.App.map context.readMore readMoreButton
-            ]
-  in
-    Html.div
-      [ class "disjoint cf" ]
-      childElements
-
--- Just (Html msg) if the Opinion is connected
--- Nothing if the opinion is not connected
-connected : Context msg -> Connection -> Maybe (Html msg)
-connected context {opinion, inflation, assessor, userLink, influence} =
-  let
-    childElements =
-      case inflation of
-        Expandable.Expanded ->
-          [ viewInfluence influence
-          , OpinionView.text True opinion
-          , lastUpdated opinion.created
-          , AssessorView.questions context.questions assessor
-            |> Html.App.map Update.DelegateToAssessor
-            |> Html.App.map context.next
-          , Html.App.map context.showAll showAll
-          ]
-
-        Expandable.Collapsed ->
-          [ viewInfluence influence
-          , OpinionView.text False opinion
-          , Html.App.map context.readMore readMoreButton
-          ]
+    inflation =
+      basic.inflation
 
     buildPathElements paths =
       case inflation of
@@ -106,23 +83,51 @@ connected context {opinion, inflation, assessor, userLink, influence} =
             |> Maybe.map ListUtils.singleton
             |> Maybe.withDefault []
 
-    build pathElements =
-      Html.div
-        [ class "connection cf" ]
-        ( ( Html.div
-            [ class "connection-header cf" ]
-            [ Html.div
-              [ class "paths" ]
-              pathElements
-            , AuthorView.connection opinion.author
-            ]
-          )
-          :: childElements
-        )
+  in
+    Html.div
+      [ class "connection cf" ]
+      <|
+        [ Html.div
+          [ class "connection-header cf" ]
+          [ Html.div
+            [ class "paths" ]
+            (buildPathElements link.userLink)
+          , AuthorView.connection <| .author <| .opinion basic
+          ]
+        ]
+        ++
+          body context basic
+
+
+body : Context msg -> Connection.Basic -> List (Html msg)
+body context {opinion, influence, assessor, inflation} =
+  let
+    opinionView isExpanded =
+      OpinionView.text isExpanded opinion
+
+    influenceView =
+      viewInfluence influence
+
+    assessorView =
+      AssessorView.questions context.questions assessor
+        |> Html.App.map Update.DelegateToAssessor
+        |> Html.App.map context.next
 
   in
-    Maybe.map (build << buildPathElements) userLink
+    case inflation of
+      Expandable.Expanded ->
+        [ influenceView
+        , opinionView True
+        , lastUpdated opinion.created
+        , assessorView
+        , Html.App.map context.showAll showAll
+        ]
 
+      Expandable.Collapsed ->
+        [ influenceView
+        , opinionView False
+        , Html.App.map context.readMore readMoreButton
+        ]
 
 readMoreButton : Html Update.Msg
 readMoreButton =
@@ -159,10 +164,12 @@ viewInfluence remoteInfl =
       Html.div
         [ class "influence no-request" ]
         [ Html.text "Couldn't calculate influence :("]
+
     Requested ->
       Html.div
         [ class "influence requested" ]
         [ Html.text "Calculating Influence..." ]
+
     Retrieved influence ->
       Html.div
         [ class "influence retrieved" ]

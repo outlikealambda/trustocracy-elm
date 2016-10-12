@@ -17,7 +17,6 @@ import Common.Remote as Remote exposing
   )
 
 import Model.Connection as Connection exposing (Connection)
-import Model.Extend.Expandable as Expandable
 import Update.Question.Assessor as AssessorUpdate
 
 import Utils.Pair as Pair
@@ -47,38 +46,38 @@ update context msg connection =
           , oid = Connection.key connection
           }
         (assessor, cmd) =
-          connection.assessor
+          Connection.assessor connection
             |> Maybe.map (AssessorUpdate.update context childMsg)
             |> Maybe.map (Pair.fstMap Just)
             |> Maybe.withDefault ( Nothing, Cmd.none )
 
       in
-        ( { connection | assessor = assessor }
+        ( Connection.setAssessor assessor connection
         , Cmd.map DelegateToAssessor cmd
         )
 
     Zoom ->
-      Expandable.expand connection
+      Connection.expand connection
         |> zoomFetch context.tid
 
     FetchedInfluence result ->
       case result of
         Ok influence ->
-          { connection | influence = Retrieved influence } ! []
+          Connection.setInfluence (Retrieved influence) connection ! []
 
         Err errorMsg ->
           let
             e = Debug.log "error fetching influence" errorMsg
 
           in
-            { connection | influence = NoRequest } ! []
+            Connection.setInfluence NoRequest connection ! []
 
 
 zoomFetch : Tid -> Connection -> (Connection, Cmd Msg)
 zoomFetch tid connection =
   let
     (assessor, cmd) =
-      case connection.assessor of
+      case Connection.assessor connection of
         Nothing ->
           AssessorUpdate.init tid <| Connection.key connection
 
@@ -86,7 +85,7 @@ zoomFetch tid connection =
           ( loaded, Cmd.none )
 
   in
-    ( { connection | assessor = Just assessor }
+    ( Connection.setAssessor (Just assessor) connection
     , Cmd.map DelegateToAssessor cmd)
 
 
@@ -94,10 +93,10 @@ secondaryFetch : Connection -> (Connection, Cmd Msg)
 secondaryFetch connection =
   let
     (influence, influenceCmd) =
-      fetchInfluence (Connection.key connection) connection.influence
+      fetchInfluence (Connection.key connection) (Connection.influence connection)
 
   in
-    { connection | influence = influence }
+    Connection.setInfluence influence connection
     ! [ influenceCmd ]
 
 

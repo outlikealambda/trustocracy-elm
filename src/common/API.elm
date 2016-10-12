@@ -180,7 +180,7 @@ fetchConnected onError onSuccess topic =
 fetchConnectedV2 : (String -> a) -> (List Connection -> a) -> TopicId -> Cmd a
 fetchConnectedV2 onError onSuccess tid =
   secureEndpoint ["topic/", toString tid, "/connected/v2"]
-    |> Http.get (Decode.list Connection.decoder)
+    |> Http.get (Decode.list Connection.connectedDecoder)
     |> Task.mapError httpErrorToString
     |> Task.perform onError onSuccess
 
@@ -188,7 +188,7 @@ fetchConnectedV2 onError onSuccess tid =
 fetchConnectedV3 : (String -> a) -> (List Connection -> a) -> TopicId -> Cmd a
 fetchConnectedV3 onError onSuccess tid =
   secureEndpoint ["topic/", toString tid, "/connected/v3"]
-    |> Http.get (Decode.list Connection.decoder)
+    |> Http.get (Decode.list Connection.connectedDecoder)
     |> Task.mapError httpErrorToString
     |> Task.perform onError onSuccess
 
@@ -196,7 +196,7 @@ fetchConnectedV3 onError onSuccess tid =
 fetchBrowsable : (String -> a) -> (List Connection -> a) -> TopicId -> Cmd a
 fetchBrowsable onError onSuccess topicId =
   openEndpoint ["topic/", toString topicId, "/opinion"]
-    |> Http.get (Decode.list Connection.noPathDecoder)
+    |> Http.get (Decode.list Connection.unconnectedDecoder)
     |> Task.mapError httpErrorToString
     |> Task.perform onError onSuccess
 

@@ -12,7 +12,6 @@ module Update.Explorer exposing
 
 import Common.API as API
 import Model.Connection as Connection exposing (Connection)
-import Model.Extend.Expandable as Expandable
 import Model.Explorer as Explorer exposing (Explorer)
 import Model.Question.Question exposing (Question)
 
@@ -117,7 +116,7 @@ update context message explorer =
 
 blurAll : Connections -> Connections
 blurAll connections =
-  Dict.map (\_ -> Expandable.collapse) connections
+  Dict.map (\_ -> Connection.collapse) connections
 
 
 delegateConnectionMsg : Context -> Oid -> ConnectionUpdate.Msg -> Explorer -> (Explorer, Cmd Msg)
