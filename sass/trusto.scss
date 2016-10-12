@@ -6,9 +6,9 @@
 @import "t-help";
 @import "trusto-range-input";
 
-$text-font: "EB Garamond";
+$text-font: "Noto-Sans";
 
-$header-font: "Roboto";
+$header-font: "Noto-Sans";
 
 $link-color: color("purple", "lighten-2");
 
@@ -114,7 +114,7 @@ h1, h2, h3, h4 {
 }
 
 .numbered-badge {
-  font-family: 'Roboto';
+  font-family: $text-font;
   overflow: hidden;
   line-height: 1.5em;
   border-radius: 0.75em;
@@ -256,7 +256,7 @@ textarea.write {
   background-size: 23px 23px;
   font-size: 14px;
   font-weight: bold;
-  font-family: 'Roboto', sans-serif;
+  font-family: $text-font, sans-serif;
   padding: 4px 4px 4px 32px;
 }
 .fb-login{
@@ -267,7 +267,7 @@ textarea.write {
   color: white;
   font-size: 14px;
   font-weight: bold;
-  font-family: 'Tahoma' sans-serif;
+  font-family: $text-font, sans-serif;
   padding: 4px 6px 6px 32px;
 }
 .confirm-login{
@@ -808,7 +808,13 @@ $trusted-color: PaleGreen;
 .connection {
   .text {
     font-family: $text-font;
-    font-size: 2.4rem;
+    font-size: 2.0rem;
+    line-height: 3.8rem;
+
+    p {
+      margin: 1.5em 0px;
+
+    }
   }
 }
 
