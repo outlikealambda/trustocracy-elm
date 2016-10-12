@@ -67,7 +67,9 @@ public context details =
     <|
       [ Html.div
         [ class "connection-header cf" ]
-        [ AuthorView.connection <| .author <| .opinion details ]
+        [ AuthorView.connection <| .author <| .opinion details
+        , viewInfluence details.influence
+        ]
       ]
       ++
         body context details
@@ -98,6 +100,7 @@ connected context details link =
             [ class "paths" ]
             (buildPathElements link.userLink)
           , AuthorView.connection <| .author <| .opinion details
+          , viewInfluence details.influence
           ]
         ]
         ++
@@ -121,16 +124,14 @@ body context {opinion, influence, assessor, inflation} =
   in
     case inflation of
       Expandable.Expanded ->
-        [ influenceView
-        , opinionView True
+        [ opinionView True
         , lastUpdated opinion.created
         , assessorView
         , Html.App.map context.showAll showAll
         ]
 
       Expandable.Collapsed ->
-        [ influenceView
-        , opinionView False
+        [ opinionView False
         , Html.App.map context.readMore readMoreButton
         ]
 
