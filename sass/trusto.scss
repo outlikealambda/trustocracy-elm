@@ -428,6 +428,10 @@ $opinion-link-color : #aaa;
   }
 }
 
+.opinion-full, .opinion-snippet {
+  clear:both;
+}
+
 .group-section-header {
   color: $header-color-light;
   margin: 1.6rem;
@@ -881,4 +885,12 @@ $trusted-color: PaleGreen;
 
 hr {
   border: 1px solid #ccc;
+}
+
+.influence {
+  line-height: 3.2rem;
+  font-size: 1.6rem;
+  background: #ccc;
+  padding: 0 1.6rem;
+  float: left;
 }
