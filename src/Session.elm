@@ -5,8 +5,8 @@ module Session exposing
   , Msg
     ( GoCompose
     , GoExplore
-    , GoExploreAll
-    , GoExploreConnected
+    , GoConnect
+    , GoBrowse
     , GoUserDelegates
     )
   , update
@@ -45,7 +45,8 @@ type alias Session =
   , topic : Topic
   , currentView : SessionView
   , composer : Composer
-  , explorer : Explorer
+  , connector : Explorer
+  , browser : Explorer
   , auth : Auth
   , delegator : Delegator
   }
@@ -59,8 +60,8 @@ type Msg
   -- exposed
   = GoCompose TopicId
   | GoExplore TopicId
-  | GoExploreAll TopicId
-  | GoExploreConnected TopicId
+  | GoBrowse TopicId
+  | GoConnect TopicId
   | GoUserDelegates
 
   -- private
@@ -73,7 +74,8 @@ type Msg
   -- child modules
   | ComposerMsg Composer.Msg
   | DelegatorMsg Delegator.Msg
-  | ExplorerMsg ExplorerUpdate.Msg
+  | ConnectorMsg ExplorerUpdate.Msg
+  | BrowserMsg ExplorerUpdate.Msg
   | AuthMsg Auth.Msg
 
 
@@ -81,8 +83,8 @@ type Msg
 type SessionView
   = Compose
   | UserDelegates
-  | ExploreAll
-  | ExploreConnected
+  | Connect
+  | Browse
   | Empty
 
 
@@ -101,7 +103,8 @@ init =
     , topic = Topic.empty
     , currentView = Empty
     , composer = Composer.empty
-    , explorer = Explorer.empty
+    , connector = Explorer.empty
+    , browser = Explorer.empty
     , auth = auth
     , delegator = Delegator.fromActiveUser LoggedOut
     }
@@ -124,15 +127,15 @@ update action session =
     GoExplore topicId ->
       case session.activeUser of
         LoggedOut ->
-          setSessionTopic session ExploreAll topicId
+          setSessionTopic session Browse topicId
         LoggedIn _ ->
-          setSessionTopic session ExploreConnected topicId
+          setSessionTopic session Connect topicId
 
-    GoExploreAll topicId ->
-      setSessionTopic session ExploreAll topicId
+    GoBrowse topicId ->
+      setSessionTopic session Browse topicId
 
-    GoExploreConnected topicId ->
-      setSessionTopic session ExploreConnected topicId
+    GoConnect topicId ->
+      setSessionTopic session Connect topicId
 
     GoUserDelegates ->
       { session | currentView = UserDelegates } ! []
@@ -158,13 +161,21 @@ update action session =
         { session | composer = update }
         ! [ Cmd.map ComposerMsg updateFx ]
 
-    ExplorerMsg msg ->
+    ConnectorMsg msg ->
       let
-        (update, updateFx) =
-          ExplorerUpdate.update {tid = session.topic.id} msg session.explorer
+        (update, updateCmd) =
+          ExplorerUpdate.update {tid = session.topic.id} msg session.connector
       in
-        { session | explorer = update }
-        ! [ Cmd.map ExplorerMsg updateFx ]
+        { session | connector = update }
+        ! [ Cmd.map ConnectorMsg updateCmd ]
+
+    BrowserMsg msg ->
+      let
+        (update, updateCmd) =
+          ExplorerUpdate.update {tid = session.topic.id} msg session.browser
+      in
+        { session | browser = update }
+        ! [ Cmd.map BrowserMsg updateCmd ]
 
     AuthMsg authAction ->
       let
@@ -231,18 +242,23 @@ updateViews session =
         session ! []
       else
         let
-          (composer, composerFx) =
+          (composer, composerCmd) =
             Composer.init session.topic
-          (explorer, explorerFx) =
-            ExplorerUpdate.init session.topic.id Nothing
+          (connector, connectorCmd) =
+            ExplorerUpdate.initConnected session.topic.id Nothing
+          (browser, browserCmd) =
+            ExplorerUpdate.initAll session.topic.id Nothing
+
         in
           ( { session
             | composer = composer
-            , explorer = explorer
+            , connector = connector
+            , browser = browser
             }
           , Cmd.batch
-            [ Cmd.map ComposerMsg composerFx
-            , Cmd.map ExplorerMsg explorerFx
+            [ Cmd.map ComposerMsg composerCmd
+            , Cmd.map ConnectorMsg connectorCmd
+            , Cmd.map BrowserMsg browserCmd
             ]
           )
 
@@ -300,21 +316,21 @@ composeLinker = buildComponentNav
   }
 
 
-exploreAllLinker : Session -> Html Msg
-exploreAllLinker = buildComponentNav
-  { componentView = ExploreAll
-  , sessionMsg = GoExploreAll << .id << .topic
+browseLinker : Session -> Html Msg
+browseLinker = buildComponentNav
+  { componentView = Browse
+  , sessionMsg = GoBrowse << .id << .topic
   , html = ExplorerView.allButton
-  , getter = .explorer
+  , getter = .browser
   }
 
 
-exploreConnectedLinker : Session -> Html Msg
-exploreConnectedLinker = buildComponentNav
-  { componentView = ExploreConnected
-  , sessionMsg = GoExploreConnected << .id << .topic
+connectLinker : Session -> Html Msg
+connectLinker = buildComponentNav
+  { componentView = Connect
+  , sessionMsg = GoConnect << .id << .topic
   , html = ExplorerView.connectedButton
-  , getter = .explorer
+  , getter = .connector
   }
 
 
@@ -327,8 +343,8 @@ activeSubNav session =
       [ Html.text session.topic.text ]
     , Html.div
       [ class "session-links" ]
-      [ exploreConnectedLinker session
-      , exploreAllLinker session
+      [ connectLinker session
+      , browseLinker session
       , composeLinker session
       ]
     ]
@@ -343,7 +359,7 @@ inactiveSubNav session =
       [ Html.text session.topic.text ]
     , Html.div
       [ class "session-links" ]
-      [ exploreAllLinker session ]
+      [ browseLinker session ]
     ]
 
 
@@ -358,21 +374,21 @@ activeSessionContent user session =
         [ Html.App.map ComposerMsg (Composer.view session.composer) ]
       ]
 
-    ExploreAll ->
+    Browse ->
       [ activeSubNav session
       , Html.div
         [ class "content" ]
-        [ ExplorerView.all session.explorer
-          |> Html.App.map ExplorerMsg
+        [ ExplorerView.all session.browser
+          |> Html.App.map BrowserMsg
         ]
       ]
 
-    ExploreConnected ->
+    Connect ->
       [ activeSubNav session
       , Html.div
         [ class "content" ]
-        [ ExplorerView.connected session.explorer
-          |> Html.App.map ExplorerMsg
+        [ ExplorerView.connected session.connector
+          |> Html.App.map ConnectorMsg
         ]
       ]
 
@@ -394,12 +410,12 @@ inactiveSessionContent : Session -> List (Html Msg)
 inactiveSessionContent session =
   case session.currentView of
 
-    ExploreAll ->
+    Browse ->
       [ inactiveSubNav session
       , Html.div
         [ class "content" ]
-        [ ExplorerView.all session.explorer
-          |> Html.App.map ExplorerMsg
+        [ ExplorerView.all session.browser
+          |> Html.App.map BrowserMsg
         ]
       ]
 

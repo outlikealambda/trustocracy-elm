@@ -4,7 +4,8 @@ module Update.Explorer exposing
     , Blur
     , ConnectionMsg
     )
-  , init
+  , initConnected
+  , initAll
   , update
   )
 
@@ -36,8 +37,18 @@ type Msg
   | Error String
 
 
-init : Tid -> Maybe Oid -> (Explorer, Cmd Msg)
-init tid maybeOid =
+initConnected : Tid -> Maybe Oid -> (Explorer, Cmd Msg)
+initConnected =
+  init << fetchConnected
+
+
+initAll : Tid -> Maybe Oid -> (Explorer, Cmd Msg)
+initAll =
+  init << fetchAll
+
+
+init : List (Cmd Msg) -> Maybe Oid -> (Explorer, Cmd Msg)
+init cmds maybeOid =
   let
     zoom =
       Maybe.map Explorer.Focused maybeOid
@@ -47,9 +58,21 @@ init tid maybeOid =
     , zoom = zoom
     , questions = [] -- need to fetch questions here
     }
-    ! [ API.fetchConnectedV3 Error FetchedConnections tid
-      , API.fetchQuestions Error FetchedQuestions tid
-      ]
+    ! cmds
+
+
+fetchConnected : Tid -> List (Cmd Msg)
+fetchConnected tid =
+  [ API.fetchConnectedV3 Error FetchedConnections tid
+  , API.fetchQuestions Error FetchedQuestions tid
+  ]
+
+
+fetchAll : Tid -> List (Cmd Msg)
+fetchAll tid =
+  [ API.fetchConnectedV3 Error FetchedConnections tid
+  , API.fetchQuestions Error FetchedQuestions tid
+  ]
 
 
 type alias Context =
