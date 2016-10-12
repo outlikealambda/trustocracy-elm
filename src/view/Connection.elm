@@ -5,8 +5,13 @@ module View.Connection exposing
   )
 
 
-import Common.Remote exposing (Remote (Requested, Retrieved))
-
+import Common.Remote exposing
+  ( Remote
+    ( NoRequest
+    , Requested
+    , Retrieved
+    )
+  )
 
 import Model.Connection as Connection exposing (Connection)
 import Model.Extend.Expandable as Expandable exposing (Expandable)
@@ -150,9 +155,15 @@ lastUpdated date =
 viewInfluence : Remote Int -> Html msg
 viewInfluence remoteInfl =
   case remoteInfl of
-    Requested _ ->
-      Html.div [] [ Html.text "Calculating Influence..." ]
+    NoRequest ->
+      Html.div
+        [ class "influence no-request" ]
+        [ Html.text "Couldn't calculate influence :("]
+    Requested ->
+      Html.div
+        [ class "influence requested" ]
+        [ Html.text "Calculating Influence..." ]
     Retrieved influence ->
       Html.div
-        [ class "influence" ]
+        [ class "influence retrieved" ]
         [ Html.text <| toString influence ++ " connected users" ]

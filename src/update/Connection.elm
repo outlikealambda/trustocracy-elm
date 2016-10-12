@@ -8,7 +8,13 @@ module Update.Connection exposing
   )
 
 import Common.API as API
-import Common.Remote as Remote
+import Common.Remote as Remote exposing
+  ( Remote
+    ( NoRequest
+    , Requested
+    , Retrieved
+    )
+  )
 
 import Model.Connection as Connection exposing (Connection)
 import Model.Extend.Expandable as Expandable
@@ -45,6 +51,7 @@ update context msg connection =
             |> Maybe.map (AssessorUpdate.update context childMsg)
             |> Maybe.map (Pair.fstMap Just)
             |> Maybe.withDefault ( Nothing, Cmd.none )
+
       in
         ( { connection | assessor = assessor }
         , Cmd.map DelegateToAssessor cmd
@@ -57,12 +64,14 @@ update context msg connection =
     FetchedInfluence result ->
       case result of
         Ok influence ->
-          { connection | influence = Remote.retrieved influence } ! []
+          { connection | influence = Retrieved influence } ! []
+
         Err errorMsg ->
           let
             e = Debug.log "error fetching influence" errorMsg
+
           in
-            connection ! []
+            { connection | influence = NoRequest } ! []
 
 
 zoomFetch : Tid -> Connection -> (Connection, Cmd Msg)
@@ -72,6 +81,7 @@ zoomFetch tid connection =
       case connection.assessor of
         Nothing ->
           AssessorUpdate.init tid <| Connection.key connection
+
         Just loaded ->
           ( loaded, Cmd.none )
 
@@ -82,9 +92,26 @@ zoomFetch tid connection =
 
 secondaryFetch : Connection -> (Connection, Cmd Msg)
 secondaryFetch connection =
-  ( connection
-  , API.fetchInfluence
-    (FetchedInfluence << Err)
-    (FetchedInfluence << Ok)
-    (Connection.key connection)
-  )
+  let
+    (influence, influenceCmd) =
+      fetchInfluence (Connection.key connection) connection.influence
+
+  in
+    { connection | influence = influence }
+    ! [ influenceCmd ]
+
+
+fetchInfluence : Int -> Remote Int -> (Remote Int, Cmd Msg)
+fetchInfluence key influence =
+  case influence of
+    NoRequest ->
+      ( Requested
+      , API.fetchInfluence
+        (FetchedInfluence << Err)
+        (FetchedInfluence << Ok)
+        key
+      )
+    _ ->
+      ( influence
+      , Cmd.none
+      )

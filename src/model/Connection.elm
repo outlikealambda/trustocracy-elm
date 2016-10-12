@@ -51,7 +51,7 @@ decoder =
 fromApi : Opinion -> Maybe (List Path) -> Connection
 fromApi opinion paths =
   { opinion = opinion
-  , influence = Remote.requested 0
+  , influence = Remote.NoRequest
   , assessor = Nothing
   , userLink = Maybe.map sortPaths paths
   , score = Maybe.withDefault 1000 <| Maybe.map (minScore 0) paths
