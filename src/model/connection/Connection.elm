@@ -1,7 +1,5 @@
-module Model.Connection exposing
+module Model.Connection.Connection exposing
   ( Connection
-  , Basic
-  , Linked
   , connectedDecoder
   , unconnectedDecoder
   , toDict
@@ -16,17 +14,19 @@ module Model.Connection exposing
   , collapse
   , expand
   , countLinked
-  , either
   )
 
 
+import Common.Extended as Extended exposing (Extended)
 import Common.Remote as Remote exposing (Remote)
 
 
-import Model.Extend.Expandable as Expandable exposing (Expandable)
+import Model.Connection.Details exposing (Details)
+import Model.Connection.Link exposing (Link, UserLink)
+import Model.Extend.Expandable as Expandable
 import Model.Opinion.Opinion as Opinion exposing (Opinion)
-import Model.Path as Path exposing (Path)
-import Model.Question.Assessor as Assessor exposing (Assessor)
+import Model.Path as Path
+import Model.Question.Assessor exposing (Assessor)
 
 
 import Dict exposing (Dict)
@@ -37,32 +37,7 @@ type alias Qid = Int
 type alias Tid = Int
 
 
-type alias Basic =
-  Expandable
-    { opinion : Opinion
-    , influence : Remote Int
-    , assessor : Maybe Assessor
-    }
-
-
-type alias Link =
-  { userLink : UserLink
-  , score : Int
-  }
-
-
-type alias Linked =
-  { basic : Basic
-  , link : Link
-  }
-
-
-type Connection
-  = Connected Linked
-  | Unconnected Basic
-
-
-type alias UserLink = List Path
+type alias Connection = Extended Details Link
 
 
 connectedDecoder : Decode.Decoder Connection
@@ -74,25 +49,24 @@ connectedDecoder =
 
 unconnectedDecoder : Decode.Decoder Connection
 unconnectedDecoder =
-  Decode.object1 (Unconnected << basicFromApi) Opinion.decoder
+  Decode.object1 (Extended.Basic << basicFromApi) Opinion.decoder
 
 
-connectedFromApi : List Path -> Opinion -> Connection
+connectedFromApi : UserLink -> Opinion -> Connection
 connectedFromApi paths opinion =
-  Connected
-    { basic = basicFromApi opinion
-    , link = linkFromApi paths
-    }
+  Extended.Complex
+    (basicFromApi opinion)
+    (linkFromApi paths)
 
 
-linkFromApi : List Path -> Link
-linkFromApi paths =
-  { userLink = sortPaths paths
-  , score = minScore 0 paths
+linkFromApi : UserLink -> Link
+linkFromApi userLink =
+  { userLink = sortUserLink userLink
+  , score = minScore 0 userLink
   }
 
 
-basicFromApi : Opinion -> Basic
+basicFromApi : Opinion -> Details
 basicFromApi opinion =
   { opinion = opinion
   , influence = Remote.NoRequest
@@ -101,11 +75,11 @@ basicFromApi opinion =
   }
 
 
-sortPaths : List Path -> List Path
-sortPaths = List.sortBy .score
+sortUserLink : UserLink -> UserLink
+sortUserLink = List.sortBy .score
 
 
-minScore : Int -> List Path -> Int
+minScore : Int -> UserLink -> Int
 minScore default =
   Maybe.withDefault default << List.minimum << List.map .score
 
@@ -134,7 +108,7 @@ influence = .influence << unwrap
 
 setInfluence : Remote Int -> Connection -> Connection
 setInfluence influence =
-  mapBasic (\b -> { b | influence = influence})
+  mapDetails (\b -> { b | influence = influence})
 
 
 assessor : Connection -> Maybe Assessor
@@ -143,7 +117,7 @@ assessor = .assessor << unwrap
 
 setAssessor : Maybe Assessor -> Connection -> Connection
 setAssessor assessor =
-  mapBasic (\b -> { b | assessor = assessor})
+  mapDetails (\b -> { b | assessor = assessor})
 
 
 inflation : Connection -> Expandable.Inflation
@@ -153,46 +127,39 @@ inflation = .inflation << unwrap
 userLink : Connection -> Maybe UserLink
 userLink connection =
   case connection of
-    Unconnected _ ->
+    Extended.Basic _ ->
       Nothing
 
-    Connected linked ->
-      linked |> .link |> .userLink |> Just
+    Extended.Complex _ link ->
+      link |> .userLink |> Just
 
 
 collapse : Connection -> Connection
-collapse = mapBasic Expandable.collapse
+collapse = mapDetails Expandable.collapse
 
 
 expand : Connection -> Connection
-expand = mapBasic Expandable.expand
+expand = mapDetails Expandable.expand
 
 
-unwrap : Connection -> Basic
+unwrap : Connection -> Details
 unwrap connection =
   case connection of
-    Unconnected basic ->
-      basic
-    Connected linked ->
-      linked.basic
+    Extended.Basic details ->
+      details
 
-mapBasic : (Basic -> Basic) -> Connection -> Connection
-mapBasic basicFn connection =
+    Extended.Complex details _ ->
+      details
+
+mapDetails : (Details -> Details) -> Connection -> Connection
+mapDetails detailsFn connection =
   case connection of
-    Unconnected basic ->
-      Unconnected (basicFn basic)
-    Connected linked ->
-      Connected { linked | basic = basicFn linked.basic }
+    Extended.Basic details ->
+      Extended.Basic (detailsFn details)
+
+    Extended.Complex details link ->
+      Extended.Complex (detailsFn details) link
 
 
 countLinked : List Connection -> Int
 countLinked = List.length << List.filterMap userLink
-
-
-either : (Basic -> a) -> (Linked -> a) -> Connection -> a
-either basicFn linkedFn connection =
-  case connection of
-    Unconnected basic ->
-      basicFn basic
-    Connected linked ->
-      linkedFn linked

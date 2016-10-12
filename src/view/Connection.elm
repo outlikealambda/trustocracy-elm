@@ -4,6 +4,7 @@ module View.Connection exposing
   )
 
 
+import Common.Extended as Extended
 import Common.Remote exposing
   ( Remote
     ( NoRequest
@@ -12,7 +13,9 @@ import Common.Remote exposing
     )
   )
 
-import Model.Connection as Connection exposing (Connection)
+import Model.Connection.Connection as Connection exposing (Connection)
+import Model.Connection.Details exposing (Details)
+import Model.Connection.Link exposing (Link)
 import Model.Extend.Expandable as Expandable exposing (Expandable)
 import Model.Question.Question exposing (Question)
 
@@ -21,11 +24,10 @@ import Update.Connection as Update
 import Utils.List as ListUtils
 import Utils.Date as DateUtils
 
-
-import View.Question.Assessor as AssessorView
 import View.Author as AuthorView
 import View.Opinion as OpinionView
 import View.Path as PathView
+import View.Question.Assessor as AssessorView
 
 
 import Html exposing (Html)
@@ -49,31 +51,34 @@ type alias Context msg =
 
 
 view : Context msg -> Connection -> Html msg
-view context =
-  Connection.either (public context) (connected context)
+view context connection =
+  case connection of
+    Extended.Basic details ->
+      public context details
+
+    Extended.Complex details link ->
+      connected context details link
 
 
-public : Context msg -> Connection.Basic -> Html msg
-public context basic =
+public : Context msg -> Details -> Html msg
+public context details =
   Html.div
     [ class "disjoint cf" ]
     <|
       [ Html.div
         [ class "connection-header cf" ]
-        [ AuthorView.connection <| .author <| .opinion basic ]
+        [ AuthorView.connection <| .author <| .opinion details ]
       ]
       ++
-        body context basic
+        body context details
 
 
-connected : Context msg -> Connection.Linked -> Html msg
-connected context {basic, link} =
+connected : Context msg -> Details -> Link -> Html msg
+connected context details link =
   let
-    inflation =
-      basic.inflation
 
     buildPathElements paths =
-      case inflation of
+      case details.inflation of
         Expandable.Expanded ->
           List.map PathView.view paths
 
@@ -92,14 +97,14 @@ connected context {basic, link} =
           [ Html.div
             [ class "paths" ]
             (buildPathElements link.userLink)
-          , AuthorView.connection <| .author <| .opinion basic
+          , AuthorView.connection <| .author <| .opinion details
           ]
         ]
         ++
-          body context basic
+          body context details
 
 
-body : Context msg -> Connection.Basic -> List (Html msg)
+body : Context msg -> Details -> List (Html msg)
 body context {opinion, influence, assessor, inflation} =
   let
     opinionView isExpanded =
@@ -128,6 +133,7 @@ body context {opinion, influence, assessor, inflation} =
         , opinionView False
         , Html.App.map context.readMore readMoreButton
         ]
+
 
 readMoreButton : Html Update.Msg
 readMoreButton =

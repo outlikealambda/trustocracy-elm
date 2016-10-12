@@ -6,7 +6,7 @@ module Model.Explorer exposing
   )
 
 
-import Model.Connection as Connection exposing (Connection)
+import Model.Connection.Connection as Connection exposing (Connection)
 import Model.Question.Question exposing (Question)
 
 
