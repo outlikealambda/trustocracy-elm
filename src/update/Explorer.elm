@@ -70,7 +70,7 @@ fetchConnected tid =
 
 fetchAll : Tid -> List (Cmd Msg)
 fetchAll tid =
-  [ API.fetchConnectedV3 Error FetchedConnections tid
+  [ API.fetchBrowsable Error FetchedConnections tid
   , API.fetchQuestions Error FetchedQuestions tid
   ]
 

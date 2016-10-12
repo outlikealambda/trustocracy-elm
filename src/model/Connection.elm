@@ -1,6 +1,7 @@
 module Model.Connection exposing
   ( Connection
   , decoder
+  , noPathDecoder
   , toDict
   , key
   , connectedCount
@@ -40,16 +41,21 @@ type alias UserLink = Maybe (List Path)
 decoder : Decode.Decoder Connection
 decoder =
   Decode.object2 fromApi
-    ( "opinion" := Opinion.decoder )
     ( Decode.oneOf
       [ "paths" := Decode.map Just (Decode.list Path.decoder)
       , Decode.succeed Nothing
       ]
     )
+    ( "opinion" := Opinion.decoder )
 
 
-fromApi : Opinion -> Maybe (List Path) -> Connection
-fromApi opinion paths =
+noPathDecoder : Decode.Decoder Connection
+noPathDecoder =
+  Decode.object1 (fromApi Nothing) Opinion.decoder
+
+
+fromApi : Maybe (List Path) -> Opinion -> Connection
+fromApi paths opinion =
   { opinion = opinion
   , influence = Remote.NoRequest
   , assessor = Nothing

@@ -235,7 +235,14 @@ updateViews : Session -> (Session, Cmd Msg)
 updateViews session =
   case session.activeUser of
     LoggedOut ->
-      session ! []
+      let
+        (browser, browserCmd) =
+          ExplorerUpdate.initAll session.topic.id Nothing
+
+      in
+        ( { session | browser = browser }
+        , Cmd.map BrowserMsg browserCmd
+        )
 
     LoggedIn user ->
       if session.topic.id < 0 then

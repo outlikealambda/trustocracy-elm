@@ -7,6 +7,7 @@ module Common.API exposing
   , fetchConnected
   , fetchConnectedV2
   , fetchConnectedV3
+  , fetchBrowsable
   , fetchInfluence
   , fetchDraftByTopic
   , saveOpinion
@@ -191,6 +192,13 @@ fetchConnectedV3 onError onSuccess tid =
     |> Task.mapError httpErrorToString
     |> Task.perform onError onSuccess
 
+
+fetchBrowsable : (String -> a) -> (List Connection -> a) -> TopicId -> Cmd a
+fetchBrowsable onError onSuccess topicId =
+  openEndpoint ["topic/", toString topicId, "/opinion"]
+    |> Http.get (Decode.list Connection.noPathDecoder)
+    |> Task.mapError httpErrorToString
+    |> Task.perform onError onSuccess
 
 fetchInfluence : (String -> a) -> (Int -> a) -> OpinionId -> Cmd a
 fetchInfluence onError onSuccess oid =
