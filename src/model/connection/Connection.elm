@@ -5,14 +5,9 @@ module Model.Connection.Connection exposing
   , toDict
   , key
   , influence
-  , assessor
   , opinion
-  , inflation
   , userLink
   , setInfluence
-  , setAssessor
-  , collapse
-  , expand
   , countLinked
   )
 
@@ -23,10 +18,8 @@ import Common.Remote as Remote exposing (Remote)
 
 import Model.Connection.Details exposing (Details)
 import Model.Connection.Link exposing (Link, UserLink)
-import Model.Extend.Expandable as Expandable
 import Model.Opinion.Opinion as Opinion exposing (Opinion)
 import Model.Path as Path
-import Model.Question.Assessor exposing (Assessor)
 
 
 import Dict exposing (Dict)
@@ -70,8 +63,6 @@ detailsFromApi : Opinion -> Details
 detailsFromApi opinion =
   { opinion = opinion
   , influence = Remote.NoRequest
-  , assessor = Nothing
-  , inflation = Expandable.Collapsed
   }
 
 
@@ -111,19 +102,6 @@ setInfluence influence =
   mapDetails (\b -> { b | influence = influence})
 
 
-assessor : Connection -> Maybe Assessor
-assessor = .assessor << unwrap
-
-
-setAssessor : Maybe Assessor -> Connection -> Connection
-setAssessor assessor =
-  mapDetails (\b -> { b | assessor = assessor})
-
-
-inflation : Connection -> Expandable.Inflation
-inflation = .inflation << unwrap
-
-
 userLink : Connection -> Maybe UserLink
 userLink connection =
   case connection of
@@ -134,14 +112,6 @@ userLink connection =
       link |> .userLink |> Just
 
 
-collapse : Connection -> Connection
-collapse = mapDetails Expandable.collapse
-
-
-expand : Connection -> Connection
-expand = mapDetails Expandable.expand
-
-
 unwrap : Connection -> Details
 unwrap connection =
   case connection of
@@ -150,6 +120,7 @@ unwrap connection =
 
     Extended.Complex details _ ->
       details
+
 
 mapDetails : (Details -> Details) -> Connection -> Connection
 mapDetails detailsFn connection =

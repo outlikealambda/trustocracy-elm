@@ -16,10 +16,8 @@ import Common.Remote exposing
 import Model.Connection.Connection as Connection exposing (Connection)
 import Model.Connection.Details exposing (Details)
 import Model.Connection.Link exposing (Link)
-import Model.Extend.Expandable as Expandable exposing (Expandable)
 import Model.Question.Question exposing (Question)
 
-import Update.Connection as Update
 
 import Utils.List as ListUtils
 import Utils.Date as DateUtils
@@ -27,7 +25,6 @@ import Utils.Date as DateUtils
 import View.Author as AuthorView
 import View.Opinion as OpinionView
 import View.Path as PathView
-import View.Question.Assessor as AssessorView
 
 
 import Html exposing (Html)
@@ -44,9 +41,10 @@ type alias Key = Int
 
 type alias Context msg =
   { showAll : () -> msg
-  , readMore : Update.Msg -> msg
-  , next : Update.Msg -> msg
+  , readMore : () -> msg
+  -- , next : () -> msg
   , questions : List Question
+  , isExpanded : Bool
   }
 
 
@@ -80,11 +78,11 @@ connected context details link =
   let
 
     buildPathElements paths =
-      case details.inflation of
-        Expandable.Expanded ->
+      case context.isExpanded of
+        True ->
           List.map PathView.view paths
 
-        Expandable.Collapsed ->
+        False ->
           List.head paths
             |> Maybe.map PathView.view
             |> Maybe.map ListUtils.singleton
@@ -108,35 +106,22 @@ connected context details link =
 
 
 body : Context msg -> Details -> List (Html msg)
-body context {opinion, influence, assessor, inflation} =
-  let
-    opinionView isExpanded =
-      OpinionView.text isExpanded opinion
+body context {opinion} =
 
-    influenceView =
-      viewInfluence influence
+  case context.isExpanded of
+    True ->
+      [ OpinionView.text True opinion
+      , lastUpdated opinion.created
+      , Html.App.map context.showAll showAll
+      ]
 
-    assessorView =
-      AssessorView.questions context.questions assessor
-        |> Html.App.map Update.DelegateToAssessor
-        |> Html.App.map context.next
-
-  in
-    case inflation of
-      Expandable.Expanded ->
-        [ opinionView True
-        , lastUpdated opinion.created
-        , assessorView
-        , Html.App.map context.showAll showAll
-        ]
-
-      Expandable.Collapsed ->
-        [ opinionView False
-        , Html.App.map context.readMore readMoreButton
-        ]
+    False ->
+      [ OpinionView.text False opinion
+      , Html.App.map context.readMore readMoreButton
+      ]
 
 
-readMoreButton : Html Update.Msg
+readMoreButton : Html ()
 readMoreButton =
   Html.a
     [ class "read-more"
@@ -144,7 +129,6 @@ readMoreButton =
     ]
     [ Html.text "read more..."
     ]
-    |> Html.App.map (always Update.Zoom)
 
 
 showAll : Html ()

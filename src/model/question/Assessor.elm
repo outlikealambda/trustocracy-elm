@@ -1,6 +1,10 @@
 module Model.Question.Assessor exposing
   ( Assessor
+    ( Enabled
+    , Disabled
+    )
   , empty
+  , clear
   )
 
 
@@ -11,14 +15,28 @@ import Dict exposing (Dict)
 
 
 type alias Qid = Int -- Question ID
+type alias Answers = Dict Qid Answer
 
 
-type alias Assessor =
-  { answers : Dict Qid Answer
-  }
+type Assessor
+  = Enabled Answers
+  | Disabled
 
 
-empty : Assessor
-empty =
-  { answers = Dict.empty
-  }
+empty : Bool -> Assessor
+empty isActiveSession =
+  case isActiveSession of
+    True ->
+      Enabled Dict.empty
+
+    False ->
+      Disabled
+
+
+clear : Assessor -> Assessor
+clear assessor =
+  case assessor of
+    Enabled _ ->
+      Enabled Dict.empty
+    Disabled ->
+      Disabled

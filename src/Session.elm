@@ -237,10 +237,14 @@ updateViews session =
     LoggedOut ->
       let
         (browser, browserCmd) =
-          ExplorerUpdate.initAll session.topic.id Nothing
+          ExplorerUpdate.init False session.topic.id Nothing
 
       in
-        ( { session | browser = browser }
+        ( { session
+          | browser = browser
+          , connector = Explorer.empty
+          , currentView = Browse
+          }
         , Cmd.map BrowserMsg browserCmd
         )
 
@@ -252,9 +256,9 @@ updateViews session =
           (composer, composerCmd) =
             Composer.init session.topic
           (connector, connectorCmd) =
-            ExplorerUpdate.initConnected session.topic.id Nothing
+            ExplorerUpdate.init True session.topic.id Nothing
           (browser, browserCmd) =
-            ExplorerUpdate.initAll session.topic.id Nothing
+            ExplorerUpdate.init True session.topic.id Nothing
 
         in
           ( { session
@@ -385,7 +389,7 @@ activeSessionContent user session =
       [ activeSubNav session
       , Html.div
         [ class "content" ]
-        [ ExplorerView.all session.browser
+        [ ExplorerView.view session.browser
           |> Html.App.map BrowserMsg
         ]
       ]
@@ -394,7 +398,7 @@ activeSessionContent user session =
       [ activeSubNav session
       , Html.div
         [ class "content" ]
-        [ ExplorerView.connected session.connector
+        [ ExplorerView.view session.connector
           |> Html.App.map ConnectorMsg
         ]
       ]

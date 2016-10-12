@@ -1,8 +1,5 @@
 module Update.Connection exposing
   ( Msg
-    ( DelegateToAssessor
-    , Zoom
-    )
   , update
   , secondaryFetch
   )
@@ -17,17 +14,13 @@ import Common.Remote as Remote exposing
   )
 
 import Model.Connection.Connection as Connection exposing (Connection)
-import Update.Question.Assessor as AssessorUpdate
 
-import Utils.Pair as Pair
 
 
 type alias Tid = Int -- Topic ID
 
 type Msg
-  = DelegateToAssessor AssessorUpdate.Msg
-  | Zoom
-  | FetchedInfluence (Result String Int)
+  = FetchedInfluence (Result String Int)
 
 
 type alias Context =
@@ -38,27 +31,6 @@ type alias Context =
 update : Context -> Msg -> Connection -> (Connection, Cmd Msg)
 update context msg connection =
   case msg of
-
-    DelegateToAssessor childMsg ->
-      let
-        context =
-          { tid = context.tid
-          , oid = Connection.key connection
-          }
-        (assessor, cmd) =
-          Connection.assessor connection
-            |> Maybe.map (AssessorUpdate.update context childMsg)
-            |> Maybe.map (Pair.fstMap Just)
-            |> Maybe.withDefault ( Nothing, Cmd.none )
-
-      in
-        ( Connection.setAssessor assessor connection
-        , Cmd.map DelegateToAssessor cmd
-        )
-
-    Zoom ->
-      Connection.expand connection
-        |> zoomFetch context.tid
 
     FetchedInfluence result ->
       case result of
@@ -71,22 +43,6 @@ update context msg connection =
 
           in
             Connection.setInfluence NoRequest connection ! []
-
-
-zoomFetch : Tid -> Connection -> (Connection, Cmd Msg)
-zoomFetch tid connection =
-  let
-    (assessor, cmd) =
-      case Connection.assessor connection of
-        Nothing ->
-          AssessorUpdate.init tid <| Connection.key connection
-
-        Just loaded ->
-          ( loaded, Cmd.none )
-
-  in
-    ( Connection.setAssessor (Just assessor) connection
-    , Cmd.map DelegateToAssessor cmd)
 
 
 secondaryFetch : Connection -> (Connection, Cmd Msg)

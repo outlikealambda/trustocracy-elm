@@ -3,7 +3,7 @@ module Update.Question.Assessor exposing
   , Msg
     (DelegateToAnswer)
   , update
-  , init
+  , load
   )
 
 
@@ -39,33 +39,49 @@ type Msg
 
 update : Context -> Msg -> Assessor -> (Assessor, Cmd Msg)
 update {tid, oid} message assessor =
-  case message of
-    DelegateToAnswer qid answerMsg ->
-      let
-        context =
-          { tid = tid
-          , oid = oid
-          , qid = qid
-          }
-        (updated, command) =
-          Dict.get qid assessor.answers
-          |> Maybe.withDefault Answer.unanswered
-          |> AnswerUpdate.update context answerMsg
+  case assessor of
+
+    Assessor.Disabled ->
+      (assessor, Cmd.none)
+
+    Assessor.Enabled answers ->
+      let (updated, cmds) =
+        case message of
+          DelegateToAnswer qid answerMsg ->
+            let
+              context =
+                { tid = tid
+                , oid = oid
+                , qid = qid
+                }
+              (updated, command) =
+                Dict.get qid answers
+                |> Maybe.withDefault Answer.unanswered
+                |> AnswerUpdate.update context answerMsg
+
+            in
+              Dict.insert qid updated answers
+              ! [ Cmd.map (DelegateToAnswer qid) command ]
+
+          FetchSuccess fetchedPairs ->
+            Dict.fromList fetchedPairs ! []
+
+          FetchFail error ->
+            Debug.log ("failed fetching answers with error: " ++ error) answers
+            ! []
 
       in
-        { assessor | answers = Dict.insert qid updated assessor.answers }
-        ! [ Cmd.map (DelegateToAnswer qid) command ]
-
-    FetchSuccess fetchedPairs ->
-      { assessor | answers = Dict.fromList fetchedPairs } ! []
-
-    FetchFail error ->
-      Debug.log ("failed fetching answers with error: " ++ error) assessor
-      ! []
+        Assessor.Enabled updated
+        ! [cmds]
 
 
-init : Tid -> Oid -> (Assessor, Cmd Msg)
-init tid oid =
-  ( { answers = Dict.empty }
-  , API.fetchAnswers FetchFail FetchSuccess tid oid
-  )
+load : Context -> Assessor -> (Assessor, Cmd Msg)
+load {tid, oid} assessor =
+  case assessor of
+    Assessor.Disabled ->
+      (Assessor.Disabled, Cmd.none)
+
+    Assessor.Enabled _ ->
+      ( Assessor.Enabled Dict.empty
+      , API.fetchAnswers FetchFail FetchSuccess tid oid
+      )

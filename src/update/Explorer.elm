@@ -2,10 +2,9 @@ module Update.Explorer exposing
   ( Msg
     ( Focus
     , Blur
-    , ConnectionMsg
+    , DelegateToAssessor
     )
-  , initConnected
-  , initAll
+  , init
   , update
   )
 
@@ -13,10 +12,15 @@ module Update.Explorer exposing
 import Common.API as API
 import Model.Connection.Connection as Connection exposing (Connection)
 import Model.Explorer as Explorer exposing (Explorer)
+import Model.Question.Assessor as Assessor exposing (Assessor)
 import Model.Question.Question exposing (Question)
 
 
+import Update.Question.Assessor as AssessorUpdate
 import Update.Connection as ConnectionUpdate
+
+
+import Utils.Cmd as CmdUtils
 
 
 import Dict exposing (Dict)
@@ -28,36 +32,49 @@ type alias Connections = Dict Oid Connection
 
 
 type Msg
-  = Focus Oid ConnectionUpdate.Msg
+  = Focus Oid
   | Blur ()
-  | ConnectionMsg Oid ConnectionUpdate.Msg
+  | DelegateToConnection Oid ConnectionUpdate.Msg
+  | DelegateToAssessor Oid AssessorUpdate.Msg
   | FetchedConnections (List Connection)
   | FetchedQuestions (List Question)
   | Error String
 
 
-initConnected : Tid -> Maybe Oid -> (Explorer, Cmd Msg)
-initConnected =
-  init << fetchConnected
-
-
-initAll : Tid -> Maybe Oid -> (Explorer, Cmd Msg)
-initAll =
-  init << fetchAll
-
-
-init : List (Cmd Msg) -> Maybe Oid -> (Explorer, Cmd Msg)
-init cmds maybeOid =
+init : Bool -> Tid -> Maybe Oid -> (Explorer, Cmd Msg)
+init isActiveSession tid maybeOid =
   let
+    emptyExplorer =
+      Explorer.empty
+
+    initMsgs =
+      fetchConnected tid
+
+    maybeContext =
+      Maybe.map (\oid -> {tid = tid, oid = oid}) maybeOid
+
+    emptyAssessor =
+      Assessor.empty isActiveSession
+
+    (assessor, assessorMsg) =
+      case maybeOid of
+        Nothing ->
+          emptyAssessor ! []
+
+        Just oid ->
+          AssessorUpdate.load {tid = tid, oid = oid} emptyAssessor
+            |> CmdUtils.mapCmdPair (DelegateToAssessor oid)
+
     zoom =
       Maybe.map Explorer.Focused maybeOid
         |> Maybe.withDefault Explorer.Blurred
+
   in
-    { connections = Dict.empty
-    , zoom = zoom
-    , questions = [] -- need to fetch questions here
+    { emptyExplorer
+    | zoom = zoom
+    , assessor = assessor
     }
-    ! cmds
+    ! (assessorMsg :: initMsgs)
 
 
 fetchConnected : Tid -> List (Cmd Msg)
@@ -82,16 +99,31 @@ type alias Context =
 update : Context -> Msg -> Explorer -> (Explorer, Cmd Msg)
 update context message explorer =
   case message of
-    -- blurs all connections before passing through the message
-    -- to the identified connection
-    Focus cId childMsg ->
-      { explorer | connections = blurAll explorer.connections }
-        |> delegateConnectionMsg context cId childMsg
+    Focus oid ->
+      let
+        assessorContext =
+          { tid = context.tid
+          , oid = oid
+          }
+
+        (assessor, assessorMsg) =
+          AssessorUpdate.load assessorContext explorer.assessor
+            |> CmdUtils.mapCmdPair (DelegateToAssessor oid)
+
+      in
+        { explorer
+        | assessor = assessor
+        , zoom = Explorer.Focused oid
+        } ! [ assessorMsg ]
 
     Blur () ->
-      { explorer | connections = blurAll explorer.connections } ! []
+      { explorer
+      | assessor = Assessor.clear explorer.assessor
+      , zoom = Explorer.Blurred
+      }
+      ! []
 
-    ConnectionMsg cId msg ->
+    DelegateToConnection cId msg ->
       delegateConnectionMsg context cId msg explorer
 
     FetchedConnections fetched ->
@@ -107,16 +139,26 @@ update context message explorer =
     FetchedQuestions questions ->
       { explorer | questions = questions } ! []
 
+    DelegateToAssessor oid msg ->
+      let
+        assessorContext =
+          { tid = context.tid
+          , oid = oid
+          }
+
+        (assessor, assessorMsg) =
+          AssessorUpdate.update assessorContext msg explorer.assessor
+            |> CmdUtils.mapCmdPair (DelegateToAssessor oid)
+
+      in
+        { explorer | assessor = assessor }
+        ! [ assessorMsg ]
+
     Error err ->
       let
         msg = Debug.log "error in Surveyer!" err
       in
         explorer ! []
-
-
-blurAll : Connections -> Connections
-blurAll connections =
-  Dict.map (\_ -> Connection.collapse) connections
 
 
 delegateConnectionMsg : Context -> Oid -> ConnectionUpdate.Msg -> Explorer -> (Explorer, Cmd Msg)
@@ -134,8 +176,7 @@ delegateConnectionMsg context cId msg explorer =
 
 
 remapConnectionMsg : Int -> (c, Cmd ConnectionUpdate.Msg) -> (c, Cmd Msg)
-remapConnectionMsg cId (c, connectionMsg) =
-  (c, Cmd.map (ConnectionMsg cId) connectionMsg)
+remapConnectionMsg = CmdUtils.mapCmdPair << DelegateToConnection
 
 
 remapPostFetchMessage : (Connection, Cmd ConnectionUpdate.Msg) -> (Connection, Cmd Msg)
