@@ -49,13 +49,13 @@ connectedDecoder =
 
 unconnectedDecoder : Decode.Decoder Connection
 unconnectedDecoder =
-  Decode.object1 (Extended.Basic << basicFromApi) Opinion.decoder
+  Decode.object1 (Extended.Basic << detailsFromApi) Opinion.decoder
 
 
 connectedFromApi : UserLink -> Opinion -> Connection
 connectedFromApi paths opinion =
   Extended.Complex
-    (basicFromApi opinion)
+    (detailsFromApi opinion)
     (linkFromApi paths)
 
 
@@ -66,8 +66,8 @@ linkFromApi userLink =
   }
 
 
-basicFromApi : Opinion -> Details
-basicFromApi opinion =
+detailsFromApi : Opinion -> Details
+detailsFromApi opinion =
   { opinion = opinion
   , influence = Remote.NoRequest
   , assessor = Nothing
