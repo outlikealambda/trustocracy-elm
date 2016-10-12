@@ -116,8 +116,6 @@ remapConnectionMsg cId (c, connectionMsg) =
   (c, Cmd.map (ConnectionMsg cId) connectionMsg)
 
 
--- no longer used: useful if we want to do some secondary fetching after the
--- initial connection fetch
 remapPostFetchMessage : (Connection, Cmd ConnectionUpdate.Msg) -> (Connection, Cmd Msg)
 remapPostFetchMessage pair =
   remapConnectionMsg (Connection.key (fst pair)) pair

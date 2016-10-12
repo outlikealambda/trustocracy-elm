@@ -8,6 +8,7 @@ module Update.Connection exposing
   )
 
 import Common.API as API
+import Common.Remote as Remote
 
 import Model.Connection as Connection exposing (Connection)
 import Model.Extend.Expandable as Expandable
@@ -56,7 +57,7 @@ update context msg connection =
     FetchedInfluence result ->
       case result of
         Ok influence ->
-          { connection | influence = influence } ! []
+          { connection | influence = Remote.retrieved influence } ! []
         Err errorMsg ->
           let
             e = Debug.log "error fetching influence" errorMsg

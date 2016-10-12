@@ -5,6 +5,9 @@ module View.Connection exposing
   )
 
 
+import Common.Remote exposing (Remote (Requested, Retrieved))
+
+
 import Model.Connection as Connection exposing (Connection)
 import Model.Extend.Expandable as Expandable exposing (Expandable)
 import Model.Question.Question exposing (Question)
@@ -67,12 +70,13 @@ authorQualifications context {opinion, inflation, assessor} =
 -- Just (Html msg) if the Opinion is connected
 -- Nothing if the opinion is not connected
 linked : Context msg -> Connection -> Maybe (Html msg)
-linked context {opinion, inflation, assessor, userLink} =
+linked context {opinion, inflation, assessor, userLink, influence} =
   let
     childElements =
       case inflation of
         Expandable.Expanded ->
-          [ OpinionView.text True opinion
+          [ viewInfluence influence
+          , OpinionView.text True opinion
           , lastUpdated opinion.created
           , AssessorView.questions context.questions assessor
             |> Html.App.map Update.DelegateToAssessor
@@ -81,7 +85,8 @@ linked context {opinion, inflation, assessor, userLink} =
           ]
 
         Expandable.Collapsed ->
-          [ OpinionView.text False opinion
+          [ viewInfluence influence
+          , OpinionView.text False opinion
           , Html.App.map context.readMore readMoreButton
           ]
 
@@ -140,3 +145,14 @@ lastUpdated date =
   Html.div
     [ class "last-updated" ]
     [ Html.text <| DateUtils.asString date ]
+
+
+viewInfluence : Remote Int -> Html msg
+viewInfluence remoteInfl =
+  case remoteInfl of
+    Requested _ ->
+      Html.div [] [ Html.text "Calculating Influence..." ]
+    Retrieved influence ->
+      Html.div
+        [ class "influence" ]
+        [ Html.text <| toString influence ++ " connected users" ]

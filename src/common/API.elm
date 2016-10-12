@@ -194,8 +194,8 @@ fetchConnectedV3 onError onSuccess tid =
 
 fetchInfluence : (String -> a) -> (Int -> a) -> OpinionId -> Cmd a
 fetchInfluence onError onSuccess oid =
-  secureEndpoint ["opinion/", toString oid, "/influence"]
-    |> Http.get Decode.int
+  openEndpoint ["opinion/", toString oid, "/influence"]
+    |> Http.get ("influence" := Decode.int)
     |> Task.mapError httpErrorToString
     |> Task.perform onError onSuccess
 
