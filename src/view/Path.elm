@@ -94,6 +94,7 @@ buildPath builders =
     Svg.svg
       [ SvgAttrs.width <| toString totalWidth
       , SvgAttrs.height <| toString settings.height
+      , SvgAttrs.class "path-wrapper"
       ]
       svgs
 

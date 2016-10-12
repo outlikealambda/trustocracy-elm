@@ -136,6 +136,10 @@ h1, h2, h3, h4 {
   }
 }
 
+.path {
+  margin-bottom: 0.8rem;
+}
+
 .path-count {
   float: right;
   background: lightskyblue;
@@ -449,7 +453,7 @@ $opinion-link-color : #aaa;
 }
 
 .content {
-  max-width: 640px;
+  max-width: 700px;
   margin: auto;
 }
 
@@ -793,7 +797,7 @@ $trusted-color: PaleGreen;
 
 }
 
-.connection {
+.connected {
   margin: 3.2rem 0;
 }
 
@@ -805,14 +809,14 @@ $trusted-color: PaleGreen;
 }
 
 
-.connection {
+.connected {
   .text {
     font-family: $text-font;
     font-size: 2.0rem;
-    line-height: 3.8rem;
+    line-height: 4.0rem;
 
     p {
-      margin: 1.5em 0px;
+      margin: 0 0 1.6em 0px;
 
     }
   }
@@ -896,6 +900,47 @@ $trusted-color: PaleGreen;
 
 }
 
+.metrics {
+  float: left;
+  clear: left;
+}
+
+.meter {
+  float: left;
+  padding: 1.6rem 0;
+  margin: 0 2.4rem;
+  position: relative;
+
+  .top-label, .bottom-label {
+    text-align: center;
+    visibility: hidden;
+    position: absolute;
+    width: 200px;
+    left: -90px; // half width minus half svg width
+    font-size: 1.2rem;
+    line-height: 1.2rem;
+    color: #999;
+  }
+
+  .top-label {
+    top: 0;
+  }
+
+  .bottom-label {
+    bottom: 0;
+  }
+
+  &:hover {
+    .top-label, .bottom-label {
+      visibility: visible;
+    }
+  }
+}
+
+svg.path-wrapper, svg.tri-meter {
+  display:block;
+}
+
 hr {
   border: 1px solid #ccc;
 }
@@ -905,6 +950,7 @@ hr {
   font-size: 1.6rem;
   background: #ccc;
   padding: 0 1.6rem;
-  float: left;
-  clear: left;
+  float: right;
+  clear: right;
+  margin-top: 1.2rem;
 }

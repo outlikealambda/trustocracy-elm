@@ -9,6 +9,7 @@ module Common.API exposing
   , fetchConnectedV3
   , fetchBrowsable
   , fetchInfluence
+  , fetchMetrics
   , fetchDraftByTopic
   , saveOpinion
   , publishOpinion
@@ -36,6 +37,7 @@ import Task exposing (Task)
 import Auth.Facebook as Facebook
 import Auth.Google as Google
 import Model.Connection.Connection as Connection exposing (Connection)
+import Model.Connection.Metrics as Metrics exposing (Metrics)
 import Model.Opinion.Composition as Composition exposing (Composition)
 import Model.Opinion.Opinion as Opinion exposing (Opinion)
 import Model.Path as Path exposing (Path)
@@ -200,10 +202,19 @@ fetchBrowsable onError onSuccess topicId =
     |> Task.mapError httpErrorToString
     |> Task.perform onError onSuccess
 
+
 fetchInfluence : (String -> a) -> (Int -> a) -> OpinionId -> Cmd a
 fetchInfluence onError onSuccess oid =
   openEndpoint ["opinion/", toString oid, "/influence"]
     |> Http.get ("influence" := Decode.int)
+    |> Task.mapError httpErrorToString
+    |> Task.perform onError onSuccess
+
+
+fetchMetrics : (String -> a) -> (Metrics -> a) -> OpinionId -> Cmd a
+fetchMetrics onError onSuccess oid =
+  openEndpoint ["opinion/", toString oid, "/metrics"]
+    |> Http.get Metrics.decoder
     |> Task.mapError httpErrorToString
     |> Task.perform onError onSuccess
 

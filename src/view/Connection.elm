@@ -16,15 +16,18 @@ import Common.Remote exposing
 import Model.Connection.Connection as Connection exposing (Connection)
 import Model.Connection.Details exposing (Details)
 import Model.Connection.Link exposing (Link)
-import Model.Question.Question exposing (Question)
+import Model.Connection.Metrics exposing (Metrics)
+import Model.Question.Question as Question exposing (Question)
 
 
 import Utils.List as ListUtils
 import Utils.Date as DateUtils
 
+
 import View.Author as AuthorView
 import View.Opinion as OpinionView
 import View.Path as PathView
+import View.Question.Metrics as MetricsView
 
 
 import Html exposing (Html)
@@ -90,15 +93,19 @@ connected context details link =
 
   in
     Html.div
-      [ class "connection cf" ]
+      [ class "connected cf" ]
       <|
         [ Html.div
           [ class "connection-header cf" ]
           [ Html.div
             [ class "paths" ]
             (buildPathElements link.userLink)
-          , AuthorView.connection <| .author <| .opinion details
-          , viewInfluence details.influence
+          , Html.div
+            [ class "author-connection" ]
+            [ AuthorView.connection <| .author <| .opinion details
+            , viewInfluence details.influence
+            ]
+          , viewMetrics context details.metrics
           ]
         ]
         ++
@@ -106,7 +113,7 @@ connected context details link =
 
 
 body : Context msg -> Details -> List (Html msg)
-body context {opinion} =
+body context {opinion, metrics} =
 
   case context.isExpanded of
     True ->
@@ -116,9 +123,9 @@ body context {opinion} =
       ]
 
     False ->
-      [ OpinionView.text False opinion
-      , Html.App.map context.readMore readMoreButton
-      ]
+      [ OpinionView.text False opinion ]
+      ++ [ Html.App.map context.readMore readMoreButton ]
+
 
 
 readMoreButton : Html ()
@@ -165,3 +172,12 @@ viewInfluence remoteInfl =
       Html.div
         [ class "influence retrieved" ]
         [ Html.text <| toString influence ++ " connected users" ]
+
+
+viewMetrics : Context msg -> Remote Metrics -> Html msg
+viewMetrics context remoteMetrics =
+  case remoteMetrics of
+    Retrieved m ->
+      MetricsView.view context.questions m
+    _ ->
+      Html.div [] []

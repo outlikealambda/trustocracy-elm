@@ -8,6 +8,7 @@ module Model.Connection.Connection exposing
   , opinion
   , userLink
   , setInfluence
+  , setMetrics
   , countLinked
   )
 
@@ -18,6 +19,7 @@ import Common.Remote as Remote exposing (Remote)
 
 import Model.Connection.Details exposing (Details)
 import Model.Connection.Link exposing (Link, UserLink)
+import Model.Connection.Metrics exposing (Metrics)
 import Model.Opinion.Opinion as Opinion exposing (Opinion)
 import Model.Path as Path
 
@@ -63,6 +65,7 @@ detailsFromApi : Opinion -> Details
 detailsFromApi opinion =
   { opinion = opinion
   , influence = Remote.NoRequest
+  , metrics = Remote.NoRequest
   }
 
 
@@ -100,6 +103,15 @@ influence = .influence << unwrap
 setInfluence : Remote Int -> Connection -> Connection
 setInfluence influence =
   mapDetails (\b -> { b | influence = influence})
+
+
+metrics : Connection -> Remote Metrics
+metrics = .metrics << unwrap
+
+
+setMetrics : Remote Metrics -> Connection -> Connection
+setMetrics metrics =
+  mapDetails (\b -> { b | metrics = metrics})
 
 
 userLink : Connection -> Maybe UserLink

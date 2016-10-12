@@ -3,6 +3,7 @@ module Model.Question.Question exposing
   , Selector (..)
   , decoder
   , samples
+  , raters
   )
 
 
@@ -10,6 +11,9 @@ import Model.Question.Option as Option exposing (Option)
 
 
 import Json.Decode as Decode exposing ((:=))
+
+
+import Dict exposing (Dict)
 
 
 type alias Question =
@@ -23,6 +27,20 @@ type alias Question =
 type Selector
   = Picker (List Option)
   | Rater (Option, Option)
+
+
+raters : List Question -> Dict Int (Option, Option)
+raters questions =
+  let
+    raterOptions question =
+      case question.selector of
+        Rater opts ->
+          Just (question.id, opts)
+        Picker _ ->
+          Nothing
+  in
+    List.filterMap raterOptions questions
+      |> Dict.fromList
 
 
 decoder : Decode.Decoder Question
