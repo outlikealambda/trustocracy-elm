@@ -823,29 +823,34 @@ $trusted-color: PaleGreen;
 
 .questions {
   font-family : $text-font;
-  width: 400px;
   margin: 0 auto;
 
   .prompt {
     margin-bottom: 0.8rem;
     color: #444;
     text-align: center;
-    font-size: 2.4rem;
+    font-size: 1.8rem;
   }
 }
 
 .rater, .picker {
-  margin: 3.2rem auto;
+  margin: 0 auto 3.2rem;
+  padding-top: 3.2rem;
+  border-top: 5px solid #ddd;
 }
 
 .picker {
+  .options {
+    width: 400px;
+    margin: auto;
+  }
 
   .option {
     margin: 0 auto 0.4rem;
     padding: 0.4rem 0.8rem;
 
     cursor: pointer;
-    font-size: 2.0rem;
+    font-size: 1.6rem;
     color: #666;
 
     border: 0.2rem solid #fff;
@@ -868,7 +873,7 @@ $trusted-color: PaleGreen;
 .rater {
 
   .endpoint-left, .endpoint-right {
-    width: 100px;
+    width: 200px;
     text-align: center;
     text-transform: uppercase;
     font-size: 1.4rem;
@@ -876,15 +881,17 @@ $trusted-color: PaleGreen;
 
   .slider {
     margin: auto;
-    width: 100%;
+    width: 400px;
   }
 
   .endpoint-left {
     float : left;
+    margin-left: -100px;
   }
 
   .endpoint-right {
     float : right;
+    margin-right: -100px;
   }
 
 }
