@@ -25,7 +25,7 @@ connected : Explorer -> Html Update.Msg
 connected {connections, questions} =
   let
     viewConnection key connection =
-      ConnectionView.linked (buildContext questions key) connection
+      ConnectionView.connected (buildContext questions key) connection
 
   in
     Html.div
@@ -41,7 +41,7 @@ all : Explorer -> Html Update.Msg
 all {connections, questions} =
   let
     viewConnection key connection =
-      ConnectionView.authorQualifications (buildContext questions key) connection
+      ConnectionView.public (buildContext questions key) connection
 
   in
     Html.div

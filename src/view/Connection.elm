@@ -1,6 +1,6 @@
 module View.Connection exposing
-  ( linked
-  , authorQualifications
+  ( connected
+  , public
   , Context
   )
 
@@ -49,8 +49,8 @@ type alias Context msg =
   }
 
 
-authorQualifications : Context msg -> Connection -> Html msg
-authorQualifications context {opinion, inflation, assessor} =
+public : Context msg -> Connection -> Html msg
+public context {opinion, inflation, assessor} =
   let
     childElements =
       case inflation of
@@ -74,8 +74,8 @@ authorQualifications context {opinion, inflation, assessor} =
 
 -- Just (Html msg) if the Opinion is connected
 -- Nothing if the opinion is not connected
-linked : Context msg -> Connection -> Maybe (Html msg)
-linked context {opinion, inflation, assessor, userLink, influence} =
+connected : Context msg -> Connection -> Maybe (Html msg)
+connected context {opinion, inflation, assessor, userLink, influence} =
   let
     childElements =
       case inflation of
