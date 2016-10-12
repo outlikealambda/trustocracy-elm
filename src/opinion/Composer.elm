@@ -113,10 +113,12 @@ view {composition, composerView} =
     case composerView of
       Write ->
         Html.App.map WriterMsg (Writer.view composition)
+
       Preview ->
         Html.div
           [ class "preview" ]
           [ OpinionView.kitchenSink True composition ]
+
   in
     Html.div
       [ class "composer" ]
@@ -132,8 +134,10 @@ composerNav composerView =
       case composerView of
         Write ->
           ("write-nav active", "preview-nav")
+
         Preview ->
           ("write-nav", "preview-nav active")
+
   in
     Html.div
       [ class "composer-nav cf" ]

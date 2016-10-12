@@ -16,7 +16,7 @@ import Markdown
 
 
 kitchenSink : Bool -> Opinion.Record a -> Html msg
-kitchenSink expanded {qualifications, text, preview, author, influence} =
+kitchenSink expanded {qualifications, text, preview, author} =
   let
     nonEmpty =
       Qualifications.removeEmpty qualifications
@@ -30,14 +30,14 @@ kitchenSink expanded {qualifications, text, preview, author, influence} =
       True ->
         Html.div
           [ class "opinion-full" ]
-          [ AuthorView.withInfluence author influence
+          [ AuthorView.connection author
           , qualificationsHtml
           , viewFull text
           ]
       False ->
         Html.div
           [ class "opinion-snippet" ]
-          [ AuthorView.withInfluence author influence
+          [ AuthorView.connection author
           , qualificationsHtml
           , viewPreview preview
         ]

@@ -33,7 +33,6 @@ empty : Composition
 empty =
   { id = Nothing
   , text = ""
-  , influence = -1
   , author = Trustee.empty
   , qualifications = []
   , created = Date.fromTime 0
@@ -49,20 +48,18 @@ encode composition =
   Encode.object
     [ ("id", Maybe.map Encode.int (key composition) |> Maybe.withDefault Encode.null)
     , ("text", Encode.string composition.text)
-    , ("influence", Encode.int composition.influence)
     ]
 
 
 decoder : Decode.Decoder Composition
 decoder =
-  Decode.object6 fromApi
+  Decode.object5 fromApi
     ( Decode.oneOf
       [ "id" := Decode.map Just Decode.int
       , Decode.succeed Nothing
       ]
     )
     ("text" := Decode.string)
-    ("influence" := Decode.int)
     ("author" := Trustee.decoder)
     (Decode.oneOf
       [ "qualifications" := Qualifications.decoder
@@ -72,11 +69,10 @@ decoder =
     ("created" := Decode.float)
 
 
-fromApi : Maybe Int -> String -> Int -> Trustee -> Qualifications -> Float -> Composition
-fromApi id text influence author qualifications created =
+fromApi : Maybe Int -> String -> Trustee -> Qualifications -> Float -> Composition
+fromApi id text author qualifications created =
   { id = id
   , text = text
-  , influence = influence
   , author = author
   , qualifications = qualifications
   , created = Date.fromTime <| Time.second * created

@@ -21,10 +21,9 @@ type alias Opinion = Identified (Record {})
 
 decoder : Decode.Decoder Opinion
 decoder =
-  Decode.object6 fromApi
+  Decode.object5 fromApi
     ("id" := Decode.int)
     ("text" := Decode.string)
-    ("influence" := Decode.int)
     ("author" := Trustee.decoder)
     (Decode.oneOf
       [ "qualifications" := Qualifications.decoder
@@ -35,11 +34,10 @@ decoder =
 
 
 
-fromApi : Int -> String -> Int -> Trustee -> Qualifications -> Float -> Opinion
-fromApi id text influence author qualifications created =
+fromApi : Int -> String -> Trustee -> Qualifications -> Float -> Opinion
+fromApi id text author qualifications created =
   { id = id
   , text = text
-  , influence = influence
   , author = author
   , qualifications = qualifications
   , created = Date.fromTime <| Time.second * created
