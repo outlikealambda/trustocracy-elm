@@ -13,6 +13,7 @@ import Common.Remote exposing
     )
   )
 
+
 import Model.Connection.Connection as Connection exposing (Connection)
 import Model.Connection.Details exposing (Details)
 import Model.Connection.Link exposing (Link)
@@ -20,7 +21,6 @@ import Model.Connection.Metrics exposing (Metrics)
 import Model.Question.Question as Question exposing (Question)
 
 
-import Utils.List as ListUtils
 import Utils.Date as DateUtils
 
 
@@ -64,48 +64,42 @@ view context connection =
 public : Context msg -> Details -> Html msg
 public context details =
   Html.div
-    [ class "disjoint cf" ]
+    [ class "connection disjoint cf" ]
     <|
       [ Html.div
         [ class "connection-header cf" ]
-        [ AuthorView.connection <| .author <| .opinion details
-        , viewInfluence details.influence
-        ]
+        [ basicHeader context details ]
       ]
       ++
         body context details
 
 
+basicHeader : Context msg -> Details -> Html msg
+basicHeader context {metrics, opinion, influence} =
+  Html.div
+    [ class "basic-header" ]
+    [ viewMetrics context metrics
+    , AuthorView.connection opinion.author
+    , viewInfluence influence
+    ]
+
+
 connected : Context msg -> Details -> Link -> Html msg
 connected context details link =
   let
-
     buildPathElements paths =
-      case context.isExpanded of
-        True ->
-          List.map PathView.view paths
-
-        False ->
-          List.head paths
-            |> Maybe.map PathView.view
-            |> Maybe.map ListUtils.singleton
-            |> Maybe.withDefault []
+      List.map PathView.view paths
 
   in
     Html.div
-      [ class "connected cf" ]
+      [ class "connection connected cf" ]
       <|
         [ Html.div
           [ class "connection-header cf" ]
           [ Html.div
             [ class "paths" ]
             (buildPathElements link.userLink)
-          , Html.div
-            [ class "author-connection" ]
-            [ AuthorView.connection <| .author <| .opinion details
-            , viewInfluence details.influence
-            ]
-          , viewMetrics context details.metrics
+          , basicHeader context details
           ]
         ]
         ++
@@ -113,8 +107,7 @@ connected context details link =
 
 
 body : Context msg -> Details -> List (Html msg)
-body context {opinion, metrics} =
-
+body context {opinion} =
   case context.isExpanded of
     True ->
       [ OpinionView.text True opinion
@@ -166,7 +159,7 @@ viewInfluence remoteInfl =
     Requested ->
       Html.div
         [ class "influence requested" ]
-        [ Html.text "Calculating Influence..." ]
+        [ Html.text "Calculating..." ]
 
     Retrieved influence ->
       Html.div

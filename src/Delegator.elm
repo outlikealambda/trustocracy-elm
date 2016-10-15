@@ -470,17 +470,16 @@ relationshipClass r =
       "unknown"
 
 
-navHeader : msg -> ActiveUser -> List (Html msg)
+navHeader : msg -> ActiveUser -> Html msg
 navHeader msg activeUser =
   case activeUser of
     LoggedOut ->
-      []
+      div [ class "inactive-delegate-nav" ] []
 
     LoggedIn user ->
-      [ div
-        [class "home" ]
+      div
+        [ class "delegate-nav" ]
         [ a
           [ Event.onClick msg ]
           [ text <| "You trust " ++ (toString <| List.length user.trustees) ++ " people" ]
         ]
-      ]

@@ -5,7 +5,9 @@ module Auth exposing
   , subscriptions
   , init
   , update
-  , view
+  , viewUser
+  , viewButton
+  , viewForm
   )
 
 
@@ -196,20 +198,6 @@ saveUser setUser user =
   CmdUtils.init <| setUser (ActiveUser.LoggedIn user)
 
 
-
-type alias ViewContext msg =
-  { activeUser : ActiveUser
-  , transform : Msg -> msg
-  }
-
-
-view : ViewContext msg -> Auth -> List (Html msg)
-view {transform, activeUser} auth =
-  [ Html.App.map transform <| viewHeader activeUser
-  , Html.App.map transform <| viewForm auth
-  ]
-
-
 viewHeader : ActiveUser -> Html Msg
 viewHeader activeUser =
   let
@@ -240,6 +228,34 @@ viewHeader activeUser =
       [ class "auth-header" ]
       <| login
       ++ userName
+
+
+viewUser : ActiveUser -> Html a
+viewUser activeUser =
+  case activeUser of
+    ActiveUser.LoggedOut ->
+      div [ class "inactive-user" ] []
+    ActiveUser.LoggedIn user ->
+      div [ class "user" ] [ text user.name ]
+
+
+viewButton : ActiveUser -> Html Msg
+viewButton activeUser =
+  case activeUser of
+    ActiveUser.LoggedOut ->
+      div
+        [ class "login" ]
+        [ a
+          [ onClick (SetVisible True) ]
+          [ text "login"]
+        ]
+    ActiveUser.LoggedIn user ->
+      div
+        [ class "logout" ]
+        [ a
+          [ onClick Logout ]
+          [ text "logout"]
+        ]
 
 
 viewForm : Auth -> Html Msg

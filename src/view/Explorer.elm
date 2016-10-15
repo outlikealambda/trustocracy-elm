@@ -62,7 +62,7 @@ focused oid {connections, questions, assessor} =
 
     combineViews connectionView =
       Html.div
-        [ class "focused" ]
+        [ class "explorer focused" ]
         [ connectionView
         , assessorView
         ]
@@ -84,7 +84,7 @@ blurred {connections, questions} =
 
   in
     Html.div
-      []
+      [ class "explorer blurred" ]
       ( Dict.map viewConnection connections
         |> Dict.values
         |> List.intersperse (Html.hr [] [])

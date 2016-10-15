@@ -48,7 +48,9 @@ init isActiveSession tid maybeOid =
       Explorer.empty
 
     initMsgs =
-      fetchConnected tid
+      [ fetchConnections isActiveSession tid
+      , fetchQuestions tid
+      ]
 
     maybeContext =
       Maybe.map (\oid -> {tid = tid, oid = oid}) maybeOid
@@ -77,18 +79,18 @@ init isActiveSession tid maybeOid =
     ! (assessorMsg :: initMsgs)
 
 
-fetchConnected : Tid -> List (Cmd Msg)
-fetchConnected tid =
-  [ API.fetchConnectedV3 Error FetchedConnections tid
-  , API.fetchQuestions Error FetchedQuestions tid
-  ]
+fetchConnections : Bool -> Tid -> Cmd Msg
+fetchConnections isActiveSession =
+  case isActiveSession of
+    True ->
+      API.fetchConnectedV4 Error FetchedConnections
+    False ->
+      API.fetchBrowsable Error FetchedConnections
 
 
-fetchAll : Tid -> List (Cmd Msg)
-fetchAll tid =
-  [ API.fetchBrowsable Error FetchedConnections tid
-  , API.fetchQuestions Error FetchedQuestions tid
-  ]
+fetchQuestions : Tid -> Cmd Msg
+fetchQuestions =
+  API.fetchQuestions Error FetchedQuestions
 
 
 type alias Context =

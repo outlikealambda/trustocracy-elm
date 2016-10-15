@@ -205,29 +205,50 @@ textarea.write {
 
 .header {
   position: fixed;
+  z-index: 1;
   top: 0;
   left: 0;
   right: 0;
-  height: 2.4rem;
-  font-size: 1.6rem;
-  line-height: 2.4rem;
+  height: 3.2rem;
+  font-size: 1.4rem;
+  line-height: 3.2rem;
   width: 100%;
-  background: pink;
+  background: #ddd;
 
-  .user, .login, .logout {
+  .user, .login, .logout, .delegate-nav {
     float: right;
-    margin-right: 8px;
+    padding: 0 1.6rem;
   }
 
   .home {
     float: left;
-    margin-left: 8px;
+    padding: 0 1.6rem;
+  }
+
+  .user {
+    font-style: italic;
+  }
+
+  .home, .login, .logout, .delegate-nav {
+    cursor: pointer;
+    color: #444;
+    background: #ccc;
+    margin: 0 0.1rem;
+    text-transform: uppercase;
+    font-size: 1.2rem;
+    letter-spacing: 0.1rem;
+
+    &:hover {
+      color: #ccc;
+      background: #444
+    }
   }
 
 }
 
 .world {
   padding-top: 2.4rem;
+  position: relative;
 
   > .content {
     margin-top: 2.4rem;
@@ -306,31 +327,6 @@ textarea.write {
 }
 
 $opinion-link-color : #aaa;
-
-.opinion {
-  padding: 2.4rem 3.2rem;
-
-  .text {
-    font-family: $text-font;
-    font-size: 2.0rem;
-    color: $text-color;
-
-    margin-top: 1.6rem;
-    line-height: 3.2rem;
-
-    p {
-      margin-top: 0;
-      margin-bottom: 3.2rem;
-    }
-  }
-
-  .read-more {
-  }
-
-  .snippet p {
-    margin: 0px;
-  }
-}
 
 .opiner {
 
@@ -797,8 +793,18 @@ $trusted-color: PaleGreen;
 
 }
 
-.connected {
+.connected, .disjoint {
   margin: 3.2rem 0;
+
+  .text {
+    margin: 3.2rem;
+    font-size: 1.8rem;
+    line-height: 3.2rem;
+
+    p {
+      margin: 0 0 1.6em 0px;
+    }
+  }
 }
 
 // Dates styling
@@ -808,19 +814,6 @@ $trusted-color: PaleGreen;
   font-style: italic;
 }
 
-
-.connected {
-  .text {
-    font-family: $text-font;
-    font-size: 2.0rem;
-    line-height: 4.0rem;
-
-    p {
-      margin: 0 0 1.6em 0px;
-
-    }
-  }
-}
 
 
 // Questions Styling
@@ -905,9 +898,13 @@ $trusted-color: PaleGreen;
   clear: left;
 }
 
+.basic-header {
+  margin-top: 1.6rem;
+}
+
 .meter {
   float: left;
-  padding: 1.6rem 0;
+  padding: 2.4rem 0;
   margin: 0 2.4rem;
   position: relative;
 

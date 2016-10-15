@@ -42,7 +42,7 @@ fromApi id text author qualifications created =
   , qualifications = qualifications
   , created = Date.fromTime <| Time.second * created
   , fetched = True
-  , snippet = StringUtils.snippetize 100 text
+  , snippet = StringUtils.snippetize 300 text
   , preview = StringUtils.snippetize 300 text
   , expanded = False
   }

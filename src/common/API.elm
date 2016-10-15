@@ -4,9 +4,9 @@ module Common.API exposing
   , fetchUserByFacebookAuth
   , fetchUserByGoogleAuth
   , updateGoogleContacts
-  , fetchConnected
   , fetchConnectedV2
   , fetchConnectedV3
+  , fetchConnectedV4
   , fetchBrowsable
   , fetchInfluence
   , fetchMetrics
@@ -40,7 +40,6 @@ import Model.Connection.Connection as Connection exposing (Connection)
 import Model.Connection.Metrics as Metrics exposing (Metrics)
 import Model.Opinion.Composition as Composition exposing (Composition)
 import Model.Opinion.Opinion as Opinion exposing (Opinion)
-import Model.Path as Path exposing (Path)
 import Model.Question.Answer as Answer exposing (Answer, Choice)
 import Model.Question.Question as Question exposing (Question)
 import Model.Topic as Topic exposing (Topic)
@@ -171,26 +170,43 @@ transmitGoogleAuth url gaResponse =
 --------------
 
 
-fetchConnected : (String -> a) -> (List Path -> a) -> Topic -> Cmd a
-fetchConnected onError onSuccess topic =
-  secureEndpoint ["topic/", toString topic.id, "/connected"]
-    |> Http.get ("paths" := Decode.list Path.decoder)
-    |> Task.mapError httpErrorToString
-    |> Task.perform onError onSuccess
-
-
 fetchConnectedV2 : (String -> a) -> (List Connection -> a) -> TopicId -> Cmd a
 fetchConnectedV2 onError onSuccess tid =
-  secureEndpoint ["topic/", toString tid, "/connected/v2"]
-    |> Http.get (Decode.list Connection.connectedDecoder)
-    |> Task.mapError httpErrorToString
-    |> Task.perform onError onSuccess
+  fetch
+    (Decode.list Connection.connectedDecoder)
+    onError
+    onSuccess
+    (secureEndpoint ["topic/", toString tid, "/connected/v2"])
 
 
 fetchConnectedV3 : (String -> a) -> (List Connection -> a) -> TopicId -> Cmd a
 fetchConnectedV3 onError onSuccess tid =
-  secureEndpoint ["topic/", toString tid, "/connected/v3"]
-    |> Http.get (Decode.list Connection.connectedDecoder)
+  fetch
+    (Decode.list Connection.connectedDecoder)
+    onError
+    onSuccess
+    (secureEndpoint ["topic/", toString tid, "/connected/v3"])
+
+
+fetchConnectedV4 : (String -> a) -> (List Connection -> a) -> TopicId -> Cmd a
+fetchConnectedV4 onError onSuccess tid =
+  fetch
+    ( Decode.list
+      ( Decode.oneOf
+        [ Connection.connectedDecoder
+        , Connection.unconnectedDecoder
+        ]
+      )
+    )
+    onError
+    onSuccess
+    (secureEndpoint ["topic/", toString tid, "/connected/v4"])
+
+
+fetch : Decode.Decoder b -> (String -> a) -> (b -> a) -> String -> Cmd a
+fetch decoder onError onSuccess apiPath =
+  apiPath
+    |> Http.get decoder
     |> Task.mapError httpErrorToString
     |> Task.perform onError onSuccess
 

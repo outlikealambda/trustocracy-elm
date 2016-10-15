@@ -438,12 +438,10 @@ inactiveSessionContent session =
       ]
 
 
-navHeader : (Msg -> msg) -> Session -> List (Html msg)
+navHeader : (Msg -> a) -> Session -> List (Html a)
 navHeader transform {auth, activeUser} =
-  List.append
-    (Auth.view
-      { transform = (transform << AuthMsg)
-      , activeUser = activeUser
-      }
-      auth)
-    (Delegator.navHeader (transform GoUserDelegates) activeUser)
+  [ Html.App.map (transform << AuthMsg) (Auth.viewButton activeUser)
+  , Delegator.navHeader (transform GoUserDelegates) activeUser
+  , Auth.viewUser activeUser
+  , Html.App.map (transform << AuthMsg) (Auth.viewForm auth)
+  ]
