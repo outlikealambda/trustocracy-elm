@@ -19,14 +19,20 @@ type alias TopicId = Int
 view : Topic -> Html TopicId
 view topic =
   Html.div
-    [ class "topic"
+    [ class "topic cf"
     , Events.onClick topic.id ]
     [ Html.div
       [ class "topic-title" ]
       [ Html.text topic.text ]
     , Html.div
       [ class "opinion-count" ]
-      [ Html.text <| toString topic.opinionCount ]
+      [ Html.span
+        [ class "opinion-count-value" ]
+        [ Html.text <| toString topic.opinionCount ]
+      , Html.i
+        [ class "material-icons md-24" ]
+        [ Html.text "format_align_left" ]
+      ]
     , Html.div
       [ class "topic-created" ]
       [ Html.text <| DateUtils.asString topic.created ]

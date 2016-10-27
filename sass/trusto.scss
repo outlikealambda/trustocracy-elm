@@ -34,10 +34,6 @@ html {
   /* for ie 6/7 (trigger haslayout) */
 }
 
-span {
-  display:block;
-}
-
 html {
   font-size: 10px;
 }
@@ -272,18 +268,41 @@ textarea.write {
 }
 
 .topic {
+  width: 400px;
+  margin: auto;
   text-transform: capitalize;
-  font-size: 1.8rem;
   font-family: $header-font;
-  line-height: 2.4rem;
-  padding: 16px;
-  border-bottom: 1px solid #eeeeee;
+  padding: 3.2rem;
+  border-bottom: 4px solid #eeeeee;
 
   &:hover {
     background-color: $primary-color;
     cursor: pointer;
   }
+
 }
+
+.opinion-count {
+  float: right;
+  line-height: 3.2rem;
+  .opinion-count-value, i {
+    float: left;
+    margin-left: 0.4rem;
+  }
+}
+
+.topic .topic-title {
+  float: left;
+  font-size: 3.2rem;
+}
+
+.topic-created, .topic-updated {
+  float: left;
+  clear: left;
+  font-style: italic;
+}
+
+
 .user-name{
   margin-bottom: 5px;
 }
