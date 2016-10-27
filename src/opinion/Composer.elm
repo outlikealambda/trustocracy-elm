@@ -169,19 +169,9 @@ navButton {composition} =
     actionText =
       case Composition.key composition of
         Nothing ->
-          [ Html.text "Compose"
-          , Html.br [] []
-          , Html.text "an"
-          , Html.br [] []
-          , Html.text "Opinion"
-          ]
+          [ Html.text "Compose" ]
         Just _ ->
-          [ Html.text "Edit"
-          , Html.br [] []
-          , Html.text "your"
-          , Html.br [] []
-          , Html.text "Opinion"
-          ]
+          [ Html.text "Edit" ]
   in
     if composition.fetched then
       Html.div
