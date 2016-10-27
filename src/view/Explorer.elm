@@ -1,7 +1,7 @@
 module View.Explorer exposing
   ( connected
   , all
-  , allButton
+  , exploreButton
   , connectedButton
   , view
   )
@@ -114,9 +114,9 @@ connectedButton {connections} =
     |> navButton
 
 
-allButton : Explorer -> Html msg
-allButton {connections} =
-  "Explore All Opinions"
+exploreButton : Explorer -> Html msg
+exploreButton ignored =
+  "Explore"
     |> navButton
 
 
