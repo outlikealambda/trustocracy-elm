@@ -14,9 +14,10 @@ view msg sessionElements =
     home =
       [ Html.div
         [ class "home" ]
-        [ Html.a
-          [ Events.onClick msg ]
-          [ Html.text "Home" ]
+        [ Html.i
+          [ class "material-icons"
+          , Events.onClick msg ]
+          [ Html.text "home" ]
         ]
       ]
 

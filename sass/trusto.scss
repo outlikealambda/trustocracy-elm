@@ -215,28 +215,37 @@ textarea.write {
   width: 100%;
   background: #ddd;
 
+  i {
+    // gets rid of extra spacing under icons
+    display:block;
+    font-size: 3.2rem;
+  }
+
   .user, .login, .logout, .delegate-nav {
-    float: right;
     padding: 0 1.6rem;
+    float: right;
   }
 
   .home {
+    color: #999;
+    cursor: pointer;
     float: left;
     padding: 0 1.6rem;
+
+    &:hover {
+      color: #444;
+    }
   }
 
   .user {
     font-style: italic;
   }
 
-  .home, .login, .logout, .delegate-nav {
-    cursor: pointer;
-    color: #444;
+  .login, .logout, .delegate-nav {
     background: #ccc;
-    margin: 0 0.1rem;
-    text-transform: uppercase;
-    font-size: 1.2rem;
-    letter-spacing: 0.1rem;
+    color: #444;
+    cursor: pointer;
+    margin-left: 0.4rem;
 
     &:hover {
       color: #ccc;
@@ -244,10 +253,17 @@ textarea.write {
     }
   }
 
+  .login, .logout, .delegate-nav {
+    text-transform: uppercase;
+    font-size: 1.2rem;
+    letter-spacing: 0.1rem;
+
+  }
+
 }
 
 .world {
-  padding-top: 2.4rem;
+  padding-top: 3.2rem;
   position: relative;
 
   > .content {
@@ -456,6 +472,7 @@ $opinion-link-color : #aaa;
 .session-overview {
   text-align: center;
   margin-bottom: 3.2rem;
+  margin-top: 1.6rem;
 }
 
 .opinion-browser, .composer {
@@ -468,14 +485,12 @@ $opinion-link-color : #aaa;
 }
 
 .session-link {
-  width: 8rem;
-  height: 8rem;
   border: 0.2rem solid orange;
   margin: 1.1rem;
-  border-radius: 0.8rem;
+  border-radius: 0.4rem;
   display: inline-block;
   vertical-align: top;
-  padding: 1rem;
+  padding: 0.8rem 1.6rem;
   cursor: pointer;
 
   div {
@@ -609,7 +624,7 @@ $opinion-link-color : #aaa;
 }
 
 .read-more, .show-all {
-  padding: 0.4rem 1.2rem;
+  padding: 0.8rem 1.6rem;
   margin-top: 1.6rem;
   margin-left: 0.1rem;
   margin-bottom: 0.1rem;
@@ -619,6 +634,7 @@ $opinion-link-color : #aaa;
   float: left;
   font-size: 1.4rem;
   color: $text-color;
+  text-transform:capitalize;
 
   &:hover {
     border-width: 3px;
