@@ -1,7 +1,5 @@
 module View.Explorer exposing
-  ( connected
-  , all
-  , exploreButton
+  ( exploreButton
   , connectedButton
   , view
   )
@@ -24,21 +22,6 @@ import Html.App
 import String
 
 
-connected : Explorer -> Html Update.Msg
-connected {connections, questions} =
-  let
-    viewConnection key connection =
-      ConnectionView.view (buildContext False questions key) connection
-
-  in
-    Html.div
-      []
-      ( Dict.map viewConnection connections
-        |> Dict.values
-        |> List.intersperse (Html.hr [] [])
-      )
-
-
 view : Explorer -> Html Update.Msg
 view explorer =
   case explorer.zoom of
@@ -47,7 +30,6 @@ view explorer =
 
     Explorer.Focused oid ->
       focused oid explorer
-
 
 
 focused : Int -> Explorer -> Html Update.Msg
@@ -73,9 +55,6 @@ focused oid {connections, questions, assessor} =
     |> Maybe.withDefault (Html.div [] [])
 
 
-
-
-
 blurred : Explorer -> Html Update.Msg
 blurred {connections, questions} =
   let
@@ -85,20 +64,6 @@ blurred {connections, questions} =
   in
     Html.div
       [ class "explorer blurred" ]
-      ( Dict.map viewConnection connections
-        |> Dict.values
-        |> List.intersperse (Html.hr [] [])
-      )
-
-all : Explorer -> Html Update.Msg
-all {connections, questions} =
-  let
-    viewConnection key connection =
-      ConnectionView.view (buildContext False questions key) connection
-
-  in
-    Html.div
-      []
       ( Dict.map viewConnection connections
         |> Dict.values
         |> List.intersperse (Html.hr [] [])

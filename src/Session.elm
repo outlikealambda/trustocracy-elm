@@ -379,7 +379,7 @@ inactiveSessionContent session =
       [ inactiveSubNav session
       , Html.div
         [ class "content" ]
-        [ ExplorerView.all session.explorer
+        [ ExplorerView.view session.explorer
           |> Html.App.map ExplorerMsg
         ]
       ]
