@@ -5,11 +5,13 @@ module Model.Connection.Connection exposing
   , toDict
   , key
   , influence
+  , influenceWithDefault
   , opinion
   , userLink
   , setInfluence
   , setMetrics
   , countLinked
+  , score
   )
 
 
@@ -18,7 +20,7 @@ import Common.Remote as Remote exposing (Remote)
 
 
 import Model.Connection.Details exposing (Details)
-import Model.Connection.Link exposing (Link, UserLink)
+import Model.Connection.Link as Link exposing (Link, UserLink)
 import Model.Connection.Metrics exposing (Metrics)
 import Model.Opinion.Opinion as Opinion exposing (Opinion)
 import Model.Path as Path
@@ -100,6 +102,11 @@ influence : Connection -> Remote Int
 influence = .influence << unwrap
 
 
+influenceWithDefault : Int -> Connection -> Int
+influenceWithDefault default =
+  Remote.withDefault default << influence
+
+
 setInfluence : Remote Int -> Connection -> Connection
 setInfluence influence =
   mapDetails (\b -> { b | influence = influence})
@@ -122,6 +129,12 @@ userLink connection =
 
     Extended.Complex _ link ->
       link |> .userLink |> Just
+
+
+score : Connection -> Int
+score =
+  Maybe.withDefault 0 << Maybe.map Link.score << userLink
+
 
 
 unwrap : Connection -> Details

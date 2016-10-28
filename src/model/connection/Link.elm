@@ -1,6 +1,7 @@
 module Model.Connection.Link exposing
   ( Link
   , UserLink
+  , score
   )
 
 
@@ -14,3 +15,9 @@ type alias Link =
 
 
 type alias UserLink = List Path
+
+
+score : UserLink -> Int
+score l =
+  List.map .score l
+  |> List.foldl (+) 0

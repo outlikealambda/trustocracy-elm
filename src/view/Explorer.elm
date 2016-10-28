@@ -19,6 +19,7 @@ import Dict
 import Html exposing (Html)
 import Html.Attributes exposing (class)
 import Html.App
+import Html.Events as Events
 import String
 
 
@@ -56,18 +57,35 @@ focused oid {connections, questions, assessor} =
 
 
 blurred : Explorer -> Html Update.Msg
-blurred {connections, questions} =
+blurred explorer =
   let
-    viewConnection key connection =
-      ConnectionView.view (buildContext False questions key) connection
+    contextBuilder =
+      buildContext False explorer.questions
+
+    viewConnection connection =
+      let
+        context =
+          contextBuilder <| Connection.key connection
+      in
+        ConnectionView.view context connection
 
   in
     Html.div
       [ class "explorer blurred" ]
-      ( Dict.map viewConnection connections
-        |> Dict.values
+
+      ( Explorer.sortConnections explorer
+        |> List.map viewConnection
         |> List.intersperse (Html.hr [] [])
+        |> (::) (sortButton explorer)
       )
+
+
+sortButton : Explorer -> Html Update.Msg
+sortButton {sort} =
+  Html.div
+    [ class <| "sort-button " ++ Explorer.classifySort sort
+    , Events.onClick Update.NextSort ]
+    [ Html.text "By Influence"]
 
 
 connectedButton : Explorer -> Html msg

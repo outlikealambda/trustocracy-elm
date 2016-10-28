@@ -3,6 +3,7 @@ module Update.Explorer exposing
     ( Focus
     , Blur
     , DelegateToAssessor
+    , NextSort
     )
   , init
   , update
@@ -38,6 +39,7 @@ type Msg
   | DelegateToAssessor Oid AssessorUpdate.Msg
   | FetchedConnections (List Connection)
   | FetchedQuestions (List Question)
+  | NextSort
   | Error String
 
 
@@ -155,6 +157,9 @@ update context message explorer =
       in
         { explorer | assessor = assessor }
         ! [ assessorMsg ]
+
+    NextSort ->
+      Explorer.rotateSort explorer ! []
 
     Error err ->
       let
