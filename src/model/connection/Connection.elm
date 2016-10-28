@@ -130,10 +130,10 @@ userLink connection =
     Extended.Complex _ link ->
       link |> .userLink |> Just
 
-
+-- lower is better
 score : Connection -> Int
 score =
-  Maybe.withDefault 0 << Maybe.map Link.score << userLink
+  Maybe.withDefault 1000 << Maybe.map Link.score << userLink
 
 
 

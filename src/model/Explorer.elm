@@ -82,9 +82,9 @@ sortConnections { connections, sort } =
     sorter =
       case sort of
         Score ->
-          List.sortBy <| invert << Connection.score
+          List.sortBy <| Connection.score
         Ascending ->
-          List.sortBy (Connection.influenceWithDefault 0)
+          List.sortBy <| Connection.influenceWithDefault 0
         Descending ->
           List.sortBy <| invert << Connection.influenceWithDefault 0
 
