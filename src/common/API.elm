@@ -23,6 +23,10 @@ module Common.API exposing
   , setTrustee
   , setTrustees
   , lookupTrustee
+  , addPlace
+  , fetchPlaces
+  , updatePlace
+  , removePlace
   )
 
 
@@ -40,6 +44,7 @@ import Model.Connection.Connection as Connection exposing (Connection)
 import Model.Connection.Metrics as Metrics exposing (Metrics)
 import Model.Opinion.Composition as Composition exposing (Composition)
 import Model.Opinion.Opinion as Opinion exposing (Opinion)
+import Model.Place as Place exposing (Place)
 import Model.Question.Answer as Answer exposing (Answer, Choice)
 import Model.Question.Question as Question exposing (Question)
 import Model.Topic as Topic exposing (Topic)
@@ -410,6 +415,46 @@ lookupTrustee onError onSuccess email =
     |> Task.mapError httpErrorToString
     |> Task.perform onError onSuccess
 
+------------
+-- PLACES --
+------------
+
+addPlace : (String -> a) -> (List Place -> a) -> Cmd a
+addPlace onError onSuccess =
+  (Place.encoder Place.createEmpty)
+    |> Encode.encode 0
+    |> Http.string
+    |> post'
+      (Decode.list Place.decoder)
+        (secureEndpoint ["postLocation"])
+    |> Task.mapError httpErrorToString
+    |> Task.perform onError onSuccess
+
+fetchPlaces : (String -> a) -> (List Place -> a) -> Cmd a
+fetchPlaces onError onSuccess =
+  Http.get (Decode.list Place.decoder)
+    (secureEndpoint ["getLocation"])
+  |> Task.mapError httpErrorToString
+  |> Task.perform onError onSuccess
+
+updatePlace : (String -> a) -> (Place -> a) -> Place -> Cmd a
+updatePlace onError onSuccess place =
+  (Place.encoder place)
+    |> Encode.encode 0
+    |> Http.string
+    |> post'
+      Place.decoder
+        (secureEndpoint [ "location/", toString place.id ] )
+    |> Task.mapError httpErrorToString
+    |> Task.perform onError onSuccess
+
+removePlace : (String -> a) -> (Int -> a) -> Int -> Cmd a
+removePlace onError onSuccess placeId =
+  delete'
+    Place.removalDecoder
+    (secureEndpoint [ "location/", toString placeId ] )
+  |> Task.mapError httpErrorToString
+  |> Task.perform onError onSuccess
 
 -- because post is pretty worthless
 -- see: https://groups.google.com/forum/#!topic/elm-discuss/Zpq9itvtLEY
@@ -423,6 +468,15 @@ post' decoder url body =
     }
   |> Http.fromJson decoder
 
+delete' : Decode.Decoder a -> String ->Task.Task Http.Error a
+delete' decoder url =
+  Http.send Http.defaultSettings
+    { verb = "DELETE"
+    , headers = [("Content-type", "application/json")]
+    , url = url
+    , body = Http.empty
+    }
+  |> Http.fromJson decoder
 
 delete : Decode.Decoder a -> String -> Task.Task Http.Error a
 delete decoder url =
