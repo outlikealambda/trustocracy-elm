@@ -5,11 +5,12 @@
   "scripts": {
     "start": "npm run build-elm && npm run start-server",
     "build-elm": "elm make src/Main.elm --output dist/elm.js",
-    "start-server": "ws -s index.html"
+    "start-server": "ws -s index.html",
+    "sass-watch": "sass --watch sass/trusto.scss:css/trusto.css"
   },
   "author": "OutLikeALambda",
   "homepage": "https://github.com/outlikealambda",
   "devDependencies": {
-    "local-web-server": "^1.2.5"
+    "local-web-server": "^1.2.6"
   }
 }
