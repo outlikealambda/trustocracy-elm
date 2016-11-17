@@ -35,9 +35,9 @@ type alias TopicOpinions = Dict Oid TopicOpinion
 type Msg
   = Focus Oid
   | Blur ()
-  | DelegateToConnection Oid TopicOpinionUpdate.Msg
+  | DelegateToTopicOpinion Oid TopicOpinionUpdate.Msg
   | DelegateToAssessor Oid AssessorUpdate.Msg
-  | FetchedConnections (List TopicOpinion)
+  | FetchedTopicOpinions (List TopicOpinion)
   | FetchedQuestions (List Question)
   | NextSort
   | Error String
@@ -50,7 +50,7 @@ init isActiveSession tid maybeOid =
       Explorer.empty
 
     initMsgs =
-      [ fetchConnections isActiveSession tid
+      [ fetchTopicOpinions isActiveSession tid
       , fetchQuestions tid
       ]
 
@@ -81,13 +81,13 @@ init isActiveSession tid maybeOid =
     ! (assessorMsg :: initMsgs)
 
 
-fetchConnections : Bool -> Tid -> Cmd Msg
-fetchConnections isActiveSession =
+fetchTopicOpinions : Bool -> Tid -> Cmd Msg
+fetchTopicOpinions isActiveSession =
   case isActiveSession of
     True ->
-      API.fetchConnectedV4 Error FetchedConnections
+      API.fetchConnectedV4 Error FetchedTopicOpinions
     False ->
-      API.fetchBrowsable Error FetchedConnections
+      API.fetchBrowsable Error FetchedTopicOpinions
 
 
 fetchQuestions : Tid -> Cmd Msg
@@ -127,10 +127,10 @@ update context message explorer =
       }
       ! []
 
-    DelegateToConnection cId msg ->
-      delegateConnectionMsg context cId msg explorer
+    DelegateToTopicOpinion cId msg ->
+      delegateTopicOpinionMsg context cId msg explorer
 
-    FetchedConnections fetched ->
+    FetchedTopicOpinions fetched ->
       let
         (topicOpinions, cmds) =
           List.map TopicOpinionUpdate.secondaryFetch fetched
@@ -168,8 +168,8 @@ update context message explorer =
         explorer ! []
 
 
-delegateConnectionMsg : Context -> Oid -> TopicOpinionUpdate.Msg -> Explorer -> (Explorer, Cmd Msg)
-delegateConnectionMsg context cId msg explorer =
+delegateTopicOpinionMsg : Context -> Oid -> TopicOpinionUpdate.Msg -> Explorer -> (Explorer, Cmd Msg)
+delegateTopicOpinionMsg context cId msg explorer =
   let
     goUpdate (update, updateCmd) =
       { explorer | topicOpinions = Dict.insert cId update explorer.topicOpinions }
@@ -177,15 +177,15 @@ delegateConnectionMsg context cId msg explorer =
   in
     Dict.get cId explorer.topicOpinions
     |> Maybe.map (TopicOpinionUpdate.update context msg)
-    |> Maybe.map (remapConnectionMsg cId)
+    |> Maybe.map (remapTopicOpinionMsg cId)
     |> Maybe.map goUpdate
     |> Maybe.withDefault (explorer, Cmd.none)
 
 
-remapConnectionMsg : Int -> (c, Cmd TopicOpinionUpdate.Msg) -> (c, Cmd Msg)
-remapConnectionMsg = CmdUtils.mapCmdPair << DelegateToConnection
+remapTopicOpinionMsg : Int -> (c, Cmd TopicOpinionUpdate.Msg) -> (c, Cmd Msg)
+remapTopicOpinionMsg = CmdUtils.mapCmdPair << DelegateToTopicOpinion
 
 
 remapPostFetchMessage : (TopicOpinion, Cmd TopicOpinionUpdate.Msg) -> (TopicOpinion, Cmd Msg)
 remapPostFetchMessage pair =
-  remapConnectionMsg (TopicOpinion.key (fst pair)) pair
+  remapTopicOpinionMsg (TopicOpinion.key (fst pair)) pair
