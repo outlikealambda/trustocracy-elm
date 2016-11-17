@@ -5,7 +5,7 @@ module Model.Explorer exposing
   , empty
   , rotateSort
   , classifySort
-  , sortConnections
+  , sortTopicOpinions
   )
 
 
@@ -76,8 +76,8 @@ classifySort sort =
       "descending"
 
 
-sortConnections : Explorer -> List TopicOpinion
-sortConnections { connections, sort } =
+sortTopicOpinions : Explorer -> List TopicOpinion
+sortTopicOpinions { connections, sort } =
   let
     sorter =
       case sort of

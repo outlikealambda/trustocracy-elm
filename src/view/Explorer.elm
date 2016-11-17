@@ -62,7 +62,7 @@ blurred explorer =
     contextBuilder =
       buildContext False explorer.questions
 
-    viewConnection connection =
+    viewTopicOpinion connection =
       let
         context =
           contextBuilder <| TopicOpinion.key connection
@@ -73,8 +73,8 @@ blurred explorer =
     Html.div
       [ class "explorer blurred" ]
 
-      ( Explorer.sortConnections explorer
-        |> List.map viewConnection
+      ( Explorer.sortTopicOpinions explorer
+        |> List.map viewTopicOpinion
         |> List.intersperse (Html.hr [] [])
         |> (::) (sortButton explorer)
       )
