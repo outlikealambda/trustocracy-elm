@@ -9,7 +9,7 @@ module Model.Explorer exposing
   )
 
 
-import Model.Connection.Connection as Connection exposing (TopicOpinion)
+import Model.TopicOpinion.Connection as Connection exposing (TopicOpinion)
 import Model.Question.Question exposing (Question)
 import Model.Question.Assessor as Assessor exposing (Assessor)
 

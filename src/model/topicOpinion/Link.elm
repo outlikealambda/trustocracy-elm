@@ -1,4 +1,4 @@
-module Model.Connection.Link exposing
+module Model.TopicOpinion.Link exposing
   ( Link
   , UserLink
   , score

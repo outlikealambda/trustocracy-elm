@@ -13,8 +13,8 @@ import Common.Remote as Remote exposing
     )
   )
 
-import Model.Connection.Connection as Connection exposing (TopicOpinion)
-import Model.Connection.Metrics exposing (Metrics)
+import Model.TopicOpinion.Connection as Connection exposing (TopicOpinion)
+import Model.TopicOpinion.Metrics exposing (Metrics)
 
 
 type alias Tid = Int -- Topic ID

@@ -5,7 +5,7 @@ module View.Explorer exposing
   )
 
 
-import Model.Connection.Connection as Connection
+import Model.TopicOpinion.Connection as Connection
 import Model.Explorer as Explorer exposing (Explorer)
 import Model.Question.Question exposing (Question)
 

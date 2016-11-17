@@ -1,4 +1,4 @@
-module Model.Connection.Metrics exposing
+module Model.TopicOpinion.Metrics exposing
   ( Metrics
   , decoder
   )

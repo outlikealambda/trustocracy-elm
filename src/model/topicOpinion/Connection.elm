@@ -1,4 +1,4 @@
-module Model.Connection.Connection exposing
+module Model.TopicOpinion.Connection exposing
   ( TopicOpinion(..)
   , connectedDecoder
   , unconnectedDecoder
@@ -18,8 +18,8 @@ module Model.Connection.Connection exposing
 import Common.Remote as Remote exposing (Remote)
 
 
-import Model.Connection.Link as Link exposing (Link, UserLink)
-import Model.Connection.Metrics exposing (Metrics)
+import Model.TopicOpinion.Link as Link exposing (Link, UserLink)
+import Model.TopicOpinion.Metrics exposing (Metrics)
 import Model.Opinion.Opinion as Opinion exposing (Opinion)
 import Model.Path as Path
 

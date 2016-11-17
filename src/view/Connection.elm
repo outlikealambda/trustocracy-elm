@@ -13,9 +13,9 @@ import Common.Remote exposing
   )
 
 
-import Model.Connection.Connection as Connection exposing (TopicOpinion(..))
-import Model.Connection.Link exposing (Link)
-import Model.Connection.Metrics exposing (Metrics)
+import Model.TopicOpinion.Connection as Connection exposing (TopicOpinion(..))
+import Model.TopicOpinion.Link exposing (Link)
+import Model.TopicOpinion.Metrics exposing (Metrics)
 import Model.Opinion.Opinion exposing(Opinion)
 import Model.Question.Question as Question exposing (Question)
 

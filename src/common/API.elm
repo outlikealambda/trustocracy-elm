@@ -40,8 +40,8 @@ import Task exposing (Task)
 
 import Auth.Facebook as Facebook
 import Auth.Google as Google
-import Model.Connection.Connection as Connection exposing (TopicOpinion)
-import Model.Connection.Metrics as Metrics exposing (Metrics)
+import Model.TopicOpinion.Connection as Connection exposing (TopicOpinion)
+import Model.TopicOpinion.Metrics as Metrics exposing (Metrics)
 import Model.Opinion.Composition as Composition exposing (Composition)
 import Model.Opinion.Opinion as Opinion exposing (Opinion)
 import Model.Place as Place exposing (Place)

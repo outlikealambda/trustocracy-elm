@@ -11,7 +11,7 @@ module Update.Explorer exposing
 
 
 import Common.API as API
-import Model.Connection.Connection as Connection exposing (TopicOpinion)
+import Model.TopicOpinion.Connection as Connection exposing (TopicOpinion)
 import Model.Explorer as Explorer exposing (Explorer)
 import Model.Question.Assessor as Assessor exposing (Assessor)
 import Model.Question.Question exposing (Question)
