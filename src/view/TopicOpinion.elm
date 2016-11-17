@@ -63,10 +63,10 @@ view context topicOpinion =
 public : Context msg -> Opinion -> Html msg
 public context opinion =
   Html.div
-    [ class "connection disjoint cf" ]
+    [ class "topic-opinion disjoint cf" ]
     <|
       [ Html.div
-        [ class "connection-header cf" ]
+        [ class "topic-opinion-header cf" ]
         [ basicHeader context opinion ]
       ]
       ++
@@ -91,10 +91,10 @@ connected context opinion link =
 
   in
     Html.div
-      [ class "connection connected cf" ]
+      [ class "topic-opinion connected cf" ]
       <|
         [ Html.div
-          [ class "connection-header cf" ]
+          [ class "topic-opinion-header cf" ]
           [ Html.div
             [ class "paths" ]
             (buildPathElements link.userLink)
