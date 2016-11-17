@@ -1,6 +1,5 @@
 module View.Author exposing
-  ( connection
-  -- , withInfluence
+  ( connected
   )
 
 
@@ -16,8 +15,8 @@ type alias Author = Trustee
 type alias Influence = Int
 
 
-connection : Author -> Html msg
-connection author =
+connected : Author -> Html msg
+connected author =
   Html.div
     [ class "author" ]
     [ Html.div

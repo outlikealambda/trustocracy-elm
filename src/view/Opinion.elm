@@ -30,14 +30,14 @@ kitchenSink expanded {qualifications, text, preview, author} =
       True ->
         Html.div
           [ class "opinion-full" ]
-          [ AuthorView.connection author
+          [ AuthorView.connected author
           , qualificationsHtml
           , viewFull text
           ]
       False ->
         Html.div
           [ class "opinion-snippet" ]
-          [ AuthorView.connection author
+          [ AuthorView.connected author
           , qualificationsHtml
           , viewPreview preview
         ]

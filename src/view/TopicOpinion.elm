@@ -78,7 +78,7 @@ basicHeader context {metrics, record, influence} =
   Html.div
     [ class "basic-header" ]
     [ viewMetrics context metrics
-    , AuthorView.connection record.author
+    , AuthorView.connected record.author
     , viewInfluence influence
     ]
 
