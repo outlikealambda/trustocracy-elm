@@ -11,7 +11,7 @@ import Model.Question.Question exposing (Question)
 
 import Update.Explorer as Update
 
-import View.Connection as ConnectionView
+import View.TopicOpinion as TopicOpinionView
 import View.Question.Assessor as AssessorView
 
 
@@ -51,7 +51,7 @@ focused oid {connections, questions, assessor} =
         ]
   in
     Dict.get oid connections
-    |> Maybe.map (ConnectionView.view context)
+    |> Maybe.map (TopicOpinionView.view context)
     |> Maybe.map combineViews
     |> Maybe.withDefault (Html.div [] [])
 
@@ -67,7 +67,7 @@ blurred explorer =
         context =
           contextBuilder <| TopicOpinion.key connection
       in
-        ConnectionView.view context connection
+        TopicOpinionView.view context connection
 
   in
     Html.div
@@ -110,7 +110,7 @@ navButton label =
     [ Html.text label ]
 
 
-buildContext : Bool -> List Question -> Int -> ConnectionView.Context Update.Msg
+buildContext : Bool -> List Question -> Int -> TopicOpinionView.Context Update.Msg
 buildContext isExpanded questions connectionKey =
   { showAll = Update.Blur
   , readMore = \_ -> Update.Focus connectionKey

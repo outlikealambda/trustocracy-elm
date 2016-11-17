@@ -1,4 +1,4 @@
-module View.Connection exposing
+module View.TopicOpinion exposing
   ( view
   , Context
   )
