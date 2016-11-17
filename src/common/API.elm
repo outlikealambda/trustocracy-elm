@@ -40,7 +40,7 @@ import Task exposing (Task)
 
 import Auth.Facebook as Facebook
 import Auth.Google as Google
-import Model.Connection.Connection as Connection exposing (Connection)
+import Model.Connection.Connection as Connection exposing (TopicOpinion)
 import Model.Connection.Metrics as Metrics exposing (Metrics)
 import Model.Opinion.Composition as Composition exposing (Composition)
 import Model.Opinion.Opinion as Opinion exposing (Opinion)
@@ -175,7 +175,7 @@ transmitGoogleAuth url gaResponse =
 --------------
 
 
-fetchConnectedV2 : (String -> a) -> (List Connection -> a) -> TopicId -> Cmd a
+fetchConnectedV2 : (String -> a) -> (List TopicOpinion -> a) -> TopicId -> Cmd a
 fetchConnectedV2 onError onSuccess tid =
   fetch
     (Decode.list Connection.connectedDecoder)
@@ -184,7 +184,7 @@ fetchConnectedV2 onError onSuccess tid =
     (secureEndpoint ["topic/", toString tid, "/connected/v2"])
 
 
-fetchConnectedV3 : (String -> a) -> (List Connection -> a) -> TopicId -> Cmd a
+fetchConnectedV3 : (String -> a) -> (List TopicOpinion -> a) -> TopicId -> Cmd a
 fetchConnectedV3 onError onSuccess tid =
   fetch
     (Decode.list Connection.connectedDecoder)
@@ -193,7 +193,7 @@ fetchConnectedV3 onError onSuccess tid =
     (secureEndpoint ["topic/", toString tid, "/connected/v3"])
 
 
-fetchConnectedV4 : (String -> a) -> (List Connection -> a) -> TopicId -> Cmd a
+fetchConnectedV4 : (String -> a) -> (List TopicOpinion -> a) -> TopicId -> Cmd a
 fetchConnectedV4 onError onSuccess tid =
   fetch
     ( Decode.list
@@ -216,7 +216,7 @@ fetch decoder onError onSuccess apiPath =
     |> Task.perform onError onSuccess
 
 
-fetchBrowsable : (String -> a) -> (List Connection -> a) -> TopicId -> Cmd a
+fetchBrowsable : (String -> a) -> (List TopicOpinion -> a) -> TopicId -> Cmd a
 fetchBrowsable onError onSuccess topicId =
   openEndpoint ["topic/", toString topicId, "/opinion"]
     |> Http.get (Decode.list Connection.unconnectedDecoder)

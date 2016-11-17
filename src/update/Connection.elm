@@ -13,7 +13,7 @@ import Common.Remote as Remote exposing
     )
   )
 
-import Model.Connection.Connection as Connection exposing (Connection)
+import Model.Connection.Connection as Connection exposing (TopicOpinion)
 import Model.Connection.Metrics exposing (Metrics)
 
 
@@ -29,7 +29,7 @@ type alias Context =
   }
 
 
-update : Context -> Msg -> Connection -> (Connection, Cmd Msg)
+update : Context -> Msg -> TopicOpinion -> (TopicOpinion, Cmd Msg)
 update context msg connection =
   case msg of
 
@@ -58,7 +58,7 @@ update context msg connection =
             Connection.setMetrics NoRequest connection ! []
 
 
-secondaryFetch : Connection -> (Connection, Cmd Msg)
+secondaryFetch : TopicOpinion -> (TopicOpinion, Cmd Msg)
 secondaryFetch connection =
   let
     opinionId =

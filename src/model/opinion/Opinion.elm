@@ -1,9 +1,14 @@
 module Model.Opinion.Opinion exposing
   ( Opinion
   , decoder
+  , setMetrics
+  , setInfluence
+  , influenceWithDefault
   )
 
 
+import Common.Remote as Remote exposing (Remote)
+import Model.Connection.Metrics exposing (Metrics)
 import Model.Extend.Identified as Identified exposing (Identified)
 import Model.Opinion.Record exposing (Record)
 import Model.Qualifications as Qualifications exposing (Qualifications)
@@ -16,12 +21,39 @@ import Json.Decode as Decode exposing ((:=))
 import Time
 
 
-type alias Opinion = Identified (Record {})
+type alias OpinionRecord = Identified (Record {})
+
+
+type alias Opinion =
+  { record : OpinionRecord
+  , influence : Remote Int
+  , metrics : Remote Metrics
+  }
+
+
+influenceWithDefault : Int -> Opinion -> Int
+influenceWithDefault default =
+  Remote.withDefault default << .influence
+
+
+setInfluence : Remote Int -> Opinion -> Opinion
+setInfluence influence opinion =
+  { opinion | influence = influence }
+
+
+setMetrics : Remote Metrics -> Opinion -> Opinion
+setMetrics metrics opinion =
+  { opinion | metrics = metrics }
 
 
 decoder : Decode.Decoder Opinion
 decoder =
-  Decode.object5 fromApi
+  Decode.map fromApi recordDecoder
+
+
+recordDecoder : Decode.Decoder OpinionRecord
+recordDecoder =
+  Decode.object5 recordFromApi
     ("id" := Decode.int)
     ("text" := Decode.string)
     ("author" := Trustee.decoder)
@@ -33,9 +65,16 @@ decoder =
     ("created" := Decode.float)
 
 
+fromApi : OpinionRecord -> Opinion
+fromApi record =
+  { record = record
+  , influence = Remote.NoRequest
+  , metrics = Remote.NoRequest
+  }
 
-fromApi : Int -> String -> Trustee -> Qualifications -> Float -> Opinion
-fromApi id text author qualifications created =
+
+recordFromApi : Int -> String -> Trustee -> Qualifications -> Float -> OpinionRecord
+recordFromApi id text author qualifications created =
   { id = id
   , text = text
   , author = author

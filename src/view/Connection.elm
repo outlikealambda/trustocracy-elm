@@ -4,7 +4,6 @@ module View.Connection exposing
   )
 
 
-import Common.Extended as Extended
 import Common.Remote exposing
   ( Remote
     ( NoRequest
@@ -14,10 +13,10 @@ import Common.Remote exposing
   )
 
 
-import Model.Connection.Connection as Connection exposing (Connection)
-import Model.Connection.Details exposing (Details)
+import Model.Connection.Connection as Connection exposing (TopicOpinion(..))
 import Model.Connection.Link exposing (Link)
 import Model.Connection.Metrics exposing (Metrics)
+import Model.Opinion.Opinion exposing(Opinion)
 import Model.Question.Question as Question exposing (Question)
 
 
@@ -51,41 +50,41 @@ type alias Context msg =
   }
 
 
-view : Context msg -> Connection -> Html msg
-view context connection =
-  case connection of
-    Extended.Basic details ->
-      public context details
+view : Context msg -> TopicOpinion -> Html msg
+view context topicOpinion =
+  case topicOpinion of
+    Unconnected opinion ->
+      public context opinion
 
-    Extended.Complex details link ->
-      connected context details link
+    Connected opinion link ->
+      connected context opinion link
 
 
-public : Context msg -> Details -> Html msg
-public context details =
+public : Context msg -> Opinion -> Html msg
+public context opinion =
   Html.div
     [ class "connection disjoint cf" ]
     <|
       [ Html.div
         [ class "connection-header cf" ]
-        [ basicHeader context details ]
+        [ basicHeader context opinion ]
       ]
       ++
-        body context details
+        body context opinion
 
 
-basicHeader : Context msg -> Details -> Html msg
-basicHeader context {metrics, opinion, influence} =
+basicHeader : Context msg -> Opinion -> Html msg
+basicHeader context {metrics, record, influence} =
   Html.div
     [ class "basic-header" ]
     [ viewMetrics context metrics
-    , AuthorView.connection opinion.author
+    , AuthorView.connection record.author
     , viewInfluence influence
     ]
 
 
-connected : Context msg -> Details -> Link -> Html msg
-connected context details link =
+connected : Context msg -> Opinion -> Link -> Html msg
+connected context opinion link =
   let
     buildPathElements paths =
       List.map PathView.view paths
@@ -99,24 +98,24 @@ connected context details link =
           [ Html.div
             [ class "paths" ]
             (buildPathElements link.userLink)
-          , basicHeader context details
+          , basicHeader context opinion
           ]
         ]
         ++
-          body context details
+          body context opinion
 
 
-body : Context msg -> Details -> List (Html msg)
-body context {opinion} =
+body : Context msg -> Opinion -> List (Html msg)
+body context {record} =
   case context.isExpanded of
     True ->
-      [ OpinionView.text True opinion
-      , lastUpdated opinion.created
+      [ OpinionView.text True record
+      , lastUpdated record.created
       , Html.App.map context.showAll showAll
       ]
 
     False ->
-      [ OpinionView.text False opinion ]
+      [ OpinionView.text False record ]
       ++ [ Html.App.map context.readMore readMoreButton ]
 
 

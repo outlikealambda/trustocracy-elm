@@ -1,5 +1,5 @@
 module Model.Connection.Connection exposing
-  ( Connection
+  ( TopicOpinion(..)
   , connectedDecoder
   , unconnectedDecoder
   , toDict
@@ -15,11 +15,9 @@ module Model.Connection.Connection exposing
   )
 
 
-import Common.Extended as Extended exposing (Extended)
 import Common.Remote as Remote exposing (Remote)
 
 
-import Model.Connection.Details exposing (Details)
 import Model.Connection.Link as Link exposing (Link, UserLink)
 import Model.Connection.Metrics exposing (Metrics)
 import Model.Opinion.Opinion as Opinion exposing (Opinion)
@@ -34,40 +32,32 @@ type alias Qid = Int
 type alias Tid = Int
 
 
-type alias Connection = Extended Details Link
+type TopicOpinion
+  = Connected Opinion Link
+  | Unconnected Opinion
 
 
-connectedDecoder : Decode.Decoder Connection
+connectedDecoder : Decode.Decoder TopicOpinion
 connectedDecoder =
   Decode.object2 connectedFromApi
     ("paths" := Decode.list Path.decoder)
     ("opinion" := Opinion.decoder)
 
 
-unconnectedDecoder : Decode.Decoder Connection
+unconnectedDecoder : Decode.Decoder TopicOpinion
 unconnectedDecoder =
-  Decode.object1 (Extended.Basic << detailsFromApi) Opinion.decoder
+  Decode.map Unconnected Opinion.decoder
 
 
-connectedFromApi : UserLink -> Opinion -> Connection
+connectedFromApi : UserLink -> Opinion -> TopicOpinion
 connectedFromApi paths opinion =
-  Extended.Complex
-    (detailsFromApi opinion)
-    (linkFromApi paths)
+  Connected opinion (linkFromApi paths)
 
 
 linkFromApi : UserLink -> Link
 linkFromApi userLink =
   { userLink = sortUserLink userLink
   , score = minScore 0 userLink
-  }
-
-
-detailsFromApi : Opinion -> Details
-detailsFromApi opinion =
-  { opinion = opinion
-  , influence = Remote.NoRequest
-  , metrics = Remote.NoRequest
   }
 
 
@@ -80,82 +70,77 @@ minScore default =
   Maybe.withDefault default << List.minimum << List.map .score
 
 
-toDict : List Connection -> Dict Int Connection
-toDict connections =
-  Dict.fromList <| List.map keyPair connections
+toDict : List TopicOpinion -> Dict Int TopicOpinion
+toDict topicOpinions =
+  Dict.fromList <| List.map keyPair topicOpinions
 
 
-keyPair : Connection -> (Int, Connection)
+keyPair : TopicOpinion -> (Int, TopicOpinion)
 keyPair c =
   (key c, c)
 
 
-key : Connection -> Int
-key = .id << opinion
+key : TopicOpinion -> Int
+key = .id << .record << opinion
 
 
-opinion : Connection -> Opinion
-opinion = .opinion << unwrap
-
-
-influence : Connection -> Remote Int
-influence = .influence << unwrap
-
-
-influenceWithDefault : Int -> Connection -> Int
+influenceWithDefault : Int -> TopicOpinion -> Int
 influenceWithDefault default =
-  Remote.withDefault default << influence
+  Opinion.influenceWithDefault default << opinion
 
 
-setInfluence : Remote Int -> Connection -> Connection
-setInfluence influence =
-  mapDetails (\b -> { b | influence = influence})
+influence : TopicOpinion -> Remote Int
+influence = .influence << opinion
 
 
-metrics : Connection -> Remote Metrics
-metrics = .metrics << unwrap
+setInfluence : Remote Int -> TopicOpinion -> TopicOpinion
+setInfluence =
+  mapOpinion << Opinion.setInfluence
 
 
-setMetrics : Remote Metrics -> Connection -> Connection
-setMetrics metrics =
-  mapDetails (\b -> { b | metrics = metrics})
+metrics : TopicOpinion -> Remote Metrics
+metrics = .metrics << opinion
 
 
-userLink : Connection -> Maybe UserLink
-userLink connection =
-  case connection of
-    Extended.Basic _ ->
+setMetrics : Remote Metrics -> TopicOpinion -> TopicOpinion
+setMetrics =
+  mapOpinion << Opinion.setMetrics
+
+
+userLink : TopicOpinion -> Maybe UserLink
+userLink topicOpinion =
+  case topicOpinion of
+    Unconnected _ ->
       Nothing
 
-    Extended.Complex _ link ->
+    Connected _ link ->
       link |> .userLink |> Just
 
 -- lower is better
-score : Connection -> Int
+score : TopicOpinion -> Int
 score =
   Maybe.withDefault 1000 << Maybe.map Link.score << userLink
 
 
+opinion : TopicOpinion -> Opinion
+opinion topicOpinion =
+  case topicOpinion of
+    Unconnected opinion ->
+      opinion
 
-unwrap : Connection -> Details
-unwrap connection =
-  case connection of
-    Extended.Basic details ->
-      details
-
-    Extended.Complex details _ ->
-      details
-
-
-mapDetails : (Details -> Details) -> Connection -> Connection
-mapDetails detailsFn connection =
-  case connection of
-    Extended.Basic details ->
-      Extended.Basic (detailsFn details)
-
-    Extended.Complex details link ->
-      Extended.Complex (detailsFn details) link
+    Connected opinion _ ->
+      opinion
 
 
-countLinked : List Connection -> Int
+mapOpinion : (Opinion -> Opinion) -> TopicOpinion -> TopicOpinion
+mapOpinion opinionFn topicOpinion =
+  case topicOpinion of
+    Unconnected opinion ->
+      Unconnected (opinionFn opinion)
+
+    Connected opinion link ->
+      Connected (opinionFn opinion) link
+
+
+countLinked : List TopicOpinion -> Int
 countLinked = List.length << List.filterMap userLink

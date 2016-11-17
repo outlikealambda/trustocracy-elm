@@ -9,7 +9,7 @@ module Model.Explorer exposing
   )
 
 
-import Model.Connection.Connection as Connection exposing (Connection)
+import Model.Connection.Connection as Connection exposing (TopicOpinion)
 import Model.Question.Question exposing (Question)
 import Model.Question.Assessor as Assessor exposing (Assessor)
 
@@ -18,7 +18,7 @@ import Dict exposing (Dict)
 
 
 type alias Explorer =
-  { connections : Dict OpinionId Connection
+  { connections : Dict OpinionId TopicOpinion
   , zoom : Zoom
   , questions : List Question
   , assessor : Assessor
@@ -76,7 +76,7 @@ classifySort sort =
       "descending"
 
 
-sortConnections : Explorer -> List Connection
+sortConnections : Explorer -> List TopicOpinion
 sortConnections { connections, sort } =
   let
     sorter =

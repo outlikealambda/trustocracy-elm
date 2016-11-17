@@ -11,7 +11,7 @@ module Update.Explorer exposing
 
 
 import Common.API as API
-import Model.Connection.Connection as Connection exposing (Connection)
+import Model.Connection.Connection as Connection exposing (TopicOpinion)
 import Model.Explorer as Explorer exposing (Explorer)
 import Model.Question.Assessor as Assessor exposing (Assessor)
 import Model.Question.Question exposing (Question)
@@ -29,7 +29,7 @@ import Dict exposing (Dict)
 
 type alias Tid = Int
 type alias Oid = Int
-type alias Connections = Dict Oid Connection
+type alias Connections = Dict Oid TopicOpinion
 
 
 type Msg
@@ -37,7 +37,7 @@ type Msg
   | Blur ()
   | DelegateToConnection Oid ConnectionUpdate.Msg
   | DelegateToAssessor Oid AssessorUpdate.Msg
-  | FetchedConnections (List Connection)
+  | FetchedConnections (List TopicOpinion)
   | FetchedQuestions (List Question)
   | NextSort
   | Error String
@@ -186,6 +186,6 @@ remapConnectionMsg : Int -> (c, Cmd ConnectionUpdate.Msg) -> (c, Cmd Msg)
 remapConnectionMsg = CmdUtils.mapCmdPair << DelegateToConnection
 
 
-remapPostFetchMessage : (Connection, Cmd ConnectionUpdate.Msg) -> (Connection, Cmd Msg)
+remapPostFetchMessage : (TopicOpinion, Cmd ConnectionUpdate.Msg) -> (TopicOpinion, Cmd Msg)
 remapPostFetchMessage pair =
   remapConnectionMsg (Connection.key (fst pair)) pair
