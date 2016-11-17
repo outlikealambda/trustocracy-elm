@@ -30,49 +30,49 @@ type alias Context =
 
 
 update : Context -> Msg -> TopicOpinion -> (TopicOpinion, Cmd Msg)
-update context msg connection =
+update context msg topicOpinion =
   case msg of
 
     FetchedInfluence result ->
       case result of
         Ok influence ->
-          TopicOpinion.setInfluence (Retrieved influence) connection ! []
+          TopicOpinion.setInfluence (Retrieved influence) topicOpinion ! []
 
         Err errorMsg ->
           let
             e = Debug.log "error fetching influence" errorMsg
 
           in
-            TopicOpinion.setInfluence NoRequest connection ! []
+            TopicOpinion.setInfluence NoRequest topicOpinion ! []
 
     FetchedMetrics result ->
       case result of
         Ok metrics ->
-          TopicOpinion.setMetrics (Retrieved metrics) connection ! []
+          TopicOpinion.setMetrics (Retrieved metrics) topicOpinion ! []
 
         Err errorMsg ->
           let
             e = Debug.log "error fetching metrics" errorMsg
 
           in
-            TopicOpinion.setMetrics NoRequest connection ! []
+            TopicOpinion.setMetrics NoRequest topicOpinion ! []
 
 
 secondaryFetch : TopicOpinion -> (TopicOpinion, Cmd Msg)
-secondaryFetch connection =
+secondaryFetch topicOpinion =
   let
     opinionId =
-      TopicOpinion.key connection
+      TopicOpinion.key topicOpinion
 
     (influence, influenceCmd) =
-      fetchInfluence opinionId (TopicOpinion.influence connection)
+      fetchInfluence opinionId (TopicOpinion.influence topicOpinion)
 
     (metrics, metricsCmd) =
       fetchMetrics opinionId
 
 
   in
-    TopicOpinion.setInfluence influence connection
+    TopicOpinion.setInfluence influence topicOpinion
     ! [ influenceCmd, metricsCmd ]
 
 
