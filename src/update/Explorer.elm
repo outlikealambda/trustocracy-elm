@@ -29,7 +29,7 @@ import Dict exposing (Dict)
 
 type alias Tid = Int
 type alias Oid = Int
-type alias Connections = Dict Oid TopicOpinion
+type alias TopicOpinions = Dict Oid TopicOpinion
 
 
 type Msg
@@ -132,12 +132,12 @@ update context message explorer =
 
     FetchedConnections fetched ->
       let
-        (connections, cmds) =
+        (topicOpinions, cmds) =
           List.map TopicOpinionUpdate.secondaryFetch fetched
             |> List.map remapPostFetchMessage
             |> List.unzip
       in
-        { explorer | connections = TopicOpinion.toDict connections }
+        { explorer | topicOpinions = TopicOpinion.toDict topicOpinions }
         ! cmds
 
     FetchedQuestions questions ->
@@ -172,10 +172,10 @@ delegateConnectionMsg : Context -> Oid -> TopicOpinionUpdate.Msg -> Explorer -> 
 delegateConnectionMsg context cId msg explorer =
   let
     goUpdate (update, updateCmd) =
-      { explorer | connections = Dict.insert cId update explorer.connections }
+      { explorer | topicOpinions = Dict.insert cId update explorer.topicOpinions }
       ! [ updateCmd ]
   in
-    Dict.get cId explorer.connections
+    Dict.get cId explorer.topicOpinions
     |> Maybe.map (TopicOpinionUpdate.update context msg)
     |> Maybe.map (remapConnectionMsg cId)
     |> Maybe.map goUpdate

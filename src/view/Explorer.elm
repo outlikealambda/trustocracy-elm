@@ -34,7 +34,7 @@ view explorer =
 
 
 focused : Int -> Explorer -> Html Update.Msg
-focused oid {connections, questions, assessor} =
+focused oid {topicOpinions, questions, assessor} =
   let
     context =
       buildContext True questions oid
@@ -43,14 +43,14 @@ focused oid {connections, questions, assessor} =
       AssessorView.questions questions assessor
       |> Html.App.map (Update.DelegateToAssessor oid)
 
-    combineViews connectionView =
+    combineViews topicOpinionView =
       Html.div
         [ class "explorer focused" ]
-        [ connectionView
+        [ topicOpinionView
         , assessorView
         ]
   in
-    Dict.get oid connections
+    Dict.get oid topicOpinions
     |> Maybe.map (TopicOpinionView.view context)
     |> Maybe.map combineViews
     |> Maybe.withDefault (Html.div [] [])
@@ -62,12 +62,12 @@ blurred explorer =
     contextBuilder =
       buildContext False explorer.questions
 
-    viewTopicOpinion connection =
+    viewTopicOpinion topicOpinion =
       let
         context =
-          contextBuilder <| TopicOpinion.key connection
+          contextBuilder <| TopicOpinion.key topicOpinion
       in
-        TopicOpinionView.view context connection
+        TopicOpinionView.view context topicOpinion
 
   in
     Html.div
@@ -89,9 +89,9 @@ sortButton {sort} =
 
 
 connectedButton : Explorer -> Html msg
-connectedButton {connections} =
+connectedButton {topicOpinions} =
   String.join " "
-    [ toString <| TopicOpinion.countLinked <| Dict.values connections
+    [ toString <| TopicOpinion.countLinked <| Dict.values topicOpinions
     , "Linked Opinions"
     ]
     |> navButton
@@ -111,9 +111,9 @@ navButton label =
 
 
 buildContext : Bool -> List Question -> Int -> TopicOpinionView.Context Update.Msg
-buildContext isExpanded questions connectionKey =
+buildContext isExpanded questions topicOpinionKey =
   { showAll = Update.Blur
-  , readMore = \_ -> Update.Focus connectionKey
+  , readMore = \_ -> Update.Focus topicOpinionKey
   , questions = questions
   , isExpanded = isExpanded
   }

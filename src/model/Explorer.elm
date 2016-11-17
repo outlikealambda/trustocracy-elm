@@ -18,7 +18,7 @@ import Dict exposing (Dict)
 
 
 type alias Explorer =
-  { connections : Dict OpinionId TopicOpinion
+  { topicOpinions : Dict OpinionId TopicOpinion
   , zoom : Zoom
   , questions : List Question
   , assessor : Assessor
@@ -43,7 +43,7 @@ type Sort
 
 empty : Explorer
 empty =
-  { connections = Dict.empty
+  { topicOpinions = Dict.empty
   , zoom = Blurred
   , questions = []
   , assessor = Assessor.empty False
@@ -77,7 +77,7 @@ classifySort sort =
 
 
 sortTopicOpinions : Explorer -> List TopicOpinion
-sortTopicOpinions { connections, sort } =
+sortTopicOpinions { topicOpinions, sort } =
   let
     sorter =
       case sort of
@@ -89,7 +89,7 @@ sortTopicOpinions { connections, sort } =
           List.sortBy <| invert << TopicOpinion.influenceWithDefault 0
 
   in
-    sorter <| Dict.values connections
+    sorter <| Dict.values topicOpinions
 
 
 invert : Int -> Int
