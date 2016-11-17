@@ -3,7 +3,7 @@ module View.Question.Metrics exposing
   )
 
 
-import Model.TopicOpinion.Metrics exposing (Metrics)
+import Model.Opinion.Metrics exposing (Metrics)
 import Model.Question.Question as Question exposing (Question)
 
 

@@ -8,8 +8,8 @@ module Model.Opinion.Opinion exposing
 
 
 import Common.Remote as Remote exposing (Remote)
-import Model.TopicOpinion.Metrics exposing (Metrics)
 import Model.Extend.Identified as Identified exposing (Identified)
+import Model.Opinion.Metrics exposing (Metrics)
 import Model.Opinion.Record exposing (Record)
 import Model.Qualifications as Qualifications exposing (Qualifications)
 import Model.Trustee as Trustee exposing (Trustee)

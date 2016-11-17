@@ -19,7 +19,7 @@ import Common.Remote as Remote exposing (Remote)
 
 
 import Model.TopicOpinion.Link as Link exposing (Link, UserLink)
-import Model.TopicOpinion.Metrics exposing (Metrics)
+import Model.Opinion.Metrics exposing (Metrics)
 import Model.Opinion.Opinion as Opinion exposing (Opinion)
 import Model.Path as Path
 
