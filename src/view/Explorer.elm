@@ -5,7 +5,7 @@ module View.Explorer exposing
   )
 
 
-import Model.TopicOpinion.Connection as Connection
+import Model.TopicOpinion.TopicOpinion as TopicOpinion
 import Model.Explorer as Explorer exposing (Explorer)
 import Model.Question.Question exposing (Question)
 
@@ -65,7 +65,7 @@ blurred explorer =
     viewConnection connection =
       let
         context =
-          contextBuilder <| Connection.key connection
+          contextBuilder <| TopicOpinion.key connection
       in
         ConnectionView.view context connection
 
@@ -91,7 +91,7 @@ sortButton {sort} =
 connectedButton : Explorer -> Html msg
 connectedButton {connections} =
   String.join " "
-    [ toString <| Connection.countLinked <| Dict.values connections
+    [ toString <| TopicOpinion.countLinked <| Dict.values connections
     , "Linked Opinions"
     ]
     |> navButton

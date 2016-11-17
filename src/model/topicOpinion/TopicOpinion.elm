@@ -1,4 +1,4 @@
-module Model.TopicOpinion.Connection exposing
+module Model.TopicOpinion.TopicOpinion exposing
   ( TopicOpinion(..)
   , connectedDecoder
   , unconnectedDecoder

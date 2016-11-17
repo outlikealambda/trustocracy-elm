@@ -11,7 +11,7 @@ module Update.Explorer exposing
 
 
 import Common.API as API
-import Model.TopicOpinion.Connection as Connection exposing (TopicOpinion)
+import Model.TopicOpinion.TopicOpinion as TopicOpinion exposing (TopicOpinion)
 import Model.Explorer as Explorer exposing (Explorer)
 import Model.Question.Assessor as Assessor exposing (Assessor)
 import Model.Question.Question exposing (Question)
@@ -137,7 +137,7 @@ update context message explorer =
             |> List.map remapPostFetchMessage
             |> List.unzip
       in
-        { explorer | connections = Connection.toDict connections }
+        { explorer | connections = TopicOpinion.toDict connections }
         ! cmds
 
     FetchedQuestions questions ->
@@ -188,4 +188,4 @@ remapConnectionMsg = CmdUtils.mapCmdPair << DelegateToConnection
 
 remapPostFetchMessage : (TopicOpinion, Cmd ConnectionUpdate.Msg) -> (TopicOpinion, Cmd Msg)
 remapPostFetchMessage pair =
-  remapConnectionMsg (Connection.key (fst pair)) pair
+  remapConnectionMsg (TopicOpinion.key (fst pair)) pair

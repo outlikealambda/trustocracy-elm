@@ -9,7 +9,7 @@ module Model.Explorer exposing
   )
 
 
-import Model.TopicOpinion.Connection as Connection exposing (TopicOpinion)
+import Model.TopicOpinion.TopicOpinion as TopicOpinion exposing (TopicOpinion)
 import Model.Question.Question exposing (Question)
 import Model.Question.Assessor as Assessor exposing (Assessor)
 
@@ -82,11 +82,11 @@ sortConnections { connections, sort } =
     sorter =
       case sort of
         Score ->
-          List.sortBy <| Connection.score
+          List.sortBy <| TopicOpinion.score
         Ascending ->
-          List.sortBy <| Connection.influenceWithDefault 0
+          List.sortBy <| TopicOpinion.influenceWithDefault 0
         Descending ->
-          List.sortBy <| invert << Connection.influenceWithDefault 0
+          List.sortBy <| invert << TopicOpinion.influenceWithDefault 0
 
   in
     sorter <| Dict.values connections

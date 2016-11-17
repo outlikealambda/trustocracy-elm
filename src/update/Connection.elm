@@ -13,7 +13,7 @@ import Common.Remote as Remote exposing
     )
   )
 
-import Model.TopicOpinion.Connection as Connection exposing (TopicOpinion)
+import Model.TopicOpinion.TopicOpinion as TopicOpinion exposing (TopicOpinion)
 import Model.Opinion.Metrics exposing (Metrics)
 
 
@@ -36,43 +36,43 @@ update context msg connection =
     FetchedInfluence result ->
       case result of
         Ok influence ->
-          Connection.setInfluence (Retrieved influence) connection ! []
+          TopicOpinion.setInfluence (Retrieved influence) connection ! []
 
         Err errorMsg ->
           let
             e = Debug.log "error fetching influence" errorMsg
 
           in
-            Connection.setInfluence NoRequest connection ! []
+            TopicOpinion.setInfluence NoRequest connection ! []
 
     FetchedMetrics result ->
       case result of
         Ok metrics ->
-          Connection.setMetrics (Retrieved metrics) connection ! []
+          TopicOpinion.setMetrics (Retrieved metrics) connection ! []
 
         Err errorMsg ->
           let
             e = Debug.log "error fetching metrics" errorMsg
 
           in
-            Connection.setMetrics NoRequest connection ! []
+            TopicOpinion.setMetrics NoRequest connection ! []
 
 
 secondaryFetch : TopicOpinion -> (TopicOpinion, Cmd Msg)
 secondaryFetch connection =
   let
     opinionId =
-      Connection.key connection
+      TopicOpinion.key connection
 
     (influence, influenceCmd) =
-      fetchInfluence opinionId (Connection.influence connection)
+      fetchInfluence opinionId (TopicOpinion.influence connection)
 
     (metrics, metricsCmd) =
       fetchMetrics opinionId
 
 
   in
-    Connection.setInfluence influence connection
+    TopicOpinion.setInfluence influence connection
     ! [ influenceCmd, metricsCmd ]
 
 
