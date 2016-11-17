@@ -18,7 +18,7 @@ import Model.Question.Question exposing (Question)
 
 
 import Update.Question.Assessor as AssessorUpdate
-import Update.Connection as ConnectionUpdate
+import Update.TopicOpinion as TopicOpinionUpdate
 
 
 import Utils.Cmd as CmdUtils
@@ -35,7 +35,7 @@ type alias Connections = Dict Oid TopicOpinion
 type Msg
   = Focus Oid
   | Blur ()
-  | DelegateToConnection Oid ConnectionUpdate.Msg
+  | DelegateToConnection Oid TopicOpinionUpdate.Msg
   | DelegateToAssessor Oid AssessorUpdate.Msg
   | FetchedConnections (List TopicOpinion)
   | FetchedQuestions (List Question)
@@ -133,7 +133,7 @@ update context message explorer =
     FetchedConnections fetched ->
       let
         (connections, cmds) =
-          List.map ConnectionUpdate.secondaryFetch fetched
+          List.map TopicOpinionUpdate.secondaryFetch fetched
             |> List.map remapPostFetchMessage
             |> List.unzip
       in
@@ -168,7 +168,7 @@ update context message explorer =
         explorer ! []
 
 
-delegateConnectionMsg : Context -> Oid -> ConnectionUpdate.Msg -> Explorer -> (Explorer, Cmd Msg)
+delegateConnectionMsg : Context -> Oid -> TopicOpinionUpdate.Msg -> Explorer -> (Explorer, Cmd Msg)
 delegateConnectionMsg context cId msg explorer =
   let
     goUpdate (update, updateCmd) =
@@ -176,16 +176,16 @@ delegateConnectionMsg context cId msg explorer =
       ! [ updateCmd ]
   in
     Dict.get cId explorer.connections
-    |> Maybe.map (ConnectionUpdate.update context msg)
+    |> Maybe.map (TopicOpinionUpdate.update context msg)
     |> Maybe.map (remapConnectionMsg cId)
     |> Maybe.map goUpdate
     |> Maybe.withDefault (explorer, Cmd.none)
 
 
-remapConnectionMsg : Int -> (c, Cmd ConnectionUpdate.Msg) -> (c, Cmd Msg)
+remapConnectionMsg : Int -> (c, Cmd TopicOpinionUpdate.Msg) -> (c, Cmd Msg)
 remapConnectionMsg = CmdUtils.mapCmdPair << DelegateToConnection
 
 
-remapPostFetchMessage : (TopicOpinion, Cmd ConnectionUpdate.Msg) -> (TopicOpinion, Cmd Msg)
+remapPostFetchMessage : (TopicOpinion, Cmd TopicOpinionUpdate.Msg) -> (TopicOpinion, Cmd Msg)
 remapPostFetchMessage pair =
   remapConnectionMsg (TopicOpinion.key (fst pair)) pair

@@ -1,4 +1,4 @@
-module Update.Connection exposing
+module Update.TopicOpinion exposing
   ( Msg
   , update
   , secondaryFetch
