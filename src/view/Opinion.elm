@@ -4,7 +4,7 @@ module View.Opinion exposing
   )
 
 
-import Model.Opinion.Record as Opinion
+import Model.Opinion.Record exposing (Record)
 import Model.Qualifications as Qualifications
 import View.Author as AuthorView
 import View.Qualifications as QualificationsView
@@ -15,7 +15,7 @@ import Html.Attributes exposing (class)
 import Markdown
 
 
-kitchenSink : Bool -> Opinion.Record a -> Html msg
+kitchenSink : Bool -> Record a -> Html msg
 kitchenSink expanded {qualifications, text, preview, author} =
   let
     nonEmpty =
@@ -43,7 +43,7 @@ kitchenSink expanded {qualifications, text, preview, author} =
         ]
 
 
-text : Bool -> Opinion.Record a -> Html msg
+text : Bool -> Record a -> Html msg
 text expanded {text, snippet} =
   case expanded of
     True ->

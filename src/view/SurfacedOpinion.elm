@@ -74,11 +74,11 @@ public context opinion =
 
 
 basicHeader : Context msg -> Opinion -> Html msg
-basicHeader context {metrics, record, influence} =
+basicHeader context {metrics, author, influence} =
   Html.div
     [ class "basic-header" ]
     [ viewMetrics context metrics
-    , AuthorView.connected record.author
+    , AuthorView.connected author
     , viewInfluence influence
     ]
 
@@ -106,16 +106,16 @@ connected context opinion link =
 
 
 body : Context msg -> Opinion -> List (Html msg)
-body context {record} =
+body context opinion =
   case context.isExpanded of
     True ->
-      [ OpinionView.text True record
-      , lastUpdated record.created
+      [ OpinionView.text True opinion
+      , lastUpdated opinion.created
       , Html.App.map context.showAll showAll
       ]
 
     False ->
-      [ OpinionView.text False record ]
+      [ OpinionView.text False opinion ]
       ++ [ Html.App.map context.readMore readMoreButton ]
 
 

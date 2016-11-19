@@ -81,7 +81,7 @@ keyPair c =
 
 
 key : SurfacedOpinion -> Int
-key = .id << .record << opinion
+key = .id << opinion
 
 
 influenceWithDefault : Int -> SurfacedOpinion -> Int

@@ -8,9 +8,7 @@ module Model.Opinion.Opinion exposing
 
 
 import Common.Remote as Remote exposing (Remote)
-import Model.Extend.Identified as Identified exposing (Identified)
 import Model.Opinion.Metrics exposing (Metrics)
-import Model.Opinion.Record exposing (Record)
 import Model.Qualifications as Qualifications exposing (Qualifications)
 import Model.Trustee as Trustee exposing (Trustee)
 import Utils.String as StringUtils
@@ -21,11 +19,20 @@ import Json.Decode as Decode exposing ((:=))
 import Time
 
 
-type alias OpinionRecord = Identified (Record {})
-
-
 type alias Opinion =
-  { record : OpinionRecord
+  { id : Int
+  , text : String
+  , author : Trustee
+  , qualifications : Qualifications
+  , created : Date
+
+  -- derived
+  , snippet : String
+  , preview : String
+  , expanded : Bool
+  , fetched : Bool
+
+  -- secondary fetch
   , influence : Remote Int
   , metrics : Remote Metrics
   }
@@ -48,12 +55,7 @@ setMetrics metrics opinion =
 
 decoder : Decode.Decoder Opinion
 decoder =
-  Decode.map fromApi recordDecoder
-
-
-recordDecoder : Decode.Decoder OpinionRecord
-recordDecoder =
-  Decode.object5 recordFromApi
+  Decode.object5 fromApi
     ("id" := Decode.int)
     ("text" := Decode.string)
     ("author" := Trustee.decoder)
@@ -65,16 +67,8 @@ recordDecoder =
     ("created" := Decode.float)
 
 
-fromApi : OpinionRecord -> Opinion
-fromApi record =
-  { record = record
-  , influence = Remote.NoRequest
-  , metrics = Remote.NoRequest
-  }
-
-
-recordFromApi : Int -> String -> Trustee -> Qualifications -> Float -> OpinionRecord
-recordFromApi id text author qualifications created =
+fromApi : Int -> String -> Trustee -> Qualifications -> Float -> Opinion
+fromApi id text author qualifications created =
   { id = id
   , text = text
   , author = author
@@ -84,4 +78,6 @@ recordFromApi id text author qualifications created =
   , snippet = StringUtils.snippetize 300 text
   , preview = StringUtils.snippetize 300 text
   , expanded = False
+  , influence = Remote.NoRequest
+  , metrics = Remote.NoRequest
   }
