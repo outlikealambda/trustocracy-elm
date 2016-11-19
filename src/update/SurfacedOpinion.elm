@@ -1,4 +1,4 @@
-module Update.TopicOpinion exposing
+module Update.SurfacedOpinion exposing
   ( Msg
   , update
   , secondaryFetch
@@ -13,7 +13,7 @@ import Common.Remote as Remote exposing
     )
   )
 
-import Model.TopicOpinion.TopicOpinion as TopicOpinion exposing (TopicOpinion)
+import Model.SurfacedOpinion.SurfacedOpinion as SurfacedOpinion exposing (SurfacedOpinion)
 import Model.Opinion.Metrics exposing (Metrics)
 
 
@@ -29,50 +29,50 @@ type alias Context =
   }
 
 
-update : Context -> Msg -> TopicOpinion -> (TopicOpinion, Cmd Msg)
-update context msg topicOpinion =
+update : Context -> Msg -> SurfacedOpinion -> (SurfacedOpinion, Cmd Msg)
+update context msg surfacedOpinion =
   case msg of
 
     FetchedInfluence result ->
       case result of
         Ok influence ->
-          TopicOpinion.setInfluence (Retrieved influence) topicOpinion ! []
+          SurfacedOpinion.setInfluence (Retrieved influence) surfacedOpinion ! []
 
         Err errorMsg ->
           let
             e = Debug.log "error fetching influence" errorMsg
 
           in
-            TopicOpinion.setInfluence NoRequest topicOpinion ! []
+            SurfacedOpinion.setInfluence NoRequest surfacedOpinion ! []
 
     FetchedMetrics result ->
       case result of
         Ok metrics ->
-          TopicOpinion.setMetrics (Retrieved metrics) topicOpinion ! []
+          SurfacedOpinion.setMetrics (Retrieved metrics) surfacedOpinion ! []
 
         Err errorMsg ->
           let
             e = Debug.log "error fetching metrics" errorMsg
 
           in
-            TopicOpinion.setMetrics NoRequest topicOpinion ! []
+            SurfacedOpinion.setMetrics NoRequest surfacedOpinion ! []
 
 
-secondaryFetch : TopicOpinion -> (TopicOpinion, Cmd Msg)
-secondaryFetch topicOpinion =
+secondaryFetch : SurfacedOpinion -> (SurfacedOpinion, Cmd Msg)
+secondaryFetch surfacedOpinion =
   let
     opinionId =
-      TopicOpinion.key topicOpinion
+      SurfacedOpinion.key surfacedOpinion
 
     (influence, influenceCmd) =
-      fetchInfluence opinionId (TopicOpinion.influence topicOpinion)
+      fetchInfluence opinionId (SurfacedOpinion.influence surfacedOpinion)
 
     (metrics, metricsCmd) =
       fetchMetrics opinionId
 
 
   in
-    TopicOpinion.setInfluence influence topicOpinion
+    SurfacedOpinion.setInfluence influence surfacedOpinion
     ! [ influenceCmd, metricsCmd ]
 
 

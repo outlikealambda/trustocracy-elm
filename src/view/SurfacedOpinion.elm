@@ -1,4 +1,4 @@
-module View.TopicOpinion exposing
+module View.SurfacedOpinion exposing
   ( view
   , Context
   )
@@ -13,8 +13,8 @@ import Common.Remote exposing
   )
 
 
-import Model.TopicOpinion.TopicOpinion exposing (TopicOpinion(..))
-import Model.TopicOpinion.Link exposing (Link)
+import Model.SurfacedOpinion.SurfacedOpinion exposing (SurfacedOpinion(..))
+import Model.SurfacedOpinion.Link exposing (Link)
 import Model.Opinion.Metrics exposing (Metrics)
 import Model.Opinion.Opinion exposing(Opinion)
 import Model.Question.Question as Question exposing (Question)
@@ -50,9 +50,9 @@ type alias Context msg =
   }
 
 
-view : Context msg -> TopicOpinion -> Html msg
-view context topicOpinion =
-  case topicOpinion of
+view : Context msg -> SurfacedOpinion -> Html msg
+view context surfacedOpinion =
+  case surfacedOpinion of
     Unconnected opinion ->
       public context opinion
 

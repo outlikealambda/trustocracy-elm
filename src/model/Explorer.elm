@@ -5,11 +5,11 @@ module Model.Explorer exposing
   , empty
   , rotateSort
   , classifySort
-  , sortTopicOpinions
+  , sortSurfacedOpinions
   )
 
 
-import Model.TopicOpinion.TopicOpinion as TopicOpinion exposing (TopicOpinion)
+import Model.SurfacedOpinion.SurfacedOpinion as SurfacedOpinion exposing (SurfacedOpinion)
 import Model.Question.Question exposing (Question)
 import Model.Question.Assessor as Assessor exposing (Assessor)
 
@@ -18,7 +18,7 @@ import Dict exposing (Dict)
 
 
 type alias Explorer =
-  { topicOpinions : Dict OpinionId TopicOpinion
+  { surfacedOpinions : Dict OpinionId SurfacedOpinion
   , zoom : Zoom
   , questions : List Question
   , assessor : Assessor
@@ -43,7 +43,7 @@ type Sort
 
 empty : Explorer
 empty =
-  { topicOpinions = Dict.empty
+  { surfacedOpinions = Dict.empty
   , zoom = Blurred
   , questions = []
   , assessor = Assessor.empty False
@@ -76,20 +76,20 @@ classifySort sort =
       "descending"
 
 
-sortTopicOpinions : Explorer -> List TopicOpinion
-sortTopicOpinions { topicOpinions, sort } =
+sortSurfacedOpinions : Explorer -> List SurfacedOpinion
+sortSurfacedOpinions { surfacedOpinions, sort } =
   let
     sorter =
       case sort of
         Score ->
-          List.sortBy <| TopicOpinion.score
+          List.sortBy <| SurfacedOpinion.score
         Ascending ->
-          List.sortBy <| TopicOpinion.influenceWithDefault 0
+          List.sortBy <| SurfacedOpinion.influenceWithDefault 0
         Descending ->
-          List.sortBy <| invert << TopicOpinion.influenceWithDefault 0
+          List.sortBy <| invert << SurfacedOpinion.influenceWithDefault 0
 
   in
-    sorter <| Dict.values topicOpinions
+    sorter <| Dict.values surfacedOpinions
 
 
 invert : Int -> Int

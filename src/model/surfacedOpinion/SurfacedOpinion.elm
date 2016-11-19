@@ -1,5 +1,5 @@
-module Model.TopicOpinion.TopicOpinion exposing
-  ( TopicOpinion(..)
+module Model.SurfacedOpinion.SurfacedOpinion exposing
+  ( SurfacedOpinion(..)
   , connectedDecoder
   , unconnectedDecoder
   , toDict
@@ -18,7 +18,7 @@ module Model.TopicOpinion.TopicOpinion exposing
 import Common.Remote as Remote exposing (Remote)
 
 
-import Model.TopicOpinion.Link as Link exposing (Link, UserLink)
+import Model.SurfacedOpinion.Link as Link exposing (Link, UserLink)
 import Model.Opinion.Metrics exposing (Metrics)
 import Model.Opinion.Opinion as Opinion exposing (Opinion)
 import Model.Path as Path
@@ -32,24 +32,24 @@ type alias Qid = Int
 type alias Tid = Int
 
 
-type TopicOpinion
+type SurfacedOpinion
   = Connected Opinion Link
   | Unconnected Opinion
 
 
-connectedDecoder : Decode.Decoder TopicOpinion
+connectedDecoder : Decode.Decoder SurfacedOpinion
 connectedDecoder =
   Decode.object2 connectedFromApi
     ("paths" := Decode.list Path.decoder)
     ("opinion" := Opinion.decoder)
 
 
-unconnectedDecoder : Decode.Decoder TopicOpinion
+unconnectedDecoder : Decode.Decoder SurfacedOpinion
 unconnectedDecoder =
   Decode.map Unconnected Opinion.decoder
 
 
-connectedFromApi : UserLink -> Opinion -> TopicOpinion
+connectedFromApi : UserLink -> Opinion -> SurfacedOpinion
 connectedFromApi paths opinion =
   Connected opinion (linkFromApi paths)
 
@@ -70,46 +70,46 @@ minScore default =
   Maybe.withDefault default << List.minimum << List.map .score
 
 
-toDict : List TopicOpinion -> Dict Int TopicOpinion
-toDict topicOpinions =
-  Dict.fromList <| List.map keyPair topicOpinions
+toDict : List SurfacedOpinion -> Dict Int SurfacedOpinion
+toDict surfacedOpinions =
+  Dict.fromList <| List.map keyPair surfacedOpinions
 
 
-keyPair : TopicOpinion -> (Int, TopicOpinion)
+keyPair : SurfacedOpinion -> (Int, SurfacedOpinion)
 keyPair c =
   (key c, c)
 
 
-key : TopicOpinion -> Int
+key : SurfacedOpinion -> Int
 key = .id << .record << opinion
 
 
-influenceWithDefault : Int -> TopicOpinion -> Int
+influenceWithDefault : Int -> SurfacedOpinion -> Int
 influenceWithDefault default =
   Opinion.influenceWithDefault default << opinion
 
 
-influence : TopicOpinion -> Remote Int
+influence : SurfacedOpinion -> Remote Int
 influence = .influence << opinion
 
 
-setInfluence : Remote Int -> TopicOpinion -> TopicOpinion
+setInfluence : Remote Int -> SurfacedOpinion -> SurfacedOpinion
 setInfluence =
   mapOpinion << Opinion.setInfluence
 
 
-metrics : TopicOpinion -> Remote Metrics
+metrics : SurfacedOpinion -> Remote Metrics
 metrics = .metrics << opinion
 
 
-setMetrics : Remote Metrics -> TopicOpinion -> TopicOpinion
+setMetrics : Remote Metrics -> SurfacedOpinion -> SurfacedOpinion
 setMetrics =
   mapOpinion << Opinion.setMetrics
 
 
-userLink : TopicOpinion -> Maybe UserLink
-userLink topicOpinion =
-  case topicOpinion of
+userLink : SurfacedOpinion -> Maybe UserLink
+userLink surfacedOpinion =
+  case surfacedOpinion of
     Unconnected _ ->
       Nothing
 
@@ -117,14 +117,14 @@ userLink topicOpinion =
       link |> .userLink |> Just
 
 -- lower is better
-score : TopicOpinion -> Int
+score : SurfacedOpinion -> Int
 score =
   Maybe.withDefault 1000 << Maybe.map Link.score << userLink
 
 
-opinion : TopicOpinion -> Opinion
-opinion topicOpinion =
-  case topicOpinion of
+opinion : SurfacedOpinion -> Opinion
+opinion surfacedOpinion =
+  case surfacedOpinion of
     Unconnected opinion ->
       opinion
 
@@ -132,9 +132,9 @@ opinion topicOpinion =
       opinion
 
 
-mapOpinion : (Opinion -> Opinion) -> TopicOpinion -> TopicOpinion
-mapOpinion opinionFn topicOpinion =
-  case topicOpinion of
+mapOpinion : (Opinion -> Opinion) -> SurfacedOpinion -> SurfacedOpinion
+mapOpinion opinionFn surfacedOpinion =
+  case surfacedOpinion of
     Unconnected opinion ->
       Unconnected (opinionFn opinion)
 
@@ -142,5 +142,5 @@ mapOpinion opinionFn topicOpinion =
       Connected (opinionFn opinion) link
 
 
-countLinked : List TopicOpinion -> Int
+countLinked : List SurfacedOpinion -> Int
 countLinked = List.length << List.filterMap userLink

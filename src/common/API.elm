@@ -40,7 +40,7 @@ import Task exposing (Task)
 
 import Auth.Facebook as Facebook
 import Auth.Google as Google
-import Model.TopicOpinion.TopicOpinion as TopicOpinion exposing (TopicOpinion)
+import Model.SurfacedOpinion.SurfacedOpinion as SurfacedOpinion exposing (SurfacedOpinion)
 import Model.Opinion.Composition as Composition exposing (Composition)
 import Model.Opinion.Opinion as Opinion exposing (Opinion)
 import Model.Opinion.Metrics as Metrics exposing (Metrics)
@@ -175,31 +175,31 @@ transmitGoogleAuth url gaResponse =
 --------------
 
 
-fetchConnectedV2 : (String -> a) -> (List TopicOpinion -> a) -> TopicId -> Cmd a
+fetchConnectedV2 : (String -> a) -> (List SurfacedOpinion -> a) -> TopicId -> Cmd a
 fetchConnectedV2 onError onSuccess tid =
   fetch
-    (Decode.list TopicOpinion.connectedDecoder)
+    (Decode.list SurfacedOpinion.connectedDecoder)
     onError
     onSuccess
     (secureEndpoint ["topic/", toString tid, "/connected/v2"])
 
 
-fetchConnectedV3 : (String -> a) -> (List TopicOpinion -> a) -> TopicId -> Cmd a
+fetchConnectedV3 : (String -> a) -> (List SurfacedOpinion -> a) -> TopicId -> Cmd a
 fetchConnectedV3 onError onSuccess tid =
   fetch
-    (Decode.list TopicOpinion.connectedDecoder)
+    (Decode.list SurfacedOpinion.connectedDecoder)
     onError
     onSuccess
     (secureEndpoint ["topic/", toString tid, "/connected/v3"])
 
 
-fetchConnectedV4 : (String -> a) -> (List TopicOpinion -> a) -> TopicId -> Cmd a
+fetchConnectedV4 : (String -> a) -> (List SurfacedOpinion -> a) -> TopicId -> Cmd a
 fetchConnectedV4 onError onSuccess tid =
   fetch
     ( Decode.list
       ( Decode.oneOf
-        [ TopicOpinion.connectedDecoder
-        , TopicOpinion.unconnectedDecoder
+        [ SurfacedOpinion.connectedDecoder
+        , SurfacedOpinion.unconnectedDecoder
         ]
       )
     )
@@ -216,10 +216,10 @@ fetch decoder onError onSuccess apiPath =
     |> Task.perform onError onSuccess
 
 
-fetchBrowsable : (String -> a) -> (List TopicOpinion -> a) -> TopicId -> Cmd a
+fetchBrowsable : (String -> a) -> (List SurfacedOpinion -> a) -> TopicId -> Cmd a
 fetchBrowsable onError onSuccess topicId =
   openEndpoint ["topic/", toString topicId, "/opinion"]
-    |> Http.get (Decode.list TopicOpinion.unconnectedDecoder)
+    |> Http.get (Decode.list SurfacedOpinion.unconnectedDecoder)
     |> Task.mapError httpErrorToString
     |> Task.perform onError onSuccess
 

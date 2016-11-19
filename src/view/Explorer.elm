@@ -5,13 +5,13 @@ module View.Explorer exposing
   )
 
 
-import Model.TopicOpinion.TopicOpinion as TopicOpinion
+import Model.SurfacedOpinion.SurfacedOpinion as SurfacedOpinion
 import Model.Explorer as Explorer exposing (Explorer)
 import Model.Question.Question exposing (Question)
 
 import Update.Explorer as Update
 
-import View.TopicOpinion as TopicOpinionView
+import View.SurfacedOpinion as SurfacedOpinionView
 import View.Question.Assessor as AssessorView
 
 
@@ -34,7 +34,7 @@ view explorer =
 
 
 focused : Int -> Explorer -> Html Update.Msg
-focused oid {topicOpinions, questions, assessor} =
+focused oid {surfacedOpinions, questions, assessor} =
   let
     context =
       buildContext True questions oid
@@ -43,15 +43,15 @@ focused oid {topicOpinions, questions, assessor} =
       AssessorView.questions questions assessor
       |> Html.App.map (Update.DelegateToAssessor oid)
 
-    combineViews topicOpinionView =
+    combineViews surfacedOpinionView =
       Html.div
         [ class "explorer focused" ]
-        [ topicOpinionView
+        [ surfacedOpinionView
         , assessorView
         ]
   in
-    Dict.get oid topicOpinions
-    |> Maybe.map (TopicOpinionView.view context)
+    Dict.get oid surfacedOpinions
+    |> Maybe.map (SurfacedOpinionView.view context)
     |> Maybe.map combineViews
     |> Maybe.withDefault (Html.div [] [])
 
@@ -62,19 +62,19 @@ blurred explorer =
     contextBuilder =
       buildContext False explorer.questions
 
-    viewTopicOpinion topicOpinion =
+    viewSurfacedOpinion surfacedOpinion =
       let
         context =
-          contextBuilder <| TopicOpinion.key topicOpinion
+          contextBuilder <| SurfacedOpinion.key surfacedOpinion
       in
-        TopicOpinionView.view context topicOpinion
+        SurfacedOpinionView.view context surfacedOpinion
 
   in
     Html.div
       [ class "explorer blurred" ]
 
-      ( Explorer.sortTopicOpinions explorer
-        |> List.map viewTopicOpinion
+      ( Explorer.sortSurfacedOpinions explorer
+        |> List.map viewSurfacedOpinion
         |> List.intersperse (Html.hr [] [])
         |> (::) (sortButton explorer)
       )
@@ -89,9 +89,9 @@ sortButton {sort} =
 
 
 connectedButton : Explorer -> Html msg
-connectedButton {topicOpinions} =
+connectedButton {surfacedOpinions} =
   String.join " "
-    [ toString <| TopicOpinion.countLinked <| Dict.values topicOpinions
+    [ toString <| SurfacedOpinion.countLinked <| Dict.values surfacedOpinions
     , "Linked Opinions"
     ]
     |> navButton
@@ -110,10 +110,10 @@ navButton label =
     [ Html.text label ]
 
 
-buildContext : Bool -> List Question -> Int -> TopicOpinionView.Context Update.Msg
-buildContext isExpanded questions topicOpinionKey =
+buildContext : Bool -> List Question -> Int -> SurfacedOpinionView.Context Update.Msg
+buildContext isExpanded questions surfacedOpinionKey =
   { showAll = Update.Blur
-  , readMore = \_ -> Update.Focus topicOpinionKey
+  , readMore = \_ -> Update.Focus surfacedOpinionKey
   , questions = questions
   , isExpanded = isExpanded
   }

@@ -11,14 +11,14 @@ module Update.Explorer exposing
 
 
 import Common.API as API
-import Model.TopicOpinion.TopicOpinion as TopicOpinion exposing (TopicOpinion)
+import Model.SurfacedOpinion.SurfacedOpinion as SurfacedOpinion exposing (SurfacedOpinion)
 import Model.Explorer as Explorer exposing (Explorer)
 import Model.Question.Assessor as Assessor exposing (Assessor)
 import Model.Question.Question exposing (Question)
 
 
 import Update.Question.Assessor as AssessorUpdate
-import Update.TopicOpinion as TopicOpinionUpdate
+import Update.SurfacedOpinion as SurfacedOpinionUpdate
 
 
 import Utils.Cmd as CmdUtils
@@ -29,15 +29,15 @@ import Dict exposing (Dict)
 
 type alias Tid = Int
 type alias Oid = Int
-type alias TopicOpinions = Dict Oid TopicOpinion
+type alias SurfacedOpinions = Dict Oid SurfacedOpinion
 
 
 type Msg
   = Focus Oid
   | Blur ()
-  | DelegateToTopicOpinion Oid TopicOpinionUpdate.Msg
+  | DelegateToSurfacedOpinion Oid SurfacedOpinionUpdate.Msg
   | DelegateToAssessor Oid AssessorUpdate.Msg
-  | FetchedTopicOpinions (List TopicOpinion)
+  | FetchedSurfacedOpinions (List SurfacedOpinion)
   | FetchedQuestions (List Question)
   | NextSort
   | Error String
@@ -50,7 +50,7 @@ init isActiveSession tid maybeOid =
       Explorer.empty
 
     initMsgs =
-      [ fetchTopicOpinions isActiveSession tid
+      [ fetchSurfacedOpinions isActiveSession tid
       , fetchQuestions tid
       ]
 
@@ -81,13 +81,13 @@ init isActiveSession tid maybeOid =
     ! (assessorMsg :: initMsgs)
 
 
-fetchTopicOpinions : Bool -> Tid -> Cmd Msg
-fetchTopicOpinions isActiveSession =
+fetchSurfacedOpinions : Bool -> Tid -> Cmd Msg
+fetchSurfacedOpinions isActiveSession =
   case isActiveSession of
     True ->
-      API.fetchConnectedV4 Error FetchedTopicOpinions
+      API.fetchConnectedV4 Error FetchedSurfacedOpinions
     False ->
-      API.fetchBrowsable Error FetchedTopicOpinions
+      API.fetchBrowsable Error FetchedSurfacedOpinions
 
 
 fetchQuestions : Tid -> Cmd Msg
@@ -127,17 +127,17 @@ update context message explorer =
       }
       ! []
 
-    DelegateToTopicOpinion cId msg ->
-      delegateTopicOpinionMsg context cId msg explorer
+    DelegateToSurfacedOpinion cId msg ->
+      delegateSurfacedOpinionMsg context cId msg explorer
 
-    FetchedTopicOpinions fetched ->
+    FetchedSurfacedOpinions fetched ->
       let
-        (topicOpinions, cmds) =
-          List.map TopicOpinionUpdate.secondaryFetch fetched
+        (surfacedOpinions, cmds) =
+          List.map SurfacedOpinionUpdate.secondaryFetch fetched
             |> List.map remapPostFetchMessage
             |> List.unzip
       in
-        { explorer | topicOpinions = TopicOpinion.toDict topicOpinions }
+        { explorer | surfacedOpinions = SurfacedOpinion.toDict surfacedOpinions }
         ! cmds
 
     FetchedQuestions questions ->
@@ -168,24 +168,24 @@ update context message explorer =
         explorer ! []
 
 
-delegateTopicOpinionMsg : Context -> Oid -> TopicOpinionUpdate.Msg -> Explorer -> (Explorer, Cmd Msg)
-delegateTopicOpinionMsg context cId msg explorer =
+delegateSurfacedOpinionMsg : Context -> Oid -> SurfacedOpinionUpdate.Msg -> Explorer -> (Explorer, Cmd Msg)
+delegateSurfacedOpinionMsg context cId msg explorer =
   let
     goUpdate (update, updateCmd) =
-      { explorer | topicOpinions = Dict.insert cId update explorer.topicOpinions }
+      { explorer | surfacedOpinions = Dict.insert cId update explorer.surfacedOpinions }
       ! [ updateCmd ]
   in
-    Dict.get cId explorer.topicOpinions
-    |> Maybe.map (TopicOpinionUpdate.update context msg)
-    |> Maybe.map (remapTopicOpinionMsg cId)
+    Dict.get cId explorer.surfacedOpinions
+    |> Maybe.map (SurfacedOpinionUpdate.update context msg)
+    |> Maybe.map (remapSurfacedOpinionMsg cId)
     |> Maybe.map goUpdate
     |> Maybe.withDefault (explorer, Cmd.none)
 
 
-remapTopicOpinionMsg : Int -> (c, Cmd TopicOpinionUpdate.Msg) -> (c, Cmd Msg)
-remapTopicOpinionMsg = CmdUtils.mapCmdPair << DelegateToTopicOpinion
+remapSurfacedOpinionMsg : Int -> (c, Cmd SurfacedOpinionUpdate.Msg) -> (c, Cmd Msg)
+remapSurfacedOpinionMsg = CmdUtils.mapCmdPair << DelegateToSurfacedOpinion
 
 
-remapPostFetchMessage : (TopicOpinion, Cmd TopicOpinionUpdate.Msg) -> (TopicOpinion, Cmd Msg)
+remapPostFetchMessage : (SurfacedOpinion, Cmd SurfacedOpinionUpdate.Msg) -> (SurfacedOpinion, Cmd Msg)
 remapPostFetchMessage pair =
-  remapTopicOpinionMsg (TopicOpinion.key (fst pair)) pair
+  remapSurfacedOpinionMsg (SurfacedOpinion.key (fst pair)) pair
