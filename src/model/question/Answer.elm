@@ -15,7 +15,7 @@ module Model.Question.Answer exposing
 import Common.Tether as Tether exposing (Tether)
 
 
-import Json.Decode as Decode exposing ((:=))
+import Json.Decode as Decode
 import Json.Encode as Encode
 
 
@@ -45,23 +45,23 @@ encodeChoice choice =
 
 decoder : Decode.Decoder Answer
 decoder =
-  Decode.object2 fromApi
-    ( "id" := Decode.int )
+  Decode.map2 fromApi
+    (Decode.field  "id" Decode.int )
     choiceDecoder
 
 
 choiceDecoder : Decode.Decoder Choice
 choiceDecoder =
   Decode.oneOf
-    [ "picked" := Decode.map Picked Decode.int
-    , "rated" := Decode.map Rated Decode.float
+    [ Decode.field "picked" <| Decode.map Picked Decode.int
+    , Decode.field "rated" <| Decode.map Rated Decode.float
     ]
 
 
 qidPairDecoder : Decode.Decoder (Int, Answer)
 qidPairDecoder =
-  Decode.object2 (,)
-    ("questionId" := Decode.int)
+  Decode.map2 (,)
+    (Decode.field "questionId" Decode.int)
     decoder
 
 
@@ -72,4 +72,4 @@ fromApi aid choice =
 
 idDecoder : Decode.Decoder Int
 idDecoder =
-  ( "id" := Decode.int )
+  (Decode.field "id" Decode.int )

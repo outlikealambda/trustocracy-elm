@@ -30,7 +30,6 @@ import View.Question.Metrics as MetricsView
 
 
 import Html exposing (Html)
-import Html.App
 import Html.Attributes as Attrs exposing (class)
 import Html.Events as Events
 import Date exposing (Date)
@@ -111,12 +110,12 @@ body context opinion =
     True ->
       [ OpinionView.text True opinion
       , lastUpdated opinion.created
-      , Html.App.map context.showAll showAll
+      , Html.map context.showAll showAll
       ]
 
     False ->
       [ OpinionView.text False opinion ]
-      ++ [ Html.App.map context.readMore readMoreButton ]
+      ++ [ Html.map context.readMore readMoreButton ]
 
 
 

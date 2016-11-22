@@ -11,7 +11,7 @@ import Common.Remote as Remote exposing (Remote)
 import Model.Extend.Identified exposing (Identified)
 import Model.Opinion.Metrics exposing (Metrics)
 import Model.Opinion.Record as Record exposing (Record)
-import Json.Decode as Decode exposing ((:=))
+import Json.Decode as Decode
 
 
 type alias Opinion =
@@ -40,8 +40,8 @@ setMetrics metrics opinion =
 
 decoder : Decode.Decoder Opinion
 decoder =
-  Decode.object2 fromApi
-    ("id" := Decode.int)
+  Decode.map2 fromApi
+    (Decode.field "id" Decode.int)
     Record.decoder
 
 

@@ -14,7 +14,6 @@ import Update.Question.Answer as AnswerUpdate
 
 
 import Html exposing (Html)
-import Html.App
 import Html.Attributes as HtmlAttrs exposing (class)
 import Html.Events as HtmlEvents
 
@@ -33,7 +32,7 @@ view answer options prompt =
       [ class "options" ]
       ( List.map (radio answer) options )
     ]
-    |> Html.App.map AnswerUpdate.Choose
+    |> Html.map AnswerUpdate.Choose
 
 
 radio : Answer -> Option -> Html Answer.Choice

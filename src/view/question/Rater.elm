@@ -14,7 +14,6 @@ import Update.Question.Answer as AnswerUpdate
 
 
 import Html exposing (Html, Attribute)
-import Html.App
 import Html.Attributes as HtmlAttrs exposing (class)
 import Html.Events as HtmlEvents
 import Json.Decode as Decode
@@ -54,7 +53,7 @@ view answer (leftEndpoint, rightEndpoint) prompt =
         ]
       ]
     )
-  |> Html.App.map AnswerUpdate.Choose
+  |> Html.map AnswerUpdate.Choose
 
 
 mouseUpWithDefault : Float -> Attribute Choice

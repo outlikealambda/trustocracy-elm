@@ -16,7 +16,6 @@ import Opinion.Writer as Writer
 import View.Opinion as OpinionView
 
 import Html exposing (Html)
-import Html.App
 import Html.Attributes exposing (class)
 import Html.Events as Events
 
@@ -112,7 +111,7 @@ view {composition, composerView} =
   let content =
     case composerView of
       Write ->
-        Html.App.map WriterMsg (Writer.view composition)
+        Html.map WriterMsg (Writer.view composition)
 
       Preview ->
         Html.div

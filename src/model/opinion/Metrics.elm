@@ -4,7 +4,7 @@ module Model.Opinion.Metrics exposing
   )
 
 
-import Json.Decode as Decode exposing ((:=))
+import Json.Decode as Decode
 
 
 type alias Metrics = List (Int, Float)
@@ -13,6 +13,6 @@ type alias Metrics = List (Int, Float)
 decoder : Decode.Decoder Metrics
 decoder =
   Decode.list
-    <| Decode.object2 (,)
-      ("questionId" := Decode.int)
-      ("rating" := Decode.float)
+    <| Decode.map2 (,)
+      (Decode.field "questionId" Decode.int)
+      (Decode.field "rating" Decode.float)

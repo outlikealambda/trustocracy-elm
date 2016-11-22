@@ -6,7 +6,7 @@ module Model.Topic exposing
 
 
 import Date exposing (Date)
-import Json.Decode as Decode exposing ((:=))
+import Json.Decode as Decode
 import Time
 
 
@@ -32,17 +32,17 @@ empty =
 
 decoder : Decode.Decoder Topic
 decoder =
-  Decode.object5 fromApi
-  ("id" := Decode.int)
-  ("text" := Decode.string)
-  ("opinionCount" := Decode.int)
-  ("created" :=
+  Decode.map5 fromApi
+  (Decode.field "id" Decode.int)
+  (Decode.field "text" Decode.string)
+  (Decode.field "opinionCount" Decode.int)
+  (Decode.field "created" <|
     Decode.oneOf
       [ Decode.null Nothing
       , Decode.map Just Decode.float
       ]
   )
-  ("lastUpdated" :=
+  (Decode.field "lastUpdated" <|
     Decode.oneOf
       [ Decode.null Nothing
       , Decode.map Just Decode.float

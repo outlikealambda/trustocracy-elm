@@ -1,12 +1,12 @@
 module Main exposing (..)
 
-import Html.App
+import Html
 
 import World
 
 main : Program String
 main =
-  Html.App.programWithFlags
+  Html.programWithFlags
     { init = World.init
     , update = World.update
     , view = World.view

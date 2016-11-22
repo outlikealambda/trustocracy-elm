@@ -10,7 +10,7 @@ import Utils.String as StringUtils
 
 
 import Date exposing (Date)
-import Json.Decode as Decode exposing ((:=))
+import Json.Decode as Decode
 import Time
 
 
@@ -36,15 +36,15 @@ type alias Record a =
 
 decoder : Decode.Decoder (Record {})
 decoder =
-  Decode.object4 fromApi
-    ("text" := Decode.string)
-    ("author" := Trustee.decoder)
+  Decode.map4 fromApi
+    (Decode.field "text" Decode.string)
+    (Decode.field "author" Trustee.decoder)
     (Decode.oneOf
-      [ "qualifications" := Qualifications.decoder
+      [ Decode.field "qualifications" Qualifications.decoder
       , Decode.succeed Qualifications.empty
       ]
     )
-    ("created" := Decode.float)
+    (Decode.field "created" Decode.float)
 
 
 fromApi : String -> Trustee -> Qualifications -> Float -> Record {}

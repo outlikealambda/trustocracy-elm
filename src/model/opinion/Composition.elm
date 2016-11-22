@@ -12,7 +12,7 @@ import Model.Opinion.Record as Record exposing (Record)
 import Model.Trustee as Trustee exposing (Trustee)
 
 import Date exposing (Date)
-import Json.Decode as Decode exposing ((:=))
+import Json.Decode as Decode
 import Json.Encode as Encode
 
 
@@ -47,9 +47,9 @@ encode composition =
 
 decoder : Decode.Decoder Composition
 decoder =
-  Decode.object2 fromApi
+  Decode.map2 fromApi
     ( Decode.oneOf
-      [ "id" := Decode.map Just Decode.int
+      [ Decode.field "id" <| Decode.map Just Decode.int
       , Decode.succeed Nothing
       ]
     )

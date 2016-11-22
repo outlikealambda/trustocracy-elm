@@ -12,7 +12,6 @@ module Auth exposing
 
 
 import Html exposing (Html, h2, div, text, input, button, a)
-import Html.App
 import Html.Attributes as Attribute exposing (placeholder, value, class)
 import Html.Events exposing (on, targetValue, onClick)
 import String
@@ -280,13 +279,13 @@ viewForm auth =
         , text <| "Eventually this will be a login; for now just input the id of the user you'd like to impersonate and press enter/login"
         , div
           [ Form.onEnter (\_ -> LoadUser) ]
-          [ Html.App.map ((flip UpdateInput) secret) <| input
+          [ Html.map ((flip UpdateInput) secret) <| input
             [ placeholder "User Name"
             , value name
             , on "input" targetValue
             ]
             []
-          , Html.App.map (UpdateInput name) <| input
+          , Html.map (UpdateInput name) <| input
             [ placeholder "Password"
             , Attribute.type' "password"
             , value secret

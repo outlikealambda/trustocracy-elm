@@ -14,7 +14,6 @@ import View.Question.Question as QuestionView
 
 import Dict exposing (Dict)
 import Html exposing (Html)
-import Html.App
 import Html.Attributes exposing (class)
 
 
@@ -38,4 +37,4 @@ mapQuestion : Dict Int Answer -> Question -> Html AssessorUpdate.Msg
 mapQuestion answers q =
   Dict.get q.id answers
   |> QuestionView.view q
-  |> Html.App.map (AssessorUpdate.DelegateToAnswer q.id)
+  |> Html.map (AssessorUpdate.DelegateToAnswer q.id)

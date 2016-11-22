@@ -4,7 +4,7 @@ module Model.Question.Option exposing
   )
 
 
-import Json.Decode as Decode exposing ((:=))
+import Json.Decode as Decode
 
 
 type alias Option =
@@ -15,6 +15,6 @@ type alias Option =
 
 decoder : Decode.Decoder Option
 decoder =
-  Decode.object2 Option
-    ("id" := Decode.int)
-    ("label" := Decode.string)
+  Decode.map2 Option
+    (Decode.field "id" Decode.int)
+    (Decode.field "label" Decode.string)

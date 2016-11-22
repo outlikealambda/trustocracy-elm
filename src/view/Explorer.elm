@@ -18,7 +18,6 @@ import View.Question.Assessor as AssessorView
 import Dict
 import Html exposing (Html)
 import Html.Attributes exposing (class)
-import Html.App
 import Html.Events as Events
 import String
 
@@ -41,7 +40,7 @@ focused oid {surfacedOpinions, questions, assessor} =
 
     assessorView =
       AssessorView.questions questions assessor
-      |> Html.App.map (Update.DelegateToAssessor oid)
+      |> Html.map (Update.DelegateToAssessor oid)
 
     combineViews surfacedOpinionView =
       Html.div

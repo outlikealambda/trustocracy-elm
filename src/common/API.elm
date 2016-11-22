@@ -32,7 +32,7 @@ module Common.API exposing
 
 import Base64
 import Http
-import Json.Decode as Decode exposing ((:=))
+import Json.Decode as Decode
 import Json.Encode as Encode
 import String
 import Task exposing (Task)
@@ -227,7 +227,7 @@ fetchBrowsable onError onSuccess topicId =
 fetchInfluence : (String -> a) -> (Int -> a) -> OpinionId -> Cmd a
 fetchInfluence onError onSuccess oid =
   openEndpoint ["opinion/", toString oid, "/influence"]
-    |> Http.get ("influence" := Decode.int)
+    |> Http.get (Decode.field "influence" Decode.int)
     |> Task.mapError httpErrorToString
     |> Task.perform onError onSuccess
 
@@ -268,12 +268,13 @@ publishOpinion =
 
 writeOpinion : String -> (String -> a) -> (Composition -> a) -> Composition -> TopicId -> Cmd a
 writeOpinion writeType onError onSuccess composition topicId =
-  Composition.encode composition
-    |> Encode.encode 0 -- no pretty print
-    |> Http.string
-    |> post' Composition.decoder (writeUrlBuilder topicId writeType)
-    |> Task.mapError httpErrorToString
-    |> Task.perform onError onSuccess
+  let
+    bodyJson = Composition.encode composition
+      |> Encode.encode 0 -- no pretty print
+      |> Http.jsonBody
+  in
+    Http.post (writeUrlBuilder topicId writeType) bodyJson Composition.decoder
+      |> Http.send (responseHandler onError onSuccess)
 
 
 writeUrlBuilder : TopicId -> String -> String
@@ -331,9 +332,8 @@ fetchAnswers onError onSuccess topicId opinionId =
 createAnswer : (String -> a) -> (AnswerId -> a) -> Choice -> TopicId -> OpinionId -> QuestionId -> Cmd a
 createAnswer onError onSuccess choice tid oid qid =
   let
-    postAnswer =
-      post' Answer.idDecoder
-        <| secureEndpoint
+    url =
+      secureEndpoint
           [ "topic/"
           , toString tid
           , "/opinion/"
@@ -342,13 +342,13 @@ createAnswer onError onSuccess choice tid oid qid =
           , toString qid
           , "/answer"
           ]
+    bodyJson =
+      Answer.encodeChoice choice
+        |> Encode.encode 0
+        |> Http.jsonBody
   in
-    Answer.encodeChoice choice
-      |> Encode.encode 0
-      |> Http.string
-      |> postAnswer
-      |> Task.mapError httpErrorToString
-      |> Task.perform onError onSuccess
+    Http.post url bodyJson Answer.idDecoder
+      |> Http.send (responseHandler onError onSuccess)
 
 
 updateAnswer : (String -> a) -> (AnswerId -> a) -> AnswerId -> Choice -> Cmd a
@@ -487,6 +487,12 @@ delete decoder url =
     , body = Http.empty
     }
   |> Http.fromJson decoder
+
+
+responseHandler : (String -> a) -> (b -> a) -> Result Error b -> a
+responseHandler onError onSuccess result =
+  Result.mapError (onError << httpErrorToString) result
+    |> Result.map onSuccess
 
 
 httpErrorToString : Http.Error -> String

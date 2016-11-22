@@ -6,7 +6,7 @@ module Model.User exposing
   , isEmpty
   )
 
-import Json.Decode as Decode exposing ((:=))
+import Json.Decode as Decode
 import Json.Encode as Encode
 
 
@@ -34,11 +34,11 @@ empty =
 
 decoder : Decode.Decoder User
 decoder =
-  Decode.object4 User
-    ("name" := Decode.string)
-    ("id" := Decode.int)
-    ("trustees" := Decode.list Trustee.decoder)
-    ("emails" := Decode.list Decode.string)
+  Decode.map4 User
+    (Decode.field "name" Decode.string)
+    (Decode.field "id" Decode.int)
+    (Decode.field "trustees" <| Decode.list Trustee.decoder)
+    (Decode.field "emails" <| Decode.list Decode.string)
 
 
 encode : User -> Encode.Value

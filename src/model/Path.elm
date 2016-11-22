@@ -8,7 +8,7 @@ import Model.Relationship as Relationship exposing (Relationship)
 import Model.Trustee as Trustee exposing (Trustee)
 
 
-import Json.Decode as Json exposing ((:=))
+import Json.Decode as Decode
 
 
 type alias Path =
@@ -18,9 +18,9 @@ type alias Path =
   }
 
 
-decoder : Json.Decoder Path
+decoder : Decode.Decoder Path
 decoder =
-  Json.object3 Path
-    ("trustee" := Trustee.decoder)
-    ("hops" := Json.list Relationship.decoder)
-    ("score" := Json.int)
+  Decode.map3 Path
+    (Decode.field "trustee" Trustee.decoder)
+    (Decode.field "hops" <| Decode.list Relationship.decoder)
+    (Decode.field "score" Decode.int)

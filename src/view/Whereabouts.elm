@@ -7,7 +7,6 @@ import Update.Whereabouts as WhereaboutsUpdate
 
 import View.Place as PlaceView
 
-import Html.App
 import Html.Events exposing (onClick, onInput)
 import Html.Attributes exposing (id, list, href, placeholder, class)
 import Html exposing (text, div, h1, h2, p, ul, li, body, Html, a, button, Attribute, input)
@@ -34,4 +33,4 @@ view model =
   ]
 viewCurrentLocations: Place -> Html WhereaboutsUpdate.Msg
 viewCurrentLocations place =
-  Html.App.map ( WhereaboutsUpdate.Modify place.id ) (PlaceView.view place)
+  Html.map ( WhereaboutsUpdate.Modify place.id ) (PlaceView.view place)

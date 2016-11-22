@@ -11,7 +11,7 @@ module Model.Qualifications exposing
   )
 
 
-import Json.Decode as Decode exposing ((:=))
+import Json.Decode as Decode
 import Json.Encode as Encode
 import String
 

@@ -7,19 +7,14 @@ import Html.Events as Events
 import Json.Decode as Decode
 
 -- from the Elm Architecture tutorial
-onEnter : (() -> a) -> Html.Attribute a
+onEnter : (Int -> a) -> Html.Attribute a
 onEnter transform =
   let
-    decoder = Decode.customDecoder Events.keyCode
-      <| Result.map transform << is13
+    isEnter code =
+      if code == 13 then
+        Decode.succeed <| transform code
+      else
+        Decode.fail "not the right key code"
   in
-    Events.on "keydown" decoder
+    Events.on "keydown" <| Decode.andThen isEnter Events.keyCode
 
-
-is13 : Int -> Result String ()
-is13 code =
-  if code == 13 then
-    Ok ()
-
-  else
-    Err "not the right key code"

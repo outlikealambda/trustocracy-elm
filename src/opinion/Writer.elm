@@ -7,7 +7,6 @@ module Opinion.Writer exposing
 
 
 import Html exposing (Html)
-import Html.App
 import Html.Attributes as Attributes exposing (class)
 import Html.Events as Events
 
@@ -47,8 +46,8 @@ view : Writer a -> Html Msg
 view {text, qualifications} =
   Html.div
     [ class "writer" ]
-    [ Html.App.map Write (viewOpinionInput text)
-    , Html.App.map SetQualification (viewQualificationsInput qualifications)
+    [ Html.map Write (viewOpinionInput text)
+    , Html.map SetQualification (viewQualificationsInput qualifications)
   ]
 
 

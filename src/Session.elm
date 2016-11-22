@@ -36,7 +36,6 @@ import Update.Whereabouts as WhereaboutsUpdate
 import Opinion.Composer as Composer exposing (Composer)
 
 import Html exposing (Html)
-import Html.App
 import Html.Attributes as Attributes exposing (class)
 import Html.Events as Events
 import Platform.Cmd exposing (Cmd)
@@ -283,7 +282,7 @@ view transform session =
         LoggedOut ->
           inactiveSessionContent session
   in
-    Html.App.map transform <| Html.div [ class "session" ] sessionContent
+    Html.map transform <| Html.div [ class "session" ] sessionContent
 
 
 -- used to help create the nav links
@@ -370,7 +369,7 @@ activeSessionContent user session =
       [ activeSubNav session
       , Html.div
         [ class "content" ]
-        [ Html.App.map ComposerMsg (Composer.view session.composer) ]
+        [ Html.map ComposerMsg (Composer.view session.composer) ]
       ]
 
     Explore ->
@@ -378,20 +377,20 @@ activeSessionContent user session =
       , Html.div
         [ class "content" ]
         [ ExplorerView.view session.explorer
-          |> Html.App.map ExplorerMsg
+          |> Html.map ExplorerMsg
         ]
       ]
 
     UserDelegates ->
       [ Html.div
         [ class "content" ]
-        [ Html.App.map DelegatorMsg (Delegator.view user.emails session.delegator) ]
+        [ Html.map DelegatorMsg (Delegator.view user.emails session.delegator) ]
       ]
 
     Whereabouts ->
       [ Html.div
         [ class "content"]
-        [ Html.App.map WhereaboutsMsg (WhereaboutsView.view session.whereabouts)]
+        [ Html.map WhereaboutsMsg (WhereaboutsView.view session.whereabouts)]
       ]
 
     Empty ->
@@ -411,7 +410,7 @@ inactiveSessionContent session =
       , Html.div
         [ class "content" ]
         [ ExplorerView.view session.explorer
-          |> Html.App.map ExplorerMsg
+          |> Html.map ExplorerMsg
         ]
       ]
 
@@ -425,10 +424,10 @@ inactiveSessionContent session =
 
 navHeader : (Msg -> a) -> Session -> List (Html a)
 navHeader transform {auth, activeUser} =
-  [ Html.App.map (transform << AuthMsg) (Auth.viewButton activeUser)
+  [ Html.map (transform << AuthMsg) (Auth.viewButton activeUser)
   , Delegator.navHeader (transform GoUserDelegates) activeUser
   , Auth.viewUser activeUser
-  , Html.App.map (transform << AuthMsg) (Auth.viewForm auth)
+  , Html.map (transform << AuthMsg) (Auth.viewForm auth)
   , whereaboutsLink transform activeUser
   ]
 

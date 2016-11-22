@@ -8,7 +8,6 @@ import Utils.Date as DateUtils
 
 
 import Html exposing (Html)
-import Html.App
 import Html.Attributes exposing (class)
 import Html.Events as Events
 
@@ -45,4 +44,4 @@ view topic =
 all : (TopicId -> msg) -> List Topic -> Html msg
 all transform topics =
   Html.div [ class "topics" ]
-    (List.map (Html.App.map transform << view ) topics)
+    (List.map (Html.map transform << view ) topics)

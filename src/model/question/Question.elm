@@ -10,7 +10,7 @@ module Model.Question.Question exposing
 import Model.Question.Option as Option exposing (Option)
 
 
-import Json.Decode as Decode exposing ((:=))
+import Json.Decode as Decode
 
 
 import Dict exposing (Dict)
@@ -45,24 +45,27 @@ raters questions =
 
 decoder : Decode.Decoder Question
 decoder =
-  ("type" := Decode.string) `Decode.andThen` typeCheckingDecoder
+  Decode.andThen typeCheckingDecoder (Decode.field "type" Decode.string)
 
 
 typeCheckingDecoder : String -> Decode.Decoder Question
 typeCheckingDecoder qType =
   case qType of
     "PICK" ->
-      Decode.object4 pickerFromApi
-        ("id" := Decode.int)
-        ("prompt" := Decode.string)
-        ("promptShort" := Decode.string)
+      Decode.map4 pickerFromApi
+        (Decode.field "id" Decode.int)
+        (Decode.field "prompt" Decode.string)
+        (Decode.field "promptShort" Decode.string)
         (Decode.at ["options", "answers"] <| Decode.list Option.decoder)
     "RATE" ->
-      Decode.object4 raterFromApi
-        ("id" := Decode.int)
-        ("prompt" := Decode.string)
-        ("promptShort" := Decode.string)
-        (Decode.at ["options", "endpoints"] <| Decode.tuple2 (,) Option.decoder Option.decoder)
+      Decode.map4 raterFromApi
+        (Decode.field "id" Decode.int)
+        (Decode.field "prompt" Decode.string)
+        (Decode.field "promptShort" Decode.string)
+        (Decode.at ["options", "endpoints"] <|
+          Decode.map2 (,)
+            (Decode.index 0 Option.decoder)
+            (Decode.index 1 Option.decoder))
     _ ->
       Decode.fail <| "we do not support " ++ qType ++ " questions yet"
 

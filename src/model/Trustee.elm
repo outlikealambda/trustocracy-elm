@@ -11,7 +11,7 @@ module Model.Trustee exposing
   )
 
 
-import Json.Decode as Decode exposing ((:=))
+import Json.Decode as Decode
 import Json.Encode as Encode
 import Model.Relationship as Relationship exposing (Relationship)
 
@@ -33,11 +33,11 @@ empty =
 
 decoder : Decode.Decoder Trustee
 decoder =
-  Decode.object3 Trustee
-    ( "name" := Decode.string )
-    ( "id" := Decode.int )
+  Decode.map3 Trustee
+    (Decode.field "name" Decode.string )
+    (Decode.field "id" Decode.int )
     ( Decode.oneOf
-      [ "relationship" := Relationship.decoder
+      [ Decode.field "relationship" Relationship.decoder
       , Decode.succeed Relationship.None
       ]
     )

@@ -25,7 +25,7 @@ import Model.Path as Path
 
 
 import Dict exposing (Dict)
-import Json.Decode as Decode exposing ((:=))
+import Json.Decode as Decode
 
 
 type alias Qid = Int
@@ -39,9 +39,9 @@ type SurfacedOpinion
 
 connectedDecoder : Decode.Decoder SurfacedOpinion
 connectedDecoder =
-  Decode.object2 connectedFromApi
-    ("paths" := Decode.list Path.decoder)
-    ("opinion" := Opinion.decoder)
+  Decode.map2 connectedFromApi
+    (Decode.field "paths" <| Decode.list Path.decoder)
+    (Decode.field "opinion" Opinion.decoder)
 
 
 unconnectedDecoder : Decode.Decoder SurfacedOpinion
