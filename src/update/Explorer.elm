@@ -188,4 +188,4 @@ remapSurfacedOpinionMsg = CmdUtils.mapCmdPair << DelegateToSurfacedOpinion
 
 remapPostFetchMessage : (SurfacedOpinion, Cmd SurfacedOpinionUpdate.Msg) -> (SurfacedOpinion, Cmd Msg)
 remapPostFetchMessage pair =
-  remapSurfacedOpinionMsg (SurfacedOpinion.key (fst pair)) pair
+  remapSurfacedOpinionMsg (SurfacedOpinion.key (Tuple.first pair)) pair

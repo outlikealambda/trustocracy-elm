@@ -21,7 +21,6 @@ module Common.API exposing
   , updateAnswer
   , deleteAnswer
   , setTrustee
-  , setTrustees
   , lookupTrustee
   , addPlace
   , fetchPlaces
@@ -36,6 +35,8 @@ import Json.Decode as Decode
 import Json.Encode as Encode
 import String
 import Task exposing (Task)
+import Time exposing (Time)
+
 
 
 import Auth.Facebook as Facebook
@@ -83,37 +84,28 @@ loginUser onError onSuccess (name, secret) =
   let
     encodedCredentials =
       Base64.encode <| (name ++ ":" ++ secret)
-    task =
-      case encodedCredentials of
-        Err err ->
-          Task.fail err
-        Ok basicAuthCreds ->
-          Http.send Http.defaultSettings
-            { verb = "GET"
-            , headers =
-              [ ("Authorization", "Basic " ++ basicAuthCreds)
-              , ("secret", secret)
-              ]
-            , url = openEndpoint ["login"]
-            , body = Http.empty
-            }
-            |> Http.fromJson User.decoder
-            |> Task.mapError httpErrorToString
   in
-    Task.perform onError onSuccess task
+    case encodedCredentials of
+      Err err ->
+        Task.perform onError <| Task.succeed err
+      Ok basicAuthCreds ->
+        Http.request
+          ( httpParams User.decoder
+            |> setHeaders
+              [ Http.header "Authorization" ("Basic " ++ basicAuthCreds)
+              , Http.header "secret" secret
+              ]
+            |> setUrl (openEndpoint ["login"])
+          )
+          |> Http.send (responseHandler onError onSuccess)
 
 
 checkForActiveUser : (String -> a) -> (User -> a) -> Cmd a
 checkForActiveUser onError onSuccess =
-  Http.send Http.defaultSettings
-    { verb = "GET"
-    , headers = []
-    , url = openEndpoint ["checkUser"]
-    , body = Http.empty
-    }
-    |> Http.fromJson User.decoder
-    |> Task.mapError httpErrorToString
-    |> Task.perform onError onSuccess
+  Http.get
+    (openEndpoint ["checkUser"])
+    User.decoder
+    |> Http.send (responseHandler onError onSuccess)
 
 
 {- send signedRequest string as a header
@@ -127,47 +119,39 @@ checkForActiveUser onError onSuccess =
 -}
 fetchUserByFacebookAuth : (String -> a) -> (User -> a) -> Facebook.AuthResponse -> Cmd a
 fetchUserByFacebookAuth onError onSuccess fbAuthResponse =
-  Http.send Http.defaultSettings
-    { verb = "GET"
-    , headers =
-      [ ("fbsignedrequest", fbAuthResponse.signedRequest)
-      , ("fbaccesstoken", fbAuthResponse.accessToken)
-      ]
-    , url = openEndpoint ["fbUser"]
-    , body = Http.empty
-    }
-  |> Http.fromJson User.decoder
-  |> Task.mapError httpErrorToString
-  |> Task.perform onError onSuccess
+  Http.request
+    ( httpParams User.decoder
+      |> setHeaders
+        [ Http.header "fbsignedrequest" fbAuthResponse.signedRequest
+        , Http.header "fbaccesstoken" fbAuthResponse.accessToken
+        ]
+      |> setUrl (openEndpoint ["fbUser"])
+    )
+    |> Http.send (responseHandler onError onSuccess)
 
 
 fetchUserByGoogleAuth : (String -> a) -> (User -> a) -> Google.AuthResponse -> Cmd a
 fetchUserByGoogleAuth onError onSuccess gAuthResponse =
-  transmitGoogleAuth (openEndpoint ["gaUser"])
-    >> Task.perform onError onSuccess
-    <| gAuthResponse
+  transmitGoogleAuth (openEndpoint ["gaUser"]) gAuthResponse
+    |> Http.send (responseHandler onError onSuccess)
 
 
 updateGoogleContacts : (String -> a) -> (User -> a) -> Google.AuthResponse -> Cmd a
 updateGoogleContacts onError onSuccess gAuthResponse =
-  transmitGoogleAuth (secureEndpoint ["gaContacts"])
-    >> Task.perform onError onSuccess
-    <| gAuthResponse
+  transmitGoogleAuth (openEndpoint ["gaContacts"]) gAuthResponse
+    |> Http.send (responseHandler onError onSuccess)
 
 
-transmitGoogleAuth : Url -> Google.AuthResponse -> Task String User
+transmitGoogleAuth : Url -> Google.AuthResponse -> Http.Request User
 transmitGoogleAuth url gaResponse =
-  Http.send Http.defaultSettings
-    { verb = "GET"
-    , headers =
-      [ ("gasignedrequest", gaResponse.idToken)
-      , ("gaaccesstoken", gaResponse.accessToken)
-      ]
-    , url = url
-    , body = Http.empty
-    }
-  |> Http.fromJson User.decoder
-  |> Task.mapError httpErrorToString
+  Http.request
+    ( httpParams User.decoder
+      |> setHeaders
+        [ Http.header "gasignedrequest" gaResponse.idToken
+        , Http.header "gaaccesstoken" gaResponse.accessToken
+        ]
+      |> setUrl url
+    )
 
 
 --------------
@@ -178,24 +162,25 @@ transmitGoogleAuth url gaResponse =
 fetchConnectedV2 : (String -> a) -> (List SurfacedOpinion -> a) -> TopicId -> Cmd a
 fetchConnectedV2 onError onSuccess tid =
   fetch
+    (secureEndpoint ["topic/", toString tid, "/connected/v2"])
     (Decode.list SurfacedOpinion.connectedDecoder)
     onError
     onSuccess
-    (secureEndpoint ["topic/", toString tid, "/connected/v2"])
 
 
 fetchConnectedV3 : (String -> a) -> (List SurfacedOpinion -> a) -> TopicId -> Cmd a
 fetchConnectedV3 onError onSuccess tid =
   fetch
+    (secureEndpoint ["topic/", toString tid, "/connected/v3"])
     (Decode.list SurfacedOpinion.connectedDecoder)
     onError
     onSuccess
-    (secureEndpoint ["topic/", toString tid, "/connected/v3"])
 
 
 fetchConnectedV4 : (String -> a) -> (List SurfacedOpinion -> a) -> TopicId -> Cmd a
 fetchConnectedV4 onError onSuccess tid =
   fetch
+    (secureEndpoint ["topic/", toString tid, "/connected/v4"])
     ( Decode.list
       ( Decode.oneOf
         [ SurfacedOpinion.connectedDecoder
@@ -205,55 +190,51 @@ fetchConnectedV4 onError onSuccess tid =
     )
     onError
     onSuccess
-    (secureEndpoint ["topic/", toString tid, "/connected/v4"])
-
-
-fetch : Decode.Decoder b -> (String -> a) -> (b -> a) -> String -> Cmd a
-fetch decoder onError onSuccess apiPath =
-  apiPath
-    |> Http.get decoder
-    |> Task.mapError httpErrorToString
-    |> Task.perform onError onSuccess
 
 
 fetchBrowsable : (String -> a) -> (List SurfacedOpinion -> a) -> TopicId -> Cmd a
 fetchBrowsable onError onSuccess topicId =
-  openEndpoint ["topic/", toString topicId, "/opinion"]
-    |> Http.get (Decode.list SurfacedOpinion.unconnectedDecoder)
-    |> Task.mapError httpErrorToString
-    |> Task.perform onError onSuccess
+  fetch
+    (openEndpoint ["topic/", toString topicId, "/opinion"])
+    (Decode.list SurfacedOpinion.unconnectedDecoder)
+    onError
+    onSuccess
 
 
 fetchInfluence : (String -> a) -> (Int -> a) -> OpinionId -> Cmd a
 fetchInfluence onError onSuccess oid =
-  openEndpoint ["opinion/", toString oid, "/influence"]
-    |> Http.get (Decode.field "influence" Decode.int)
-    |> Task.mapError httpErrorToString
-    |> Task.perform onError onSuccess
+  fetch
+    (openEndpoint ["opinion/", toString oid, "/influence"])
+    (Decode.field "influence" Decode.int)
+    onError
+    onSuccess
 
 
 fetchMetrics : (String -> a) -> (Metrics -> a) -> OpinionId -> Cmd a
 fetchMetrics onError onSuccess oid =
-  openEndpoint ["opinion/", toString oid, "/metrics"]
-    |> Http.get Metrics.decoder
-    |> Task.mapError httpErrorToString
-    |> Task.perform onError onSuccess
+  fetch
+    (openEndpoint ["opinion/", toString oid, "/metrics"])
+    Metrics.decoder
+    onError
+    onSuccess
 
 
 fetchOpinionsByTopic : (String -> a) -> (List Opinion -> a) -> TopicId -> Cmd a
 fetchOpinionsByTopic onError onSuccess topicId =
-  openEndpoint ["topic/", toString topicId, "/opinion"]
-    |> Http.get (Decode.list Opinion.decoder)
-    |> Task.mapError httpErrorToString
-    |> Task.perform onError onSuccess
+  fetch
+    (openEndpoint ["topic/", toString topicId, "/opinion"])
+    (Decode.list Opinion.decoder)
+    onError
+    onSuccess
 
 
 fetchDraftByTopic : (String -> a) -> (Composition -> a) -> TopicId -> Cmd a
-fetchDraftByTopic onError onComplete topicId =
-  secureEndpoint ["topic/", toString topicId, "/opinion"]
-    |> Http.get Composition.decoder
-    |> Task.mapError httpErrorToString
-    |> Task.perform onError onComplete
+fetchDraftByTopic onError onSuccess topicId =
+  fetch
+    (secureEndpoint ["topic/", toString topicId, "/opinion"])
+    Composition.decoder
+    onError
+    onSuccess
 
 
 saveOpinion : (String -> a) -> (Composition -> a) -> Composition -> TopicId -> Cmd a
@@ -268,13 +249,12 @@ publishOpinion =
 
 writeOpinion : String -> (String -> a) -> (Composition -> a) -> Composition -> TopicId -> Cmd a
 writeOpinion writeType onError onSuccess composition topicId =
-  let
-    bodyJson = Composition.encode composition
-      |> Encode.encode 0 -- no pretty print
-      |> Http.jsonBody
-  in
-    Http.post (writeUrlBuilder topicId writeType) bodyJson Composition.decoder
-      |> Http.send (responseHandler onError onSuccess)
+  write
+    (writeUrlBuilder topicId writeType)
+    (Composition.encode composition)
+    Composition.decoder
+    onError
+    onSuccess
 
 
 writeUrlBuilder : TopicId -> String -> String
@@ -294,18 +274,20 @@ writeUrlBuilder topicId writeType =
 
 fetchTopic : (String -> a) -> (Topic -> a) -> TopicId -> Cmd a
 fetchTopic onError onSuccess topicId =
-  openEndpoint ["topic/", toString topicId]
-    |> Http.get Topic.decoder
-    |> Task.mapError httpErrorToString
-    |> Task.perform onError onSuccess
+  fetch
+    (openEndpoint ["topic/", toString topicId])
+    Topic.decoder
+    onError
+    onSuccess
 
 
 fetchAllTopics : (String -> a) -> (List Topic -> a) -> Cmd a
-fetchAllTopics onError onComplete =
-  openEndpoint ["topic"]
-    |> Http.get (Decode.list Topic.decoder)
-    |> Task.mapError httpErrorToString
-    |> Task.perform onError onComplete
+fetchAllTopics onError onSuccess =
+  fetch
+    (openEndpoint ["topic"])
+    (Decode.list Topic.decoder)
+    onError
+    onSuccess
 
 
 ---------------
@@ -315,19 +297,20 @@ fetchAllTopics onError onComplete =
 
 fetchQuestions : (String -> a) -> (List Question -> a) -> TopicId -> Cmd a
 fetchQuestions onError onSuccess topicId =
-  openEndpoint ["topic/", toString topicId, "/question"]
-    |> Http.get (Decode.list Question.decoder)
-    |> Task.mapError httpErrorToString
-    |> Task.perform onError onSuccess
+  fetch
+    (openEndpoint ["topic/", toString topicId, "/question"])
+    (Decode.list Question.decoder)
+    onError
+    onSuccess
 
 
 fetchAnswers : (String -> a) -> (List (QuestionId, Answer) -> a) -> TopicId -> OpinionId -> Cmd a
 fetchAnswers onError onSuccess topicId opinionId =
-  secureEndpoint ["topic/", toString topicId, "/opinion/", toString opinionId, "/answer" ]
-    |> Http.get (Decode.list Answer.qidPairDecoder)
-    |> Task.mapError httpErrorToString
-    |> Task.perform onError onSuccess
-
+  fetch
+    (secureEndpoint ["topic/", toString topicId, "/opinion/", toString opinionId, "/answer" ])
+    (Decode.list Answer.qidPairDecoder)
+    onError
+    onSuccess
 
 createAnswer : (String -> a) -> (AnswerId -> a) -> Choice -> TopicId -> OpinionId -> QuestionId -> Cmd a
 createAnswer onError onSuccess choice tid oid qid =
@@ -342,39 +325,33 @@ createAnswer onError onSuccess choice tid oid qid =
           , toString qid
           , "/answer"
           ]
-    bodyJson =
-      Answer.encodeChoice choice
-        |> Encode.encode 0
-        |> Http.jsonBody
+
   in
-    Http.post url bodyJson Answer.idDecoder
-      |> Http.send (responseHandler onError onSuccess)
+    write
+      url
+      (Answer.encodeChoice choice)
+      Answer.idDecoder
+      onError
+      onSuccess
 
 
 updateAnswer : (String -> a) -> (AnswerId -> a) -> AnswerId -> Choice -> Cmd a
 updateAnswer onError onSuccess answerId choice =
-  let
-    putAnswer =
-      post' Answer.idDecoder
-        <| secureEndpoint
-          [ "answer/"
-          , toString answerId
-          ]
-  in
-    Answer.encodeChoice choice
-      |> Encode.encode 0
-      |> Http.string
-      |> putAnswer
-      |> Task.mapError httpErrorToString
-      |> Task.perform onError onSuccess
+  write
+    (secureEndpoint [ "answer/" , toString answerId ])
+    (Answer.encodeChoice choice)
+    Answer.idDecoder
+    onError
+    onSuccess
 
 
 deleteAnswer : (String -> a) -> (AnswerId -> a) -> AnswerId -> Cmd a
 deleteAnswer onError onSuccess answerId =
-  secureEndpoint [ "answer/", toString answerId ]
-    |> delete (Decode.succeed answerId)
-    |> Task.mapError httpErrorToString
-    |> Task.perform onError onSuccess
+    delete
+      (secureEndpoint [ "answer/", toString answerId ])
+      (Decode.succeed answerId)
+      onError
+      onSuccess
 
 
 --------------
@@ -382,38 +359,25 @@ deleteAnswer onError onSuccess answerId =
 --------------
 
 
-setTrusteeTask : Trustee -> Task Http.Error Trustee
-setTrusteeTask trustee =
-  Trustee.encoder trustee
-    |> Encode.encode 0
-    |> Http.string
-    |> post'
-      Trustee.decoder
-      (secureEndpoint ["delegate"])
+buildTrusteePost : Trustee -> (String -> a) -> (Trustee -> a) -> Cmd a
+buildTrusteePost trustee =
+  write
+    (secureEndpoint ["delegate"])
+    (Trustee.encoder trustee)
+    Trustee.decoder
 
 
 setTrustee : (String -> a) -> (Trustee -> a) -> Trustee -> Cmd a
 setTrustee onError onSuccess trustee =
-  setTrusteeTask trustee
-    |> Task.mapError httpErrorToString
-    |> Task.perform onError onSuccess
-
-
-setTrustees : (List Trustee -> a) -> List Trustee -> Cmd a
-setTrustees transform trustees =
-  List.map setTrusteeTask trustees
-    |> List.map Task.toResult
-    |> Task.sequence
-    |> Task.map (List.filterMap Result.toMaybe)
-    |> Task.perform (\_ -> transform []) transform
+  buildTrusteePost trustee onError onSuccess
 
 
 lookupTrustee : (String -> a) -> (Trustee -> a) -> String -> Cmd a
 lookupTrustee onError onSuccess email =
-  Http.url (secureEndpoint ["delegate/lookup"]) [ ("email", email) ]
-    |> Http.get Trustee.decoder
-    |> Task.mapError httpErrorToString
-    |> Task.perform onError onSuccess
+  Http.get
+    (secureEndpoint ["delegate/lookup"] ++ "?email=" ++ email)
+    Trustee.decoder
+    |> Http.send (responseHandler onError onSuccess)
 
 ------------
 -- PLACES --
@@ -421,91 +385,151 @@ lookupTrustee onError onSuccess email =
 
 addPlace : (String -> a) -> (List Place -> a) -> Cmd a
 addPlace onError onSuccess =
-  (Place.encoder Place.createEmpty)
-    |> Encode.encode 0
-    |> Http.string
-    |> post'
-      (Decode.list Place.decoder)
-        (secureEndpoint ["postLocation"])
-    |> Task.mapError httpErrorToString
-    |> Task.perform onError onSuccess
+  write
+    (secureEndpoint ["postLocation"])
+    (Place.encoder Place.createEmpty)
+    (Decode.list Place.decoder)
+    onError
+    onSuccess
+
 
 fetchPlaces : (String -> a) -> (List Place -> a) -> Cmd a
 fetchPlaces onError onSuccess =
-  Http.get (Decode.list Place.decoder)
+  fetch
     (secureEndpoint ["getLocation"])
-  |> Task.mapError httpErrorToString
-  |> Task.perform onError onSuccess
+    (Decode.list Place.decoder)
+    onError
+    onSuccess
+
 
 updatePlace : (String -> a) -> (Place -> a) -> Place -> Cmd a
 updatePlace onError onSuccess place =
-  (Place.encoder place)
-    |> Encode.encode 0
-    |> Http.string
-    |> post'
-      Place.decoder
-        (secureEndpoint [ "location/", toString place.id ] )
-    |> Task.mapError httpErrorToString
-    |> Task.perform onError onSuccess
+  write
+    (secureEndpoint ["location/", toString place.id])
+    (Place.encoder Place.createEmpty)
+    Place.decoder
+    onError
+    onSuccess
+
 
 removePlace : (String -> a) -> (Int -> a) -> Int -> Cmd a
 removePlace onError onSuccess placeId =
-  delete'
-    Place.removalDecoder
+  delete
     (secureEndpoint [ "location/", toString placeId ] )
-  |> Task.mapError httpErrorToString
-  |> Task.perform onError onSuccess
-
--- because post is pretty worthless
--- see: https://groups.google.com/forum/#!topic/elm-discuss/Zpq9itvtLEY
-post' : Decode.Decoder a -> String -> Http.Body -> Task.Task Http.Error a
-post' decoder url body =
-  Http.send Http.defaultSettings
-    { verb = "POST"
-    , headers = [("Content-type", "application/json")]
-    , url = url
-    , body = body
-    }
-  |> Http.fromJson decoder
-
-delete' : Decode.Decoder a -> String ->Task.Task Http.Error a
-delete' decoder url =
-  Http.send Http.defaultSettings
-    { verb = "DELETE"
-    , headers = [("Content-type", "application/json")]
-    , url = url
-    , body = Http.empty
-    }
-  |> Http.fromJson decoder
-
-delete : Decode.Decoder a -> String -> Task.Task Http.Error a
-delete decoder url =
-  Http.send Http.defaultSettings
-    { verb = "DELETE"
-    , headers = [("Content-type", "plain/text")]
-    , url = url
-    , body = Http.empty
-    }
-  |> Http.fromJson decoder
+    Place.removalDecoder
+    onError
+    onSuccess
 
 
-responseHandler : (String -> a) -> (b -> a) -> Result Error b -> a
+fetch : String -> Decode.Decoder b -> (String -> a) -> (b -> a) -> Cmd a
+fetch apiPath decoder onError onSuccess =
+  Http.get apiPath decoder
+    |> Http.send (responseHandler onError onSuccess)
+
+
+write : String -> Encode.Value -> Decode.Decoder b -> (String -> a) -> (b -> a) -> Cmd a
+write apiPath encodedBody decoder onError onSuccess =
+  Http.post
+    apiPath
+    (toJsonBody encodedBody)
+    decoder
+    |> Http.send (responseHandler onError onSuccess)
+
+
+delete : String -> Decode.Decoder b -> (String -> a) -> (b -> a) -> Cmd a
+delete url decoder onError onSuccess =
+  Http.request
+    ( httpParams decoder
+      |> setMethod "DELETE"
+      |> setUrl url
+    )
+    |> Http.send (responseHandler onError onSuccess)
+
+
+toJsonBody : Encode.Value -> Http.Body
+toJsonBody =
+  Http.jsonBody
+
+
+responseHandler : (String -> a) -> (b -> a) -> Result Http.Error b -> a
 responseHandler onError onSuccess result =
-  Result.mapError (onError << httpErrorToString) result
-    |> Result.map onSuccess
+  case result of
+    Ok value ->
+      onSuccess value
+    Err error ->
+      onError <| httpErrorToString error
 
 
 httpErrorToString : Http.Error -> String
 httpErrorToString err =
   case (Debug.log "HTTP ERROR!" err) of
+    Http.BadUrl message ->
+      "bad url: " ++ message
+
     Http.Timeout ->
       "timeout error"
 
     Http.NetworkError ->
       "network error"
 
-    Http.UnexpectedPayload msg ->
-      "json parse error: " ++ msg
+    Http.BadPayload debugMsg response ->
+      "json parse error: " ++ debugMsg ++ ", body: " ++ response.body
 
-    Http.BadResponse code msg ->
-      "http response error: " ++ (toString code) ++ " " ++ msg
+    Http.BadStatus response ->
+      "http response error: " ++ (toString response.status) ++ " " ++ response.body
+
+-------------------------------
+-- Request Parameter Helpers --
+-------------------------------
+
+type alias RequestParams a =
+  { method : String
+  , headers : List Http.Header
+  , url : String
+  , body : Http.Body
+  , expect : Http.Expect a
+  , timeout : Maybe Time
+  , withCredentials : Bool
+  }
+
+
+httpParams : Decode.Decoder a -> RequestParams a
+httpParams decoder =
+  { method = "GET"
+  , headers = []
+  , url = ""
+  , body = Http.emptyBody
+  , expect = Http.expectJson decoder
+  , timeout = Nothing
+  , withCredentials = False
+  }
+
+
+setMethod : String -> RequestParams a -> RequestParams a
+setMethod method rp =
+  { rp | method = method }
+
+
+setHeaders : List Http.Header -> RequestParams a -> RequestParams a
+setHeaders headers rp =
+  { rp | headers = headers }
+
+
+setUrl : String -> RequestParams a -> RequestParams a
+setUrl url rp =
+  { rp | url = url }
+
+
+setBody : Http.Body -> RequestParams a -> RequestParams a
+setBody body rp =
+  { rp | body = body }
+
+
+setExpect : Http.Expect b -> RequestParams a -> RequestParams b
+setExpect expect rp =
+  { rp | expect = expect }
+
+
+setWithCredentials : Bool -> RequestParams a -> RequestParams a
+setWithCredentials withCredentials rp =
+  { rp | withCredentials = withCredentials }

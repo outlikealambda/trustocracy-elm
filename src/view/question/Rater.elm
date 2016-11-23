@@ -33,7 +33,7 @@ view answer (leftEndpoint, rightEndpoint) prompt =
       , Html.div
         [ class "slider"]
         [ Html.input
-          [ HtmlAttrs.type' "range"
+          [ HtmlAttrs.type_ "range"
           , HtmlAttrs.min "0"
           , HtmlAttrs.max "1"
           , HtmlAttrs.step ".01"

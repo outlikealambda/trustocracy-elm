@@ -14,6 +14,7 @@ import Html.Events as Event exposing (onClick)
 import Json.Decode as Json
 import String
 import Utils.Cmd as CmdUtils
+import Utils.List as ListUtils
 
 
 import ActiveUser exposing (ActiveUser (LoggedIn, LoggedOut))
@@ -35,7 +36,8 @@ type alias Delegator =
 type Msg
   = NoOp
   | ValidateMove Trustee
-  | SaveDelegateComplete (List Trustee)
+  | SaveDelegateComplete Trustee
+  | SaveDelegateFailed Trustee String
   | InputUpdate String
   | Lookup
   | LookupComplete Trustee
@@ -91,22 +93,19 @@ update message delegator =
 
               fx =
                 if List.isEmpty diff then
-                  Cmd.none
+                  []
                 else
-                  API.setTrustees SaveDelegateComplete diff
+                  List.map (\t -> API.setTrustee (SaveDelegateFailed t) SaveDelegateComplete t) diff
             in
               ( { updated | errors = [] }
-              , fx
+              , Cmd.batch fx
               )
 
-    SaveDelegateComplete trustees ->
+    SaveDelegateComplete trustee ->
       let
-        -- get all the delegates which weren't saved
-        unchanged =
-          List.filter (\t -> List.all (not << Trustee.isTrustee t) trustees) delegator.saved
-
+        -- update the saved version of the list with this trustee
         updatedDelegateList =
-          trustees ++ unchanged
+          ListUtils.replace (Trustee.isTrustee trustee) trustee delegator.saved
 
       in
         ( { delegator
@@ -114,6 +113,30 @@ update message delegator =
           , current = updatedDelegateList }
         , Cmd.none
         )
+
+    -- If the save fails, remove that trustee from the current list, and
+    -- revert to the saved version of that trustee
+    SaveDelegateFailed trustee err ->
+      let
+
+        updatedTrusteesMinusFailedSave =
+          List.filter (Trustee.isTrustee trustee) delegator.saved
+            |> List.head
+            |> Maybe.map (\t -> ListUtils.replace (Trustee.isTrustee t) t delegator.current)
+            |> Maybe.withDefault delegator.current
+
+      in
+        ( { delegator
+          | current = updatedTrusteesMinusFailedSave
+          , errors =
+            ("Sorry, we couldn't find anyone with the email " ++ delegator.input ++ ":" ++ err)
+            :: delegator.errors
+
+          }
+        , Cmd.none )
+
+
+
 
     InputUpdate input ->
       ( { delegator | input = String.toLower(input) }

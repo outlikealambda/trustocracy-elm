@@ -2,9 +2,9 @@ module Main exposing (..)
 
 import Html
 
-import World
+import World exposing (World)
 
-main : Program String
+main : Program String World World.Msg
 main =
   Html.programWithFlags
     { init = World.init

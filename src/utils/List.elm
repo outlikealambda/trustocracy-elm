@@ -1,6 +1,7 @@
 module Utils.List exposing
   ( groupBy
   , singleton
+  , replace
   )
 
 
@@ -35,14 +36,20 @@ insertOrAppend : (comparable, a) -> List (comparable, List a) -> List (comparabl
 insertOrAppend pair keyedItems =
   let
     (matched, unmatched) =
-      List.partition (\keyedItem -> fst pair == fst keyedItem) keyedItems
+      List.partition (\keyedItem -> Tuple.first pair == Tuple.first keyedItem) keyedItems
     appendTo =
       case matched of
         [] -> []
-        first::rest -> snd first
+        first::rest -> Tuple.second first
   in
-    ( fst pair, snd pair :: appendTo ) :: unmatched
+    ( Tuple.first pair, Tuple.second pair :: appendTo ) :: unmatched
 
 
 singleton : a -> List a
 singleton = flip (::) []
+
+
+replace : (a -> Bool) -> a -> List a -> List a
+replace isMatch newItem items =
+  List.filter (not << isMatch) items
+    |> List.append [ newItem ]

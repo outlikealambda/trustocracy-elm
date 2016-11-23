@@ -287,7 +287,7 @@ viewForm auth =
             []
           , Html.map (UpdateInput name) <| input
             [ placeholder "Password"
-            , Attribute.type' "password"
+            , Attribute.type_ "password"
             , value secret
             , on "input" targetValue
             ]
